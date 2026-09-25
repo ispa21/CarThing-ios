@@ -9,9 +9,10 @@ describe('parseRetryAfter', () => {
     const now = Date.parse('2026-01-01T00:00:00Z')
     expect(parseRetryAfter('Thu, 01 Jan 2026 00:00:30 GMT', now)).toBe(30_000)
   })
-  it('falls back to 5s when missing or garbage', () => {
-    expect(parseRetryAfter(null)).toBe(5000)
-    expect(parseRetryAfter('soon')).toBe(5000)
+  it('returns null when missing or garbage (e.g. not exposed via CORS)', () => {
+    expect(parseRetryAfter(null)).toBeNull()
+    expect(parseRetryAfter('')).toBeNull()
+    expect(parseRetryAfter('soon')).toBeNull()
   })
   it('never returns less than 1s (no tight loops)', () => {
     expect(parseRetryAfter('0')).toBe(1000)
@@ -32,6 +33,22 @@ describe('cooldown', () => {
     c.trip(10_000, 0)
     c.trip(1000, 0)
     expect(c.remaining(0)).toBe(10_000)
+  })
+  it('backs off exponentially when Retry-After is unreadable, capped at 5 min', () => {
+    const c = createCooldown()
+    const waits = Array.from({ length: 9 }, () => c.trip(null, 0))
+    expect(waits).toEqual([5000, 10_000, 20_000, 40_000, 80_000, 160_000, 300_000, 300_000, 300_000])
+  })
+  it('resets the backoff after a successful response', () => {
+    const c = createCooldown()
+    c.trip(null, 0)
+    c.trip(null, 0)
+    c.reset()
+    expect(c.trip(null, 0)).toBe(5000)
+  })
+  it('prefers Retry-After when readable', () => {
+    const c = createCooldown()
+    expect(c.trip(7000, 0)).toBe(7000)
   })
 })
 

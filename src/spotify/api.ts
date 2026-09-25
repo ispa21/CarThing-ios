@@ -49,10 +49,10 @@ export async function spotify<T>(path: string, opts: RequestOptions = {}): Promi
   if (res.status === 401) res = await send(url, opts, await getAccessToken({ force: true }))
 
   if (res.status === 429) {
-    const ms = parseRetryAfter(res.headers.get('Retry-After'))
-    cooldown.trip(ms)
+    const ms = cooldown.trip(parseRetryAfter(res.headers.get('Retry-After')))
     throw new SpotifyError(429, 'Rate limited', 'RATE_LIMITED', ms)
   }
+  cooldown.reset()
   if (res.status === 204 || res.status === 202) return null
 
   const text = await res.text()

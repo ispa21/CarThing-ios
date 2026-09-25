@@ -24,27 +24,38 @@ export class SpotifyError extends Error {
   }
 }
 
-/** Retry-After is delta-seconds or an HTTP date. Unknown → 5s. Never below 1s. */
-export function parseRetryAfter(header: string | null, now = Date.now()): number {
-  const fallback = 5000
-  if (!header) return fallback
+/** Retry-After is delta-seconds or an HTTP date. Returns null if absent/unreadable. Never below 1s. */
+export function parseRetryAfter(header: string | null, now = Date.now()): number | null {
+  if (!header?.trim()) return null
   const seconds = Number(header)
   if (Number.isFinite(seconds)) return Math.max(1000, seconds * 1000)
   const date = Date.parse(header)
   if (Number.isFinite(date)) return Math.max(1000, date - now)
-  return fallback
+  return null
 }
 
+const BACKOFF_START_MS = 5000
+const BACKOFF_MAX_MS = 5 * 60_000
+
 /**
- * One cooldown shared by every request: after a 429 nothing is sent until
- * Retry-After elapses. This is what prevents tight retry loops.
+ * One cooldown shared by every request: after a 429 nothing is sent until it
+ * elapses — no tight retry loops. Uses Retry-After when the browser can read it
+ * (Spotify doesn't list it in Access-Control-Expose-Headers), otherwise backs
+ * off exponentially: 5s, 10s, 20s … 5 min. A successful response resets it.
  */
 export function createCooldown() {
   let until = 0
+  let strikes = 0
   return {
     remaining: (now = Date.now()) => Math.max(0, until - now),
-    trip: (ms: number, now = Date.now()) => {
+    trip: (retryAfterMs: number | null, now = Date.now()) => {
+      strikes++
+      const ms = retryAfterMs ?? Math.min(BACKOFF_START_MS * 2 ** (strikes - 1), BACKOFF_MAX_MS)
       until = Math.max(until, now + ms)
+      return ms
+    },
+    reset: () => {
+      strikes = 0
     },
   }
 }

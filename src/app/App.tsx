@@ -49,7 +49,12 @@ export function App() {
   let content
   if (route === 'callback') content = <Callback />
   else if (connected) content = <ConnectedApp route={route} />
-  else if (route === 'lyrics-demo') content = <Screen route={route} immersive />
+  else if (route === 'lyrics-demo')
+    content = (
+      <div className="shell" data-immersive>
+        <Screen route={route} immersive />
+      </div>
+    )
   else content = <Connect />
 
   return (
@@ -92,7 +97,8 @@ function Screen({ route, immersive = false }: { route: Route; immersive?: boolea
       first.current = false
       return
     }
-    ref.current?.focus({ preventScroll: true })
+    const main = ref.current
+    if (main && !main.contains(document.activeElement)) main.focus({ preventScroll: true }) // keep e.g. Search's autofocus
   }, [route])
 
   return (
