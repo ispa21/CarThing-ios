@@ -1,7 +1,6 @@
 import { create } from 'zustand'
 import { hasSession, onSessionChange } from '../spotify/auth'
-import type { FriendlyError } from '../spotify/errors'
-import { initialPlayback, usePlayback } from './playback'
+import { describeError, type FriendlyError } from '../spotify/errors'
 
 interface SessionStore {
   connected: boolean
@@ -16,7 +15,12 @@ export const useSession = create<SessionStore>(() => ({
   notice: null,
 }))
 
-onSessionChange((connected) => {
-  useSession.setState(connected ? { connected, notice: null } : { connected, displayName: null })
-  if (!connected) usePlayback.setState(initialPlayback, true) // drop all Spotify-derived state
+// Spotify-derived playback state is dropped by playbackService.stopPlaybackSync(),
+// which runs when the connected app unmounts.
+onSessionChange((connected, reason) => {
+  useSession.setState(
+    connected
+      ? { connected, notice: null }
+      : { connected, displayName: null, notice: reason ? describeError(reason) : useSession.getState().notice },
+  )
 })

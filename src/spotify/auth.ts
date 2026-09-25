@@ -19,6 +19,12 @@ interface Tokens {
   expiresAt: number
 }
 
+/**
+ * denied   — the user declined on Spotify's page
+ * state    — callback didn't match a login we started
+ * exchange — Spotify rejected the code / refresh token (HTTP 400/401: revoked, expired, invalid)
+ * network  — couldn't complete: offline, or Spotify accounts unavailable (5xx, 429, garbage)
+ */
 export type AuthFailure = 'denied' | 'state' | 'exchange' | 'network'
 
 export class AuthError extends Error {
@@ -53,18 +59,27 @@ function writeTokens(t: Tokens) {
 }
 
 let memory: Tokens | null = readTokens()
-const listeners = new Set<(connected: boolean) => void>()
+type SessionListener = (connected: boolean, reason?: SpotifyError) => void
+const listeners = new Set<SessionListener>()
+
+// Another tab (or the installed PWA) refreshed or disconnected: follow it.
+window.addEventListener('storage', (e) => {
+  if (e.key !== TOKEN_KEY && e.key !== null) return
+  const wasConnected = memory !== null
+  memory = readTokens()
+  if (wasConnected !== (memory !== null)) emit()
+})
 
 export const hasSession = () => memory !== null
 
-/** Notified when the session starts or ends (login, logout, refresh revoked). */
-export function onSessionChange(cb: (connected: boolean) => void) {
+/** Notified when the session starts or ends. `reason` says why it ended (unless the user chose to). */
+export function onSessionChange(cb: SessionListener) {
   listeners.add(cb)
   return () => listeners.delete(cb)
 }
 
-function emit() {
-  for (const cb of listeners) cb(memory !== null)
+function emit(reason?: SpotifyError) {
+  for (const cb of listeners) cb(memory !== null, reason)
 }
 
 export async function beginLogin(returnTo = '/') {
@@ -99,8 +114,16 @@ async function requestToken(body: Record<string, string>): Promise<TokenResponse
   } catch {
     throw new AuthError('network')
   }
-  if (!res.ok) throw new AuthError('exchange')
-  return (await res.json()) as TokenResponse
+  // Only a definite OAuth rejection is fatal. A 5xx/429 or a captive-portal page is transient.
+  if (res.status === 400 || res.status === 401) throw new AuthError('exchange')
+  if (!res.ok) throw new AuthError('network')
+  try {
+    const json = (await res.json()) as TokenResponse
+    if (typeof json.access_token !== 'string' || typeof json.expires_in !== 'number') throw new Error('bad token response')
+    return json
+  } catch {
+    throw new AuthError('network')
+  }
 }
 
 function store(r: TokenResponse, previousRefresh?: string) {
@@ -143,9 +166,19 @@ export function completeLogin(params: URLSearchParams): Promise<string> {
 
 let refreshInFlight: Promise<string> | null = null
 
-async function refresh(): Promise<string> {
-  const current = memory
+const isFresh = (t: Tokens) => t.expiresAt - 60_000 > Date.now()
+
+async function refresh(force: boolean): Promise<string> {
+  // Another tab may already have refreshed (and rotated the refresh token).
+  const stored = readTokens()
+  if (stored && stored.accessToken !== memory?.accessToken && isFresh(stored)) {
+    memory = stored
+    return stored.accessToken
+  }
+  const current = stored ?? memory
   if (!current) throw new SpotifyError(401, 'Not connected', 'AUTH_EXPIRED')
+  if (!force && isFresh(current)) return current.accessToken
+
   try {
     store(
       await requestToken({ grant_type: 'refresh_token', refresh_token: current.refreshToken, client_id: SPOTIFY_CLIENT_ID }),
@@ -153,24 +186,31 @@ async function refresh(): Promise<string> {
     )
     return memory!.accessToken
   } catch (e) {
-    if (e instanceof AuthError && e.kind === 'network') throw new SpotifyError(0, 'Network error', 'NETWORK')
-    logout() // refresh token revoked or expired
-    throw new SpotifyError(401, 'Session expired', 'AUTH_EXPIRED')
+    if (e instanceof AuthError && e.kind === 'network') throw new SpotifyError(0, 'Network error', 'NETWORK') // keep tokens
+    // Rejected. If another tab rotated the refresh token meanwhile, use theirs instead of signing out.
+    const latest = readTokens()
+    if (latest && latest.refreshToken !== current.refreshToken) {
+      memory = latest
+      return latest.accessToken
+    }
+    const expired = new SpotifyError(401, 'Session expired', 'AUTH_EXPIRED')
+    logout(expired) // refresh token revoked or expired
+    throw expired
   }
 }
 
 /** A valid access token, refreshing a minute before expiry. Concurrent callers share one refresh. */
 export async function getAccessToken({ force = false } = {}): Promise<string> {
   if (!memory) throw new SpotifyError(401, 'Not connected', 'AUTH_EXPIRED')
-  if (!force && memory.expiresAt - 60_000 > Date.now()) return memory.accessToken
-  refreshInFlight ??= refresh().finally(() => {
+  if (!force && isFresh(memory)) return memory.accessToken
+  refreshInFlight ??= refresh(force).finally(() => {
     refreshInFlight = null
   })
   return refreshInFlight
 }
 
 /** Disconnect: forget tokens and every piece of Spotify-derived local data. */
-export function logout() {
+export function logout(reason?: SpotifyError) {
   memory = null
   try {
     localStorage.removeItem(TOKEN_KEY)
@@ -178,5 +218,5 @@ export function logout() {
   } catch {
     // ignore
   }
-  emit()
+  emit(reason)
 }

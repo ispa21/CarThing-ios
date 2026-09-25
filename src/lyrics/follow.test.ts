@@ -51,7 +51,8 @@ describe('manual scrolling', () => {
   })
 
   it('recognises scroll keys', () => {
-    expect(['ArrowDown', 'PageUp', ' ', 'End'].every(isScrollKey)).toBe(true)
-    expect(['a', 'Enter', 'Tab'].some(isScrollKey)).toBe(false)
+    expect(['ArrowDown', 'PageUp', 'End'].every(isScrollKey)).toBe(true)
+    // Space toggles playback in the reader, so it must not drop auto-follow
+    expect(['a', 'Enter', 'Tab', ' '].some(isScrollKey)).toBe(false)
   })
 })

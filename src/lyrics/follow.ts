@@ -28,7 +28,8 @@ export function showJumpButton(mode: FollowMode, opts: { timed: boolean; autoScr
   return opts.timed && opts.hasCurrent && (mode === 'free' || !opts.autoScroll)
 }
 
-const SCROLL_KEYS = new Set(['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '])
+// Not Space: in the reader Space is play/pause (see app/shortcuts.ts).
+const SCROLL_KEYS = new Set(['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End'])
 
 /** Keys that mean "I'm scrolling by myself" when focus is in the reader. */
 export const isScrollKey = (key: string) => SCROLL_KEYS.has(key)

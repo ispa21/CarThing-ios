@@ -19,9 +19,15 @@ export function Scrubber({ clock, durationMs, onSeek, disabled = false, label = 
   const fillRef = useRef<HTMLDivElement>(null)
   const thumbRef = useRef<HTMLDivElement>(null)
   const elapsedRef = useRef<HTMLSpanElement>(null)
-  const remainRef = useRef<HTMLSpanElement>(null)
   const lastSecond = useRef(-1)
+  // The drag/keyboard preview position. A ref for handlers (never stale), state to pause the painter.
+  const dragRef = useRef<number | null>(null)
   const [dragMs, setDragMs] = useState<number | null>(null)
+  const setDrag = (ms: number | null) => {
+    dragRef.current = ms
+    setDragMs(ms)
+  }
+  const keyTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
   const dragging = dragMs !== null
 
   const paint = useCallback(
@@ -34,16 +40,21 @@ export function Scrubber({ clock, durationMs, onSeek, disabled = false, label = 
       lastSecond.current = second
       const elapsed = formatTime(ms)
       if (elapsedRef.current) elapsedRef.current.textContent = elapsed
-      if (remainRef.current) remainRef.current.textContent = `-${formatTime(durationMs - ms)}`
       trackRef.current?.setAttribute('aria-valuenow', String(second))
       trackRef.current?.setAttribute('aria-valuetext', `${elapsed} of ${formatTime(durationMs)}`)
     },
     [durationMs],
   )
 
+  // Track changed (new duration): repaint now, even when paused and nothing else will trigger it.
   useEffect(() => {
-    lastSecond.current = -1 // duration changed → repaint labels
-  }, [durationMs])
+    lastSecond.current = -1
+    if (dragRef.current !== null) return
+    const { snapshot, syncedAt } = clock.read()
+    paint(interpolateProgress(snapshot, syncedAt, Date.now()))
+  }, [durationMs, clock, paint])
+
+  useEffect(() => () => clearTimeout(keyTimer.current), [])
 
   useClockPainter(clock, paint, !dragging)
   useEffect(() => {
@@ -58,21 +69,23 @@ export function Scrubber({ clock, durationMs, onSeek, disabled = false, label = 
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
     if (disabled || !durationMs || e.button !== 0) return
     e.currentTarget.setPointerCapture(e.pointerId)
-    setDragMs(msAt(e.clientX))
+    setDrag(msAt(e.clientX))
   }
   const onPointerMove = (e: PointerEvent<HTMLDivElement>) => {
-    if (dragging) setDragMs(msAt(e.clientX))
+    if (dragRef.current !== null) setDrag(msAt(e.clientX))
   }
   const onPointerUp = () => {
-    if (dragMs === null) return
-    onSeek(dragMs)
-    setDragMs(null)
+    const ms = dragRef.current
+    if (ms === null) return
+    setDrag(null)
+    onSeek(ms)
   }
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (disabled) return
     const { snapshot, syncedAt } = clock.read()
-    const now = interpolateProgress(snapshot, syncedAt, Date.now())
+    // Repeated presses build on the preview, not on the (not yet seeked) playback position.
+    const now = dragRef.current ?? interpolateProgress(snapshot, syncedAt, Date.now())
     const step = { ArrowRight: 5000, ArrowUp: 5000, ArrowLeft: -5000, ArrowDown: -5000, PageUp: 15000, PageDown: -15000 }[e.key]
     let target: number | null = step != null ? now + step : null
     if (e.key === 'Home') target = 0
@@ -80,7 +93,14 @@ export function Scrubber({ clock, durationMs, onSeek, disabled = false, label = 
     if (target === null) return
     e.preventDefault()
     e.stopPropagation() // don't also trigger the global ←/→ shortcut
-    onSeek(Math.min(Math.max(0, target), durationMs))
+    // Preview immediately, send one seek when the keys stop (holding a key must not flood Spotify).
+    setDrag(Math.min(Math.max(0, target), durationMs))
+    clearTimeout(keyTimer.current)
+    keyTimer.current = setTimeout(() => {
+      const ms = dragRef.current
+      setDrag(null)
+      if (ms !== null) onSeek(ms)
+    }, 350)
   }
 
   return (
@@ -97,7 +117,7 @@ export function Scrubber({ clock, durationMs, onSeek, disabled = false, label = 
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
-        onPointerCancel={() => setDragMs(null)}
+        onPointerCancel={() => setDrag(null)}
         onKeyDown={onKeyDown}
       >
         <div className="scrub-track">
@@ -107,7 +127,7 @@ export function Scrubber({ clock, durationMs, onSeek, disabled = false, label = 
       </div>
       <div className="scrub-times" aria-hidden="true">
         <span ref={elapsedRef}>0:00</span>
-        <span ref={remainRef}>-{formatTime(durationMs)}</span>
+        <span>{formatTime(durationMs)}</span>
       </div>
     </div>
   )

@@ -1,18 +1,18 @@
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import { AnimatePresence, m, useReducedMotion } from 'motion/react'
 import { useCallback, useEffect, useReducer, useRef, useState, type CSSProperties } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { back, linkHandler } from '../app/router'
+import { SOURCES } from '../app/sources'
 import { PlayKey } from '../app/Transport'
 import { DEMO_TRACK } from '../lyrics/demo'
-import { seekDemo, toggleDemo, useDemoClock } from '../lyrics/demoClock'
+import { toggleDemo, useDemoClock } from '../lyrics/demoClock'
 import { lyricsEngine } from '../lyrics/engine'
 import { followReducer, isScrollKey, shouldAutoScroll, showJumpButton } from '../lyrics/follow'
 import { canTimeSync, type PlaybackSource } from '../lyrics/policy'
-import { resolveLyrics, type ResolvedLyrics } from '../lyrics/resolver'
-import { seekTo, togglePlay } from '../spotify/playbackService'
-import { usePlayback } from '../store/playback'
+import { resolveLyrics, type ResolvedLyrics, type TrackQuery } from '../lyrics/resolver'
+import { selectCanToggle, usePlayback } from '../store/playback'
 import { LYRIC_SIZES, useSettings } from '../store/settings'
-import { demoClock, spotifyClock, useClockValue } from '../ui/clock'
+import { useClockValue } from '../ui/clock'
 import { EmptyState } from '../ui/Feedback'
 import { Icon } from '../ui/Icon'
 import { Scrubber } from '../ui/Scrubber'
@@ -24,9 +24,81 @@ const NO_LINES: never[] = []
 /** Where the current line rests, as a fraction of the reader's height. */
 const FOCUS_LINE = 0.36
 
+/** Lyrics for a track. `loading` is derived from which track the result belongs to, not stored. */
+function useResolvedLyrics(query: TrackQuery | null): LyricsState {
+  const key = query ? `${query.title}\u0000${query.artist}` : null
+  const [resolved, setResolved] = useState<{ key: string; lyrics: ResolvedLyrics | null } | null>(null)
+  const { title = '', artist = '', durationMs } = query ?? {}
+  useEffect(() => {
+    if (!key) return
+    let cancelled = false
+    resolveLyrics({ title, artist, durationMs }).then((lyrics) => {
+      if (!cancelled) setResolved({ key, lyrics })
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [key, title, artist, durationMs])
+
+  if (!key) return { status: 'none' }
+  if (resolved?.key !== key) return { status: 'loading' }
+  return resolved.lyrics ? { status: 'ready', lyrics: resolved.lyrics } : { status: 'none' }
+}
+
+/**
+ * Controls fade away while reading. Any interaction reveals them; they only hide
+ * while playing, and never while pressed or while one of them has focus.
+ */
+function useAutoHide(playing: boolean) {
+  const [idle, setIdle] = useState(false)
+  const [activity, setActivity] = useState(0)
+  const lastPoke = useRef(0)
+  const pressing = useRef(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  const poke = useCallback(() => {
+    const now = performance.now()
+    if (now - lastPoke.current < 400) return // pointermove fires constantly; don't re-render on each
+    lastPoke.current = now
+    setIdle(false)
+    setActivity((a) => a + 1)
+  }, [])
+
+  useEffect(() => {
+    if (!playing) return
+    // Keyboard focus only: a mouse click on the scrubber also focuses it, and shouldn't pin the controls.
+    const busy = () => {
+      const el = document.activeElement as HTMLElement | null
+      return pressing.current || (!!el?.closest('.lyrics-top, .lyrics-bottom') && el.matches(':focus-visible'))
+    }
+    let t = setTimeout(function tick() {
+      if (busy()) t = setTimeout(tick, HIDE_CONTROLS_MS)
+      else setIdle(true)
+    }, HIDE_CONTROLS_MS)
+    return () => clearTimeout(t)
+  }, [playing, activity])
+
+  const handlers = {
+    ref: rootRef,
+    onPointerMove: poke,
+    onKeyDown: poke,
+    onPointerDown: () => {
+      pressing.current = true
+      poke()
+    },
+    onPointerUp: () => {
+      pressing.current = false
+    },
+    onPointerCancel: () => {
+      pressing.current = false
+    },
+  }
+  return { visible: !playing || !idle, handlers }
+}
+
 export function LyricsScreen({ source }: { source: PlaybackSource }) {
   const demo = source === 'demo'
-  const clock = demo ? demoClock : spotifyClock
+  const src = SOURCES[source]
 
   const spotify = usePlayback(
     useShallow((s) => ({
@@ -36,7 +108,7 @@ export function LyricsScreen({ source }: { source: PlaybackSource }) {
       artist: s.playback.artist,
       durationMs: s.playback.durationMs,
       isPlaying: s.playback.isPlaying,
-      cantToggle: s.playback.isPlaying ? s.playback.disallows.pausing : s.playback.disallows.resuming,
+      canToggle: selectCanToggle(s),
       cantSeek: s.playback.disallows.seeking,
     })),
   )
@@ -45,28 +117,7 @@ export function LyricsScreen({ source }: { source: PlaybackSource }) {
     ? { id: 'demo', title: DEMO_TRACK.title, artist: DEMO_TRACK.artist, durationMs: DEMO_TRACK.durationMs, isPlaying: demoPlaying }
     : { id: spotify.trackId, title: spotify.title, artist: spotify.artist, durationMs: spotify.durationMs, isPlaying: spotify.isPlaying }
 
-  // ── Resolve lyrics for the current track ──
-  // `resolved` remembers which track it belongs to, so "loading" is derived, not stored.
-  const trackKey = track.title ? `${track.title}\u0000${track.artist ?? ''}` : null
-  const [resolved, setResolved] = useState<{ key: string; lyrics: ResolvedLyrics | null } | null>(null)
-  useEffect(() => {
-    if (!trackKey || !track.title) return
-    let cancelled = false
-    resolveLyrics({ title: track.title, artist: track.artist ?? '', durationMs: track.durationMs }).then((lyrics) => {
-      if (!cancelled) setResolved({ key: trackKey, lyrics })
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [trackKey, track.title, track.artist, track.durationMs])
-
-  const state: LyricsState = !trackKey
-    ? { status: 'none' }
-    : resolved?.key !== trackKey
-      ? { status: 'loading' }
-      : resolved.lyrics
-        ? { status: 'ready', lyrics: resolved.lyrics }
-        : { status: 'none' }
+  const state = useResolvedLyrics(track.title ? { title: track.title, artist: track.artist ?? '', durationMs: track.durationMs } : null)
 
   const lines = state.status === 'ready' ? state.lyrics.lines : NO_LINES
   // Timed follow only when the lyrics have stamps AND the clock isn't Spotify audio (policy.ts).
@@ -76,7 +127,7 @@ export function LyricsScreen({ source }: { source: PlaybackSource }) {
     (ms: number, isPlaying: boolean) => (timed ? lyricsEngine({ lyrics: lines, playbackPositionMs: ms, isPlaying }).currentIndex : -1),
     [timed, lines],
   )
-  const current = useClockValue(clock, deriveIndex, timed)
+  const current = useClockValue(src.clock, deriveIndex, timed)
 
   // ── Follow / manual scroll ──
   const autoScroll = useSettings((s) => s.autoScroll)
@@ -109,24 +160,7 @@ export function LyricsScreen({ source }: { source: PlaybackSource }) {
     scrollToCurrent(true)
   }
 
-  // ── Controls fade away while reading ──
-  // Any interaction reveals the controls; they only auto-hide while playing.
-  const [idle, setIdle] = useState(false)
-  const [activity, setActivity] = useState(0)
-  const lastPoke = useRef(0)
-  const poke = useCallback(() => {
-    const now = performance.now()
-    if (now - lastPoke.current < 400) return // pointermove fires constantly; don't re-render on each
-    lastPoke.current = now
-    setIdle(false)
-    setActivity((a) => a + 1)
-  }, [])
-  useEffect(() => {
-    if (!track.isPlaying) return
-    const t = setTimeout(() => setIdle(true), HIDE_CONTROLS_MS)
-    return () => clearTimeout(t)
-  }, [track.isPlaying, activity])
-  const controls = !track.isPlaying || !idle
+  const { visible: controls, handlers } = useAutoHide(track.isPlaying)
 
   // The demo clock runs by itself; start it when the demo opens, pause on leave.
   useEffect(() => {
@@ -145,21 +179,22 @@ export function LyricsScreen({ source }: { source: PlaybackSource }) {
   const fade = { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 }, transition: { duration: 0.2 } }
 
   return (
-    <div className="lyrics" onPointerMove={poke} onPointerDown={poke} onKeyDown={poke} data-controls={controls || undefined}>
+    <div className="lyrics" {...handlers} data-controls={controls || undefined}>
       <AnimatePresence>
         {controls && (
-          <motion.header key="top" className="lyrics-top" {...fade}>
-            <button className="icon-btn" onClick={() => back(demo ? '/' : '/now')} aria-label="Back">
+          <m.header key="top" className="lyrics-top" {...fade}>
+            <button className="icon-btn" onClick={() => back(src.backTo)} aria-label="Back">
               <Icon name="back" />
             </button>
             <div className="lyrics-track">
               <span className="lyrics-track-title">{track.title ?? 'Lyrics'}</span>
-              {track.artist && <span className="lyrics-track-artist">{track.artist}</span>}
+              {/* The demo clock is silent — say so rather than imply playback. */}
+              {(demo || track.artist) && <span className="lyrics-track-artist">{demo ? 'Demo, no audio' : track.artist}</span>}
             </div>
             <button className="icon-btn" onClick={cycleSize} aria-label={`Text size: ${size.label}. Change`}>
               <Icon name="textSize" />
             </button>
-          </motion.header>
+          </m.header>
         )}
       </AnimatePresence>
 
@@ -215,7 +250,7 @@ export function LyricsScreen({ source }: { source: PlaybackSource }) {
 
       <AnimatePresence>
         {showJump && (
-          <motion.button
+          <m.button
             key="jump"
             className="jump"
             onClick={jump}
@@ -226,29 +261,29 @@ export function LyricsScreen({ source }: { source: PlaybackSource }) {
           >
             <Icon name="target" size={18} />
             Jump to current
-          </motion.button>
+          </m.button>
         )}
       </AnimatePresence>
 
       <AnimatePresence>
         {controls && (demo || spotify.has) && (
-          <motion.footer key="bottom" className="lyrics-bottom" {...fade}>
+          <m.footer key="bottom" className="lyrics-bottom" {...fade}>
             <PlayKey
               small
               isPlaying={track.isPlaying}
-              onPress={demo ? toggleDemo : togglePlay}
-              disabled={!demo && spotify.cantToggle}
+              onPress={src.toggle}
+              disabled={!demo && !spotify.canToggle}
             />
             <div className="lyrics-scrub">
               <Scrubber
-                clock={clock}
+                clock={src.clock}
                 durationMs={track.durationMs}
-                onSeek={demo ? seekDemo : seekTo}
+                onSeek={src.seek}
                 disabled={!demo && spotify.cantSeek}
                 label="Song position"
               />
             </div>
-          </motion.footer>
+          </m.footer>
         )}
       </AnimatePresence>
     </div>

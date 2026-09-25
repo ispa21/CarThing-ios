@@ -64,8 +64,15 @@ export async function spotify<T>(path: string, opts: RequestOptions = {}): Promi
   }
 
   if (!res.ok) {
+    // ErrorObject is { status, message }. Player endpoints also send `reason`
+    // (PREMIUM_REQUIRED, NO_ACTIVE_DEVICE…) though the schema omits it, so it is
+    // only a hint — describeError() falls back to status and message.
     const err = (body as { error?: { message?: string; reason?: string } } | null)?.error
-    throw new SpotifyError(res.status, err?.message ?? res.statusText, err?.reason ?? (res.status === 401 ? 'AUTH_EXPIRED' : undefined))
+    const message = err?.message ?? res.statusText
+    let reason = err?.reason ?? (res.status === 401 ? 'AUTH_EXPIRED' : undefined)
+    // Development Mode: accounts missing from the app's user list get 403 with this message.
+    if (res.status === 403 && /not be registered|not registered/i.test(message)) reason = 'NOT_REGISTERED'
+    throw new SpotifyError(res.status, message, reason)
   }
   return body as T
 }

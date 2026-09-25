@@ -8,7 +8,7 @@
 // pauses everything until Retry-After has elapsed.
 
 import { interpolateProgress } from '../lib/progress'
-import { usePlayback } from '../store/playback'
+import { initialPlayback, selectCanToggle, usePlayback, type PlaybackStore } from '../store/playback'
 import { useSession } from '../store/session'
 import { notify, openDevices, closeDevices } from '../store/ui'
 import * as api from './api'
@@ -36,6 +36,13 @@ let fastSyncs = 0
 let backoffMs = 0
 /** Bumped by every command so a poll that started before it can't undo the optimistic state. */
 let epoch = 0
+let commandsInFlight = 0
+/** Bumped on stop (disconnect). Responses from an older generation are dropped. */
+let generation = 0
+const stillCurrent = () => {
+  const g = generation
+  return () => g === generation
+}
 
 const set = usePlayback.setState
 const get = usePlayback.getState
@@ -53,28 +60,39 @@ export function startPlaybackSync() {
   void loadProfile()
 }
 
+/** Stops syncing and forgets all Spotify-derived state (runs on disconnect). */
 export function stopPlaybackSync() {
   running = false
+  generation++
   clearTimeout(timer)
+  inflight = null // its response is dropped by the generation check
+  fastSyncs = 0
+  backoffMs = 0
   document.removeEventListener('visibilitychange', onVisibility)
   window.removeEventListener('online', syncNow)
+  set(initialPlayback, true)
 }
 
 export function syncNow(): Promise<void> {
   if (!running) return Promise.resolve()
-  inflight ??= pollOnce().finally(() => {
-    inflight = null
-    schedule()
-  })
+  if (!inflight) {
+    const poll: Promise<void> = pollOnce().finally(() => {
+      if (inflight === poll) inflight = null // a restart may already own the slot
+      schedule()
+    })
+    inflight = poll
+  }
   return inflight
 }
 
 async function pollOnce() {
+  const alive = stillCurrent()
   const startedEpoch = epoch
   const started = Date.now()
   try {
     const raw = await api.getPlayback()
-    if (startedEpoch !== epoch) return // a command landed mid-flight; the next poll is authoritative
+    // A command started or is still in flight: this snapshot may predate it. The next poll is authoritative.
+    if (!alive() || startedEpoch !== epoch || commandsInFlight > 0) return
     const before = get().playback.trackId
     const playback = normalizePlayback(raw)
     backoffMs = 0
@@ -87,7 +105,8 @@ async function pollOnce() {
     })
     if (before !== playback.trackId && get().queue.data) void refreshQueue()
   } catch (e) {
-    const friendly = handleError(e)
+    if (!alive()) return
+    const friendly = explainError(e)
     if (friendly) set({ syncError: friendly, loaded: true })
   }
 }
@@ -119,14 +138,13 @@ function resyncSoon() {
 
 // ── Errors ───────────────────────────────────────────────────────────────────
 
-/** Central error policy. Returns the user-facing error, or null if handled silently. */
-function handleError(e: unknown) {
+/** Central error policy (auth, 429 backoff). Returns the user-facing error, or null if handled silently. */
+export function explainError(e: unknown) {
   if (e instanceof DOMException && e.name === 'AbortError') return null
   if (e instanceof SpotifyError) {
     if (e.status === 429) backoffMs = e.retryAfterMs ?? 5000
-    if (e.reason === 'AUTH_EXPIRED') {
-      useSession.setState({ notice: describeError(e) })
-      logout()
+    if (e.reason === 'AUTH_EXPIRED' || e.reason === 'NOT_REGISTERED') {
+      logout(e) // the Connect screen explains why
       return null
     }
   }
@@ -134,7 +152,7 @@ function handleError(e: unknown) {
 }
 
 function reportCommandError(e: unknown) {
-  const friendly = handleError(e)
+  const friendly = explainError(e)
   if (!friendly) return
   notify(friendly.detail ? `${friendly.title}. ${friendly.detail}` : friendly.title, 'error')
   if (friendly.action === 'devices') openDevices()
@@ -144,6 +162,8 @@ function reportCommandError(e: unknown) {
 
 async function command(run: () => Promise<unknown>, optimistic?: Partial<PlaybackState>): Promise<boolean> {
   epoch++
+  commandsInFlight++
+  const alive = stillCurrent()
   const before = get()
   if (optimistic) {
     const now = Date.now()
@@ -156,25 +176,32 @@ async function command(run: () => Promise<unknown>, optimistic?: Partial<Playbac
     await run()
     return true
   } catch (e) {
+    if (!alive()) return false
     if (optimistic) set({ playback: before.playback, syncedAt: before.syncedAt }) // roll back
     reportCommandError(e)
     return false
   } finally {
-    resyncSoon()
+    commandsInFlight--
+    if (alive()) resyncSoon()
   }
 }
 
+// Every entry point (buttons, keyboard) checks Spotify's `disallows` here, so
+// nothing sends a command Spotify has said it will reject.
+const can = (action: keyof PlaybackState['disallows']) => get().hasPlayback && !get().playback.disallows[action]
+
 export function togglePlay() {
-  const { playback } = get()
-  return playback.isPlaying
+  if (!selectCanToggle(get())) return Promise.resolve(false)
+  return get().playback.isPlaying
     ? command(api.pausePlayback, { isPlaying: false })
     : command(() => api.startPlayback(), { isPlaying: true })
 }
 
-export const skipNext = () => command(api.skipToNext)
-export const skipPrevious = () => command(api.skipToPrevious)
+export const skipNext = () => (can('skippingNext') ? command(api.skipToNext) : Promise.resolve(false))
+export const skipPrevious = () => (can('skippingPrev') ? command(api.skipToPrevious) : Promise.resolve(false))
 
 export function seekTo(ms: number) {
+  if (!can('seeking')) return Promise.resolve(false)
   const { durationMs } = get().playback
   const target = Math.max(0, Math.min(ms, durationMs || ms))
   return command(() => api.seekToPosition(target), { progressMs: target })
@@ -213,24 +240,22 @@ export async function transferTo(deviceId: string, name: string) {
 
 // ── Queue, devices, catalog ──────────────────────────────────────────────────
 
-export async function refreshQueue() {
-  set({ queue: { ...get().queue, loading: true } })
+type Loadable = 'queue' | 'devices'
+
+async function load<K extends Loadable>(key: K, fetch: () => Promise<PlaybackStore[K]['data']>) {
+  const alive = stillCurrent()
+  const patch = (value: PlaybackStore[K]) => set({ [key]: value } as Pick<PlaybackStore, K>)
+  patch({ ...get()[key], loading: true })
   try {
-    set({ queue: { data: normalizeQueue(await api.getQueue()), loading: false, error: null } })
+    const data = await fetch()
+    if (alive()) patch({ data, loading: false, error: null } as PlaybackStore[K])
   } catch (e) {
-    set({ queue: { ...get().queue, loading: false, error: handleError(e) } })
+    if (alive()) patch({ ...get()[key], loading: false, error: explainError(e) })
   }
 }
 
-export async function refreshDevices() {
-  set({ devices: { ...get().devices, loading: true } })
-  try {
-    const res = await api.getDevices()
-    set({ devices: { data: (res?.devices ?? []).map(normalizeDevice), loading: false, error: null } })
-  } catch (e) {
-    set({ devices: { ...get().devices, loading: false, error: handleError(e) } })
-  }
-}
+export const refreshQueue = () => load('queue', async () => normalizeQueue(await api.getQueue()))
+export const refreshDevices = () => load('devices', async () => ((await api.getDevices())?.devices ?? []).map(normalizeDevice))
 
 export async function searchCatalog(q: string, signal?: AbortSignal) {
   return normalizeSearch(await api.search(q, signal))
@@ -241,20 +266,12 @@ export async function fetchPlaylists() {
   return (page?.items ?? []).filter((p): p is RawPlaylist => p != null).map((p) => normalizePlaylist(p))
 }
 
-/** Surface a caught catalog error the same way everywhere (and handle auth/429). */
-export const explainError = (e: unknown) => handleError(e)
-
 async function loadProfile() {
+  const alive = stillCurrent()
   try {
     const me = await api.getMe()
-    useSession.setState({ displayName: me?.display_name ?? me?.id ?? null })
+    if (alive()) useSession.setState({ displayName: me?.display_name ?? me?.id ?? null })
   } catch (e) {
-    // Development Mode: accounts not on the app's user list get 403 everywhere.
-    if (e instanceof SpotifyError && e.status === 403) {
-      useSession.setState({ notice: describeError(new SpotifyError(403, e.message, 'NOT_REGISTERED')) })
-      logout()
-      return
-    }
-    handleError(e)
+    if (alive()) explainError(e) // "Connected as" is optional; NOT_REGISTERED / auth errors sign out
   }
 }

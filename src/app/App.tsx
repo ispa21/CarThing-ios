@@ -1,4 +1,4 @@
-import { MotionConfig } from 'motion/react'
+import { domAnimation, LazyMotion, MotionConfig } from 'motion/react'
 import { useEffect, useRef } from 'react'
 import { Callback } from '../screens/Callback'
 import { Connect } from '../screens/Connect'
@@ -58,10 +58,12 @@ export function App() {
   else content = <Connect />
 
   return (
-    <MotionConfig reducedMotion="user">
-      {content}
-      <Toaster />
-    </MotionConfig>
+    <LazyMotion features={domAnimation} strict>
+      <MotionConfig reducedMotion="user">
+        {content}
+        <Toaster />
+      </MotionConfig>
+    </LazyMotion>
   )
 }
 

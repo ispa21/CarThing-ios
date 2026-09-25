@@ -49,13 +49,15 @@ export function createCooldown() {
   return {
     remaining: (now = Date.now()) => Math.max(0, until - now),
     trip: (retryAfterMs: number | null, now = Date.now()) => {
-      strikes++
+      // Parallel requests hitting the same 429 are one strike, not several.
+      if (until <= now) strikes++
       const ms = retryAfterMs ?? Math.min(BACKOFF_START_MS * 2 ** (strikes - 1), BACKOFF_MAX_MS)
       until = Math.max(until, now + ms)
-      return ms
+      return until - now
     },
-    reset: () => {
-      strikes = 0
+    /** After a success — unless it was already in flight when the 429 hit. */
+    reset: (now = Date.now()) => {
+      if (until <= now) strikes = 0
     },
   }
 }
@@ -73,14 +75,17 @@ export function describeError(err: unknown): FriendlyError {
     return { title: 'Something went wrong', detail: 'Try that again.', action: 'retry' }
   }
   if (err.reason === 'NETWORK' || err.status === 0) {
-    return { title: "Can't reach Spotify", detail: 'Check your connection.', action: 'retry' }
+    const offline = typeof navigator !== 'undefined' && navigator.onLine === false
+    return offline
+      ? { title: "You're offline", detail: 'PartyDeck reconnects when you are back online.', action: 'retry' }
+      : { title: "Can't reach Spotify", detail: 'Check your connection.', action: 'retry' }
   }
   if (err.reason === 'AUTH_EXPIRED' || err.status === 401) {
     return { title: 'Spotify disconnected', detail: 'Your session ended. Connect again.', action: 'connect' }
   }
   if (err.status === 429) {
     const s = Math.ceil((err.retryAfterMs ?? 5000) / 1000)
-    return { title: 'Spotify asked us to slow down', detail: `Trying again in ${s}s.`, action: null }
+    return { title: 'Spotify asked us to slow down', detail: `PartyDeck is pausing requests for ${s}s.`, action: null }
   }
   if (err.reason === 'PREMIUM_REQUIRED' || /premium/i.test(err.message)) {
     return { title: 'Spotify Premium required', detail: 'Playback control needs a Premium account.', action: null }

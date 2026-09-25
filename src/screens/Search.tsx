@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { debounce } from '../lib/debounce'
+import { createLatestRunner } from '../lib/latest'
 import type { FriendlyError } from '../spotify/errors'
 import { isSearchEmpty, type SearchView } from '../spotify/normalize'
 import { explainError, playItem, queueItem, searchCatalog } from '../spotify/playbackService'
@@ -21,53 +21,35 @@ const SECTIONS: Array<{ key: keyof SearchView; title: string; max: number }> = [
   { key: 'playlists', title: 'Playlists', max: 4 },
 ]
 
-/** Debounced search where each request aborts the one before it. */
-function createSearchRunner(setState: (s: State) => void) {
-  let inflight: AbortController | null = null
-  const debounced = debounce((q: string) => {
-    inflight?.abort()
-    const ctrl = new AbortController()
-    inflight = ctrl
-    searchCatalog(q, ctrl.signal)
-      .then((results) => {
-        if (!ctrl.signal.aborted) setState(isSearchEmpty(results) ? { status: 'empty', query: q } : { status: 'results', results })
-      })
-      .catch((e: unknown) => {
-        if (ctrl.signal.aborted) return
-        const error = explainError(e)
-        if (error) setState({ status: 'error', error })
-      })
-  }, 250)
-  return {
-    search: debounced,
-    flush: () => debounced.flush(),
-    stop: () => {
-      debounced.cancel()
-      inflight?.abort()
-    },
-  }
-}
-
 export function Search() {
   const [query, setQuery] = useState('')
   const [state, setState] = useState<State>({ status: 'idle' })
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const [run] = useState(() => createSearchRunner(setState))
+  // Newest query wins: older in-flight requests are aborted, late responses dropped.
+  const [runner] = useState(() =>
+    createLatestRunner(searchCatalog, 250, {
+      onResult: (results, q: string) => setState(isSearchEmpty(results) ? { status: 'empty', query: q } : { status: 'results', results }),
+      onError: (e) => {
+        const error = explainError(e)
+        if (error) setState({ status: 'error', error })
+      },
+    }),
+  )
 
-  useEffect(() => run.stop, [run])
+  useEffect(() => runner.stop, [runner])
 
   const onChange = (value: string) => {
     setQuery(value)
     const q = value.trim()
     if (!q) {
-      run.stop()
+      runner.stop()
       setState({ status: 'idle' })
       return
     }
     // Keep the previous results on screen while typing — it feels instant.
     setState((s) => ({ status: 'searching', previous: s.status === 'results' ? s.results : s.status === 'searching' ? s.previous : undefined }))
-    run.search(q)
+    runner.run(q)
   }
 
   const results = state.status === 'results' ? state.results : state.status === 'searching' ? state.previous : undefined
@@ -81,7 +63,7 @@ export function Search() {
         role="search"
         onSubmit={(e) => {
           e.preventDefault()
-          run.flush()
+          runner.flush()
           inputRef.current?.blur() // hide the mobile keyboard
         }}
       >

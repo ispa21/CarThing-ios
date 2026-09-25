@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m } from 'motion/react'
 import { useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { back, linkHandler } from '../app/router'
@@ -83,23 +83,23 @@ export function NowPlaying() {
         <div className="np-body">
           <div className="np-art">
             <AnimatePresence initial={false}>
-              <motion.div
+              <m.div
                 key={s.art ?? 'none'}
                 className="np-art-layer"
-                initial={{ opacity: 0, scale: 0.97, filter: 'blur(8px)' }}
-                animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+                initial={{ opacity: 0, scale: 0.97 }}
+                animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.4, ease }}
               >
                 <Artwork src={s.art} alt={s.album ? `${s.album} cover` : `${s.title} artwork`} />
-              </motion.div>
+              </m.div>
             </AnimatePresence>
           </div>
 
           <div className="np-panel">
             <div className="np-meta">
               <AnimatePresence mode="popLayout" initial={false}>
-                <motion.div
+                <m.div
                   key={s.trackId}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -109,7 +109,7 @@ export function NowPlaying() {
                   <h2 className="np-title">{s.title}</h2>
                   <p className="np-artist">{s.artist}</p>
                   {s.album && <p className="np-album">{s.album}</p>}
-                </motion.div>
+                </m.div>
               </AnimatePresence>
               {s.url && (
                 <a className="np-attr" href={s.url} target="_blank" rel="noopener noreferrer">

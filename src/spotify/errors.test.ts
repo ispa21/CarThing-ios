@@ -36,15 +36,31 @@ describe('cooldown', () => {
   })
   it('backs off exponentially when Retry-After is unreadable, capped at 5 min', () => {
     const c = createCooldown()
-    const waits = Array.from({ length: 9 }, () => c.trip(null, 0))
+    let now = 0
+    const waits = Array.from({ length: 9 }, () => {
+      const ms = c.trip(null, now)
+      now += ms // next 429 arrives after the cooldown ends
+      return ms
+    })
     expect(waits).toEqual([5000, 10_000, 20_000, 40_000, 80_000, 160_000, 300_000, 300_000, 300_000])
+  })
+  it('counts simultaneous 429s as a single strike', () => {
+    const c = createCooldown()
+    expect([c.trip(null, 0), c.trip(null, 0), c.trip(null, 1)]).toEqual([5000, 5000, 5000])
+    expect(c.trip(null, 5001)).toBe(10_000) // the next real strike
   })
   it('resets the backoff after a successful response', () => {
     const c = createCooldown()
     c.trip(null, 0)
+    c.trip(null, 5000)
+    c.reset(20_000)
+    expect(c.trip(null, 20_000)).toBe(5000)
+  })
+  it('a success already in flight during the cooldown does not reset it', () => {
+    const c = createCooldown()
     c.trip(null, 0)
-    c.reset()
-    expect(c.trip(null, 0)).toBe(5000)
+    c.reset(100) // response to a request sent before the 429
+    expect(c.trip(null, 5000)).toBe(10_000)
   })
   it('prefers Retry-After when readable', () => {
     const c = createCooldown()
@@ -68,8 +84,8 @@ describe('describeError', () => {
     expect(d.title).toBe(title)
     expect(d.action).toBe(action)
   })
-  it('includes the retry delay for 429', () => {
-    expect(describeError(new SpotifyError(429, '', 'RATE_LIMITED', 12_000)).detail).toBe('Trying again in 12s.')
+  it('includes the pause length for 429', () => {
+    expect(describeError(new SpotifyError(429, '', 'RATE_LIMITED', 12_000)).detail).toBe('PartyDeck is pausing requests for 12s.')
   })
   it('handles non-Spotify errors', () => {
     expect(describeError(new Error('boom')).title).toBe('Something went wrong')

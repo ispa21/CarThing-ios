@@ -139,7 +139,7 @@ main:focus {
 }
 
 .btn-small {
-  min-height: 40px;
+  min-height: var(--tap);
   padding: 0 16px;
   font-size: 0.9375rem;
   border-radius: 12px;
@@ -689,9 +689,9 @@ button.row-main:active {
   display: grid;
   place-items: center;
   flex: none;
-  width: 32px;
-  height: 32px;
-  margin: -6px -8px -6px 0;
+  width: var(--tap);
+  height: var(--tap);
+  margin: -14px -14px -14px 0; /* 44px hit area without growing the row */
   border-radius: 8px;
   color: var(--ink-3);
 }
@@ -985,9 +985,10 @@ button.row-main:active {
 }
 
 .np-attr {
-  display: inline-block;
-  margin-top: 6px;
-  padding: 4px 0;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  margin: -4px 0 -10px;
   color: var(--ink-3);
   font-size: 0.8125rem;
   font-weight: 500;
@@ -1522,7 +1523,7 @@ button.row-main:active {
 .seg span {
   display: grid;
   place-items: center;
-  min-height: 40px;
+  min-height: var(--tap);
   padding: 0 14px;
   border-radius: 10px;
   color: var(--ink-2);
@@ -1643,7 +1644,7 @@ button.row-main:active {
 /* Static reader (untimed / Spotify playback): everything readable, nothing highlighted. */
 .lyrics-lines:not([data-timed]) {
   padding-top: calc(var(--safe-t) + 96px);
-  font-size: calc(min(clamp(1.75rem, 0.9rem + 3.4vw, 6rem), 10vh) * var(--lyrics-scale));
+  font-size: calc(min(clamp(2rem, 1rem + 3.4vw, 6rem), 10vh) * var(--lyrics-scale));
 }
 
 .lyrics-lines:not([data-timed]) li {

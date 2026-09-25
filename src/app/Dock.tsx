@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { togglePlay } from '../spotify/playbackService'
-import { usePlayback } from '../store/playback'
+import { selectCanToggle, usePlayback } from '../store/playback'
 import { openDevices } from '../store/ui'
 import { Artwork } from '../ui/Artwork'
 import { spotifyClock, useClockPainter } from '../ui/clock'
@@ -12,7 +12,7 @@ const TABS: Array<{ route: Route; label: string; icon: IconName }> = [
   { route: 'home', label: 'Home', icon: 'home' },
   { route: 'search', label: 'Search', icon: 'search' },
   { route: 'queue', label: 'Queue', icon: 'queue' },
-  { route: 'now', label: 'Playing', icon: 'nowPlaying' },
+  { route: 'now', label: 'Now Playing', icon: 'nowPlaying' },
   { route: 'lyrics', label: 'Lyrics', icon: 'lyrics' },
 ]
 
@@ -42,7 +42,7 @@ export function MiniPlayer() {
       artist: s.playback.artist,
       art: s.playback.albumArt,
       isPlaying: s.playback.isPlaying,
-      cantToggle: s.playback.isPlaying ? s.playback.disallows.pausing : s.playback.disallows.resuming,
+      canToggle: selectCanToggle(s),
     })),
   )
   const lineRef = useRef<HTMLSpanElement>(null)
@@ -70,7 +70,7 @@ export function MiniPlayer() {
           <span className="mini-sub">{s.artist}</span>
         </span>
       </a>
-      <button className="icon-btn icon-btn-strong" onClick={togglePlay} disabled={s.cantToggle} aria-label={s.isPlaying ? 'Pause' : 'Play'}>
+      <button className="icon-btn icon-btn-strong" onClick={togglePlay} disabled={!s.canToggle} aria-label={s.isPlaying ? 'Pause' : 'Play'}>
         <Icon name={s.isPlaying ? 'pause' : 'play'} />
       </button>
       <span className="mini-line" aria-hidden="true">

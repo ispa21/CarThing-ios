@@ -29,3 +29,7 @@ export const initialPlayback: PlaybackStore = {
 
 /** Written only by spotify/playbackService. UI reads with selectors. */
 export const usePlayback = create<PlaybackStore>(() => initialPlayback)
+
+/** Play/pause is possible right now (something is loaded and Spotify allows the toggle). */
+export const selectCanToggle = (s: PlaybackStore) =>
+  s.hasPlayback && !(s.playback.isPlaying ? s.playback.disallows.pausing : s.playback.disallows.resuming)

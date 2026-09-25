@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
-import { seekDemoBy, toggleDemo } from '../lyrics/demoClock'
-import { seekBy, skipNext, skipPrevious, togglePlay } from '../spotify/playbackService'
+import { skipNext, skipPrevious } from '../spotify/playbackService'
 import { back, navigate, type Route } from './router'
+import { SOURCES } from './sources'
 
 /**
  * Desktop keyboard shortcuts:
@@ -11,12 +11,14 @@ import { back, navigate, type Route } from './router'
 export function useShortcuts(route: Route, connected: boolean) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return
+      // Ignore auto-repeat: holding → must not fire dozens of Spotify requests a second.
+      if (e.defaultPrevented || e.repeat || e.metaKey || e.ctrlKey || e.altKey) return
       const target = e.target as HTMLElement
       if (target.closest('input, textarea, select, [contenteditable="true"]') || target.closest('dialog')) return
 
       const demo = route === 'lyrics-demo'
       if (!connected && !demo) return
+      const source = SOURCES[demo ? 'demo' : 'spotify']
       const onControl = target.closest('button, a, [role="slider"]')
 
       switch (e.key) {
@@ -24,17 +26,17 @@ export function useShortcuts(route: Route, connected: boolean) {
         case 'k':
           if (e.key === ' ' && onControl) return // let the focused button handle Space
           e.preventDefault()
-          void (demo ? toggleDemo() : togglePlay())
+          source.toggle()
           return
         case 'ArrowRight':
         case 'ArrowLeft': {
           if (onControl?.getAttribute('role') === 'slider') return
-          const delta = e.key === 'ArrowRight' ? 10_000 : -10_000
-          void (demo ? seekDemoBy(delta) : seekBy(delta))
+          source.seekBy(e.key === 'ArrowRight' ? 10_000 : -10_000)
           return
         }
         case 'Escape':
-          if (route === 'now' || route === 'lyrics' || demo) back(demo && !connected ? '/' : '/now')
+          if (route === 'now') back('/')
+          else if (route === 'lyrics' || demo) back(source.backTo)
           return
       }
       if (!connected) return

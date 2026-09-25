@@ -33,7 +33,7 @@ export function Settings() {
             Connected{name ? ` as ${name}` : ''}
             <span className="group-detail">Disconnecting removes your Spotify sign-in and data from this device.</span>
           </span>
-          <button className="btn btn-small btn-danger" onClick={logout}>
+          <button className="btn btn-small btn-danger" onClick={() => logout()}>
             Disconnect
           </button>
         </div>
