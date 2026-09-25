@@ -1,0 +1,55 @@
+/* PartyDeck design tokens.
+   Graphite is the device's plastic; Signal amber is the instrument-cluster
+   backlight, used only for live state: progress, "playing", active, focus. */
+
+:root {
+  --screen: #17141b;
+  --raised: #221e27;
+  --raised-2: #2d2833;
+  --line: rgb(255 255 255 / 0.08);
+  --line-strong: rgb(255 255 255 / 0.14);
+
+  --ink: #f3efe8;
+  --ink-2: #aaa3af;
+  --ink-3: #857f8b; /* 4.6:1 on graphite */
+  --ink-on-light: #17141b;
+
+  --signal: #ffa630;
+  --signal-glow: rgb(255 166 48 / 0.35);
+  --danger: #ff7a6b;
+
+  --font-ui: 'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Barlow Semi Condensed', 'Barlow', system-ui, -apple-system, sans-serif;
+
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+
+  --r-s: 8px;
+  --r-m: 14px;
+  --r-l: 22px;
+
+  --gutter: clamp(16px, 4vw, 32px);
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --pad-l: max(var(--gutter), var(--safe-l));
+  --pad-r: max(var(--gutter), var(--safe-r));
+
+  --tap: 44px;
+  color-scheme: dark;
+}
+
+:root[data-theme='black'] {
+  --screen: #000;
+  --raised: #141216;
+  --raised-2: #1f1c22;
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --ink-2: #d4ced8;
+    --ink-3: #aaa3af;
+    --line: rgb(255 255 255 / 0.3);
+  }
+}
