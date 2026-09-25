@@ -10,6 +10,7 @@ import { lyricsEngine } from '../lyrics/engine'
 import { followReducer, isScrollKey, shouldAutoScroll, showJumpButton } from '../lyrics/follow'
 import { canTimeSync, type PlaybackSource } from '../lyrics/policy'
 import { resolveLyrics, type ResolvedLyrics, type TrackQuery } from '../lyrics/resolver'
+import { feedback } from '../sensory/feedback'
 import { selectCanToggle, usePlayback } from '../store/playback'
 import { LYRIC_SIZES, useSettings } from '../store/settings'
 import { useClockValue } from '../ui/clock'
@@ -154,8 +155,12 @@ export function LyricsScreen({ source }: { source: PlaybackSource }) {
     if (shouldAutoScroll(mode, { timed, autoScroll })) scrollToCurrent(true)
   }, [mode, timed, autoScroll, scrollToCurrent])
 
-  const userScrolled = () => dispatch({ type: 'userScroll' })
+  const userScrolled = () => {
+    if (mode === 'following') feedback.play('lyrics-manual-scroll') // mapped to silence: reading shouldn't be noisy
+    dispatch({ type: 'userScroll' })
+  }
   const jump = () => {
+    feedback.play('jump-to-current')
     dispatch({ type: 'jump' })
     scrollToCurrent(true)
   }
@@ -173,7 +178,10 @@ export function LyricsScreen({ source }: { source: PlaybackSource }) {
 
   const sizeIndex = useSettings((s) => s.lyricSize)
   const size = LYRIC_SIZES[sizeIndex]
-  const cycleSize = () => useSettings.setState({ lyricSize: (sizeIndex + 1) % LYRIC_SIZES.length })
+  const cycleSize = () => {
+    feedback.play('select')
+    useSettings.setState({ lyricSize: (sizeIndex + 1) % LYRIC_SIZES.length })
+  }
 
   const showJump = showJumpButton(mode, { timed, autoScroll, hasCurrent: current >= 0 })
   const fade = { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 }, transition: { duration: 0.2 } }
@@ -183,7 +191,14 @@ export function LyricsScreen({ source }: { source: PlaybackSource }) {
       <AnimatePresence>
         {controls && (
           <m.header key="top" className="lyrics-top" {...fade}>
-            <button className="icon-btn" onClick={() => back(src.backTo)} aria-label="Back">
+            <button
+              className="icon-btn"
+              onClick={() => {
+                feedback.play('back')
+                back(src.backTo)
+              }}
+              aria-label="Back"
+            >
               <Icon name="back" />
             </button>
             <div className="lyrics-track">

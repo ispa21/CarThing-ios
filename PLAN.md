@@ -165,3 +165,89 @@ Each phase ends with its check. The riskiest part (auth + real API) comes first.
 **Not doing in the MVP:** backend, Supabase, WebSockets, rooms/QR, presets, local audio, DJ features, a real lyrics provider, and ambient album‑art backgrounds.
 
 **Assumption most likely to be wrong:** that timed lyrics against Spotify playback should be off. That follows from Spotify's current policy text. If Spotify grants a specific licence (or a licensed provider's terms explicitly cover it), flip `canTimeSync`. The engine is already built for it.
+
+---
+
+# Phase 1.5: Physical appliance UX, sensory system, landscape-first onboarding
+
+## Audit (what exists → what changes)
+
+| Area | Phase 1 | Phase 1.5 |
+|---|---|---|
+| Motion | `motion` (LazyMotion), CSS tokens `--ease-out`/`--ease-drawer`, `:active` scale | Reuse. Primary keys get spring return via Motion `whileTap` |
+| Commands | `playbackService` commands (only user-initiated), `app/sources.ts` | Feedback fires in the command layer, never in polling |
+| Nav | 5-tab dock + mini player (portrait-first); Now Playing immersive | **Rail**: landscape = one row `[deck][Home Search Queue Lyrics][fullscreen]`; portrait = Phase 1 dock |
+| Now Playing | art/panel side-by-side in landscape, immersive | Landscape is primary (rail visible, swipe art to skip); portrait = compact + "turn sideways" prompt |
+| Onboarding | Connect screen with developer instructions inline | Welcome → Continue with Spotify → Connected → Power on (boot) → Orientation → Tutorial. Developer setup is a separate disclosure |
+| Settings | disconnect, lyrics, theme, install, about | + Sound, Haptics, Replay tutorial, Fullscreen |
+
+Installed after reading their source: `web-haptics@0.0.6` and `cuelume@0.2.2`.
+- **WebHaptics** uses `navigator.vibrate` (Android). On iOS 18+ it uses a hidden `<input switch>` click, which must run synchronously inside a user gesture.
+- **Cuelume** uses one lazy `AudioContext`, refuses to play before `userActivation.hasBeenActive`, and is a silent no-op when audio is unavailable. It has 17 cues.
+
+## Sensory architecture
+
+```
+UI handler / user command ──► feedback.play('next-track')
+                                   │  settings (sound, haptics) · dedupe 60ms · capability
+                                   ├─► haptics.ts ─► WebHaptics  (touch devices only)
+                                   └─► sounds.ts  ─► Cuelume     (after first gesture; iOS audio session = ambient,
+                                                                  so cues mix with Spotify and respect the silent switch)
+```
+
+- `src/sensory/` imports nothing from Spotify, rooms or stores. The app passes settings in with `configureFeedback()`.
+- Feedback is supplementary. Every state it signals is also shown visually and announced as text.
+- **Never from polling.** Only user-command entry points and UI handlers call `feedback.play`. A test runs the poll loop and asserts zero feedback.
+
+### Vocabulary → interaction map
+
+The palette is deliberately small: 7 haptic presets and 9 sounds.
+
+| Event(s) | Haptic | Sound | Why |
+|---|---|---|---|
+| select, tick, lyrics-open, seek, queue-reorder | selection | tick | Navigation and small changes: the lightest touch |
+| toggle | selection | toggle | Switch flips |
+| back, queue-remove, room-left | light | droplet | Dismiss / collapse |
+| primary-press, play | medium | pulse | The primary key |
+| pause | medium | press | The same key, duller: stopping |
+| next-track, previous-track | rigid | page | Decisive, like a page turn |
+| jump-to-current | light | release | Clear but restrained |
+| queue-add, device-connected, success | success | success | Confirmation |
+| spotify-connected, ready, room-joined | success | ready | The system is live |
+| power-on | heavy | arrival | Boot. Once per install |
+| error, playback-error | error | error | Refusal |
+| warning, spotify-disconnected, device-lost | warning | none | Attention without noise |
+| focus, loading, lyrics-follow, lyrics-manual-scroll, reaction, listener-arrival, listener-departure | none | none | Reserved or silent. Proportionality |
+
+## Onboarding state machine (`src/onboarding/flow.ts`, pure, tested)
+
+```
+not connected:  welcome ──Continue(power key)──► connect ──Continue with Spotify──► [Spotify]
+back from Spotify (justConnected):  connected ──Power on──► (phone portrait? orientation) ──► (not onboarded? tutorial) ──► deck
+returning, already onboarded:  deck
+```
+
+- `welcome` is shown once (`welcomed`). After that, a disconnected user goes straight to `connect`.
+- **Orientation**: only on phone portrait. It auto-advances when the phone turns. "Continue in portrait" never blocks.
+- **Tutorial** at `/tutorial`, replayable from Settings. It uses a practice deck of silent demo tracks, so it can't skip your real music. Five performed steps:
+  1. Play
+  2. Skip (next or previous)
+  3. Queue
+  4. Lyrics
+  5. Fullscreen, or "Add to Home Screen" if fullscreen isn't possible
+
+  It runs 15–30s and has Skip.
+
+## Orientation states
+
+- `phone-portrait` (portrait and ≤ 599px wide): compact Now Playing with an inline "Turn your phone sideways" prompt.
+- Everything else uses the landscape deck. Tablet portrait keeps the stacked Phase 1 layout.
+
+## Motion rules (from apple-design / emil / animate)
+
+- Keys: press to `scale(0.96)` in ~100ms, release on a critically damped spring (`bounce: 0`, 0.3s). Reduced motion keeps the colour change and drops the scale.
+- Swipe the art to skip: 1:1 drag, rubber-banding (`dragElastic: 0.18`), commit on distance > 80px or velocity > 500px/s, one selection tick when the threshold is crossed, and no continuous vibration.
+- Boot: an LED ring sweep and the wordmark brightening. It runs < 700ms, only after the Power on press. No fake loading.
+- Orientation glyph: a rotation loop that stops under reduced motion.
+
+**Out of scope:** rooms/realtime, listening moments (`/s/:id`), reactions UI. The vocabulary already has those events, and `RoomService` is unchanged.

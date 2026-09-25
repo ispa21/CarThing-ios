@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react'
+import { feedback } from '../sensory/feedback'
 import { Icon } from './Icon'
 
 /**
@@ -22,15 +23,25 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
       className="sheet"
       aria-labelledby={titleId}
       onClose={onClose}
+      onCancel={() => feedback.play('back')} // Escape
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose() // backdrop tap
+        if (e.target !== e.currentTarget) return // backdrop tap only
+        feedback.play('back')
+        onClose()
       }}
     >
       <div className="sheet-body">
         <div className="sheet-grip" aria-hidden="true" />
         <header className="sheet-head">
           <h2 id={titleId}>{title}</h2>
-          <button className="icon-btn" onClick={onClose} aria-label="Close">
+          <button
+            className="icon-btn"
+            onClick={() => {
+              feedback.play('back')
+              onClose()
+            }}
+            aria-label="Close"
+          >
             <Icon name="down" />
           </button>
         </header>

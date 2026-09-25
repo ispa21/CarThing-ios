@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { linkHandler } from '../app/router'
+import { feedback } from '../sensory/feedback'
 import { refreshQueue } from '../spotify/playbackService'
 import { usePlayback } from '../store/playback'
 import { EmptyState, SkeletonRows } from '../ui/Feedback'
@@ -21,7 +22,16 @@ export function Queue() {
     <div className="page">
       <header className="page-head">
         <h1 className="page-title">Queue</h1>
-        <button className="icon-btn" onClick={refreshQueue} disabled={loading} aria-label="Refresh queue" data-spin={loading || undefined}>
+        <button
+          className="icon-btn"
+          onClick={() => {
+            feedback.play('select')
+            void refreshQueue()
+          }}
+          disabled={loading}
+          aria-label="Refresh queue"
+          data-spin={loading || undefined}
+        >
           <Icon name="refresh" />
         </button>
       </header>
@@ -43,8 +53,8 @@ export function Queue() {
       )}
 
       {data?.current && (
-        <>
-          <section aria-labelledby="q-now">
+        <div className="queue-layout">
+          <section aria-labelledby="q-now" className="queue-now">
             <h2 id="q-now" className="section-title">
               Now playing
             </h2>
@@ -52,7 +62,7 @@ export function Queue() {
               <MediaRow item={data.current} lead={<span className="led row-led" aria-hidden="true" />} />
             </ul>
           </section>
-          <section aria-labelledby="q-next">
+          <section aria-labelledby="q-next" className="queue-next">
             <h2 id="q-next" className="section-title">
               Up next
             </h2>
@@ -66,7 +76,7 @@ export function Queue() {
               <EmptyState title="Nothing queued" detail="Add songs from Search with the + button." />
             )}
           </section>
-        </>
+        </div>
       )}
     </div>
   )

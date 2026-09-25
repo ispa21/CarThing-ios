@@ -4,6 +4,8 @@ import { describeError, type FriendlyError } from '../spotify/errors'
 
 interface SessionStore {
   connected: boolean
+  /** Just returned from Spotify's sign-in: show the "connected → power on" moment. */
+  justConnected: boolean
   displayName: string | null
   /** Why the user is looking at the Connect screen (expired, denied, not allow-listed…). */
   notice: FriendlyError | null
@@ -11,6 +13,7 @@ interface SessionStore {
 
 export const useSession = create<SessionStore>(() => ({
   connected: hasSession(),
+  justConnected: false,
   displayName: null,
   notice: null,
 }))
@@ -21,6 +24,6 @@ onSessionChange((connected, reason) => {
   useSession.setState(
     connected
       ? { connected, notice: null }
-      : { connected, displayName: null, notice: reason ? describeError(reason) : useSession.getState().notice },
+      : { connected, justConnected: false, displayName: null, notice: reason ? describeError(reason) : useSession.getState().notice },
   )
 })

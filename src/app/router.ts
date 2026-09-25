@@ -3,22 +3,26 @@
 
 import { useSyncExternalStore, type MouseEvent } from 'react'
 
-export type Route = 'home' | 'search' | 'queue' | 'now' | 'lyrics' | 'lyrics-demo' | 'settings' | 'callback'
+export type Route = 'now' | 'search' | 'queue' | 'lyrics' | 'lyrics-demo' | 'settings' | 'callback' | 'tutorial'
 
-const ROUTES: Record<string, Route> = {
-  '/': 'home',
-  '/search': 'search',
-  '/queue': 'queue',
-  '/now': 'now',
-  '/lyrics': 'lyrics',
-  '/lyrics/demo': 'lyrics-demo',
-  '/settings': 'settings',
-  '/callback': 'callback',
+/** The deck (Now Playing) is home. */
+export const PATHS: Record<Route, string> = {
+  now: '/',
+  search: '/search',
+  queue: '/queue',
+  lyrics: '/lyrics',
+  'lyrics-demo': '/lyrics/demo',
+  settings: '/settings',
+  callback: '/callback',
+  tutorial: '/tutorial',
 }
 
-export const PATHS = Object.fromEntries(Object.entries(ROUTES).map(([p, r]) => [r, p])) as Record<Route, string>
+const ROUTES: Record<string, Route> = {
+  ...Object.fromEntries(Object.entries(PATHS).map(([r, p]) => [p, r as Route])),
+  '/now': 'now', // Phase 1 links
+}
 
-export const matchRoute = (pathname: string): Route => ROUTES[pathname.replace(/\/+$/, '') || '/'] ?? 'home'
+export const matchRoute = (pathname: string): Route => ROUTES[pathname.replace(/\/+$/, '') || '/'] ?? 'now'
 
 const listeners = new Set<() => void>()
 const notify = () => listeners.forEach((l) => l())

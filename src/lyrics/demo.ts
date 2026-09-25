@@ -45,3 +45,21 @@ export const DEMO_LRC = `[ti:Night Drive]
 [02:36.80]Turn it up
 [02:40.60]
 `
+
+/** Short original lines for the tutorial's other practice tracks. */
+export const PRACTICE_LRC = {
+  warmUp: `[00:02.00]
+[00:04.00]Lights on low, the room is waking
+[00:08.40]Every speaker finds its place
+[00:12.80]Hands up on the deck and waiting
+[00:17.20]One more second, then the bass
+[00:21.60]
+`,
+  afterglow: `[00:02.00]
+[00:03.50]Last song and the windows are glowing
+[00:08.00]Nobody's ready to leave
+[00:12.40]Keep the record turning slowly
+[00:16.80]Keep the night inside the sleeve
+[00:21.20]
+`,
+}

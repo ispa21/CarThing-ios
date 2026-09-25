@@ -1,5 +1,7 @@
-import { useRef } from 'react'
+import { useRef, type MouseEvent } from 'react'
 import { useShallow } from 'zustand/react/shallow'
+import { fullscreenSupported, isStandalone, toggleFullscreen, useIsFullscreen } from '../lib/fullscreen'
+import { feedback } from '../sensory/feedback'
 import { togglePlay } from '../spotify/playbackService'
 import { selectCanToggle, usePlayback } from '../store/playback'
 import { openDevices } from '../store/ui'
@@ -9,31 +11,72 @@ import { Icon, type IconName } from '../ui/Icon'
 import { linkHandler, PATHS, type Route } from './router'
 
 const TABS: Array<{ route: Route; label: string; icon: IconName }> = [
-  { route: 'home', label: 'Home', icon: 'home' },
+  { route: 'now', label: 'Home', icon: 'nowPlaying' },
   { route: 'search', label: 'Search', icon: 'search' },
   { route: 'queue', label: 'Queue', icon: 'queue' },
-  { route: 'now', label: 'Now Playing', icon: 'nowPlaying' },
   { route: 'lyrics', label: 'Lyrics', icon: 'lyrics' },
 ]
 
-export function Dock({ route }: { route: Route }) {
+const navigateWithTick = (e: MouseEvent<HTMLAnchorElement>) => {
+  feedback.play('select')
+  linkHandler(e)
+}
+
+/**
+ * The appliance's control strip. Landscape: one row — the mini deck on the left,
+ * tabs centred, tools on the right. Phones upright: mini deck above the tabs.
+ * Same DOM; CSS grid areas rearrange it.
+ */
+export function Rail({ route }: { route: Route }) {
   return (
-    <nav className="dock" aria-label="Main">
-      <ul>
+    <nav className="rail" aria-label="Main" data-route={route}>
+      <div className="rail-deck">{route !== 'now' && <MiniDeck />}</div>
+      <ul className="rail-tabs">
         {TABS.map((t) => (
           <li key={t.route}>
-            <a className="dock-item" href={PATHS[t.route]} onClick={linkHandler} aria-current={route === t.route ? 'page' : undefined}>
+            <a className="rail-tab" href={PATHS[t.route]} onClick={navigateWithTick} aria-current={route === t.route ? 'page' : undefined}>
               <Icon name={t.icon} />
               <span>{t.label}</span>
             </a>
           </li>
         ))}
       </ul>
+      <div className="rail-tools">
+        <FullscreenButton />
+        <a
+          className="icon-btn"
+          href={PATHS.settings}
+          onClick={navigateWithTick}
+          aria-label="Settings"
+          aria-current={route === 'settings' ? 'page' : undefined}
+        >
+          <Icon name="settings" />
+        </a>
+      </div>
     </nav>
   )
 }
 
-export function MiniPlayer() {
+export function FullscreenButton({ coach, onEntered }: { coach?: boolean; onEntered?: () => void }) {
+  const active = useIsFullscreen()
+  if (!fullscreenSupported() || isStandalone()) return null
+  return (
+    <button
+      className="icon-btn"
+      data-coach={coach || undefined}
+      aria-label={active ? 'Exit full screen' : 'Full screen'}
+      aria-pressed={active}
+      onClick={async () => {
+        feedback.play('select')
+        if (await toggleFullscreen()) onEntered?.()
+      }}
+    >
+      <Icon name={active ? 'collapse' : 'expand'} />
+    </button>
+  )
+}
+
+function MiniDeck() {
   const s = usePlayback(
     useShallow((s) => ({
       loaded: s.loaded,
@@ -55,7 +98,13 @@ export function MiniPlayer() {
     return (
       <div className="mini mini-idle">
         <span className="mini-idle-text">Nothing playing</span>
-        <button className="btn btn-small" onClick={openDevices}>
+        <button
+          className="btn btn-small"
+          onClick={() => {
+            feedback.play('select')
+            openDevices()
+          }}
+        >
           Choose device
         </button>
       </div>
@@ -63,7 +112,7 @@ export function MiniPlayer() {
   }
   return (
     <div className="mini">
-      <a className="mini-main" href="/now" onClick={linkHandler} aria-label={`Open player: ${s.title}${s.artist ? ` by ${s.artist}` : ''}`}>
+      <a className="mini-main" href="/" onClick={navigateWithTick} aria-label={`Open the deck: ${s.title}${s.artist ? ` by ${s.artist}` : ''}`}>
         <Artwork src={s.art} className="art-sm" />
         <span className="mini-text">
           <span className="mini-title">{s.title}</span>

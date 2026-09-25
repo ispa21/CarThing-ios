@@ -13,12 +13,14 @@ export interface InstallPromptEvent extends Event {
 }
 
 interface UiStore {
+  /** Dismissed the "turn your phone sideways" hint this session. */
+  rotateHintDismissed: boolean
   devicesOpen: boolean
   toast: Toast | null
   installPrompt: InstallPromptEvent | null
 }
 
-export const useUi = create<UiStore>(() => ({ devicesOpen: false, toast: null, installPrompt: null }))
+export const useUi = create<UiStore>(() => ({ rotateHintDismissed: false, devicesOpen: false, toast: null, installPrompt: null }))
 
 let toastId = 0
 export function notify(text: string, tone: Toast['tone'] = 'info') {

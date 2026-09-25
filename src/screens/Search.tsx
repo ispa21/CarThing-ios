@@ -6,6 +6,7 @@ import { explainError, playItem, queueItem, searchCatalog } from '../spotify/pla
 import { EmptyState, SkeletonRows } from '../ui/Feedback'
 import { Icon } from '../ui/Icon'
 import { MediaRow } from '../ui/MediaRow'
+import { PlaylistShelf } from './PlaylistShelf'
 
 type State =
   | { status: 'idle' }
@@ -81,7 +82,7 @@ export function Search() {
             autoCorrect="off"
             autoCapitalize="off"
             spellCheck={false}
-            autoFocus
+            autoFocus={window.matchMedia('(pointer: fine)').matches}
           />
         </label>
       </form>
@@ -90,7 +91,7 @@ export function Search() {
         {state.status === 'searching' ? 'Searching' : state.status === 'empty' ? 'No results' : state.status === 'results' ? 'Results updated' : ''}
       </p>
 
-      {state.status === 'idle' && <p className="hint">Find something to play or queue.</p>}
+      {state.status === 'idle' && <PlaylistShelf />}
       {state.status === 'searching' && !results && <SkeletonRows count={6} />}
       {state.status === 'empty' && <EmptyState title={`Nothing found for “${state.query}”`} detail="Check the spelling or try fewer words." />}
       {state.status === 'error' && (

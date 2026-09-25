@@ -6,8 +6,12 @@
 // the tab is hidden. Between polls the UI interpolates progress locally. After a
 // command we resync quickly (Spotify takes a moment to reflect changes). A 429
 // pauses everything until Retry-After has elapsed.
+//
+// Sensory feedback belongs to the *command* functions below (user-initiated, called
+// synchronously from the gesture so iOS haptics work). Polling never plays feedback.
 
 import { interpolateProgress } from '../lib/progress'
+import { feedback } from '../sensory/feedback'
 import { initialPlayback, selectCanToggle, usePlayback, type PlaybackStore } from '../store/playback'
 import { useSession } from '../store/session'
 import { notify, openDevices, closeDevices } from '../store/ui'
@@ -154,6 +158,7 @@ export function explainError(e: unknown) {
 function reportCommandError(e: unknown) {
   const friendly = explainError(e)
   if (!friendly) return
+  feedback.play('playback-error')
   notify(friendly.detail ? `${friendly.title}. ${friendly.detail}` : friendly.title, 'error')
   if (friendly.action === 'devices') openDevices()
 }
@@ -192,16 +197,26 @@ const can = (action: keyof PlaybackState['disallows']) => get().hasPlayback && !
 
 export function togglePlay() {
   if (!selectCanToggle(get())) return Promise.resolve(false)
-  return get().playback.isPlaying
-    ? command(api.pausePlayback, { isPlaying: false })
-    : command(() => api.startPlayback(), { isPlaying: true })
+  const playing = get().playback.isPlaying
+  feedback.play(playing ? 'pause' : 'play')
+  return playing ? command(api.pausePlayback, { isPlaying: false }) : command(() => api.startPlayback(), { isPlaying: true })
 }
 
-export const skipNext = () => (can('skippingNext') ? command(api.skipToNext) : Promise.resolve(false))
-export const skipPrevious = () => (can('skippingPrev') ? command(api.skipToPrevious) : Promise.resolve(false))
+export function skipNext() {
+  if (!can('skippingNext')) return Promise.resolve(false)
+  feedback.play('next-track')
+  return command(api.skipToNext)
+}
+
+export function skipPrevious() {
+  if (!can('skippingPrev')) return Promise.resolve(false)
+  feedback.play('previous-track')
+  return command(api.skipToPrevious)
+}
 
 export function seekTo(ms: number) {
   if (!can('seeking')) return Promise.resolve(false)
+  feedback.play('seek')
   const { durationMs } = get().playback
   const target = Math.max(0, Math.min(ms, durationMs || ms))
   return command(() => api.seekToPosition(target), { progressMs: target })
@@ -214,14 +229,17 @@ export const seekBy = (deltaMs: number) => {
 
 export async function playItem(item: MediaItem) {
   const body = item.kind === 'track' || item.kind === 'episode' ? { uris: [item.uri] } : { context_uri: item.uri }
+  feedback.play('primary-press')
   const ok = await command(() => api.startPlayback(body))
   if (ok) notify(`Playing ${item.title}`)
   return ok
 }
 
 export async function queueItem(item: MediaItem) {
+  feedback.play('select') // the press; confirmation follows once Spotify accepts it
   const ok = await command(() => api.addToQueue(item.uri))
   if (ok) {
+    feedback.play('queue-add')
     notify(`Added ${item.title} to the queue`)
     if (get().queue.data) void refreshQueue()
   }
@@ -229,8 +247,10 @@ export async function queueItem(item: MediaItem) {
 }
 
 export async function transferTo(deviceId: string, name: string) {
+  feedback.play('select')
   const ok = await command(() => api.transferPlayback(deviceId))
   if (ok) {
+    feedback.play('device-connected')
     closeDevices()
     notify(`Playing on ${name}`)
     void refreshDevices()

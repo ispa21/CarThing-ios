@@ -1,8 +1,9 @@
 // One table for "what drives playback here": Spotify, or the silent lyrics demo.
 // Screens and shortcuts look the source up instead of branching on it.
 
-import { seekDemo, seekDemoBy, toggleDemo } from '../lyrics/demoClock'
+import { seekDemo, seekDemoBy, toggleDemo, useDemoClock } from '../lyrics/demoClock'
 import type { PlaybackSource } from '../lyrics/policy'
+import { feedback } from '../sensory/feedback'
 import { seekBy, seekTo, togglePlay } from '../spotify/playbackService'
 import { demoClock, spotifyClock, type Clock } from '../ui/clock'
 
@@ -21,7 +22,23 @@ export const SOURCES: Record<PlaybackSource, SourceControls> = {
     toggle: () => void togglePlay(),
     seek: (ms) => void seekTo(ms),
     seekBy: (d) => void seekBy(d),
-    backTo: '/now',
+    backTo: '/',
   },
-  demo: { clock: demoClock, toggle: toggleDemo, seek: seekDemo, seekBy: seekDemoBy, backTo: '/' },
+  // Spotify's commands play their own feedback (playbackService); the demo does it here.
+  demo: {
+    clock: demoClock,
+    toggle: () => {
+      feedback.play(useDemoClock.getState().isPlaying ? 'pause' : 'play')
+      toggleDemo()
+    },
+    seek: (ms) => {
+      feedback.play('seek')
+      seekDemo(ms)
+    },
+    seekBy: (d) => {
+      feedback.play('seek')
+      seekDemoBy(d)
+    },
+    backTo: '/',
+  },
 }

@@ -2,29 +2,64 @@ import { useShallow } from 'zustand/react/shallow'
 import { skipNext, skipPrevious, togglePlay } from '../spotify/playbackService'
 import { selectCanToggle, usePlayback } from '../store/playback'
 import { Icon } from '../ui/Icon'
+import { PressKey } from '../ui/PressKey'
 
-/** Previous / Play-Pause / Next. Buttons Spotify says it will reject are disabled. */
-export function Transport() {
-  const { has, isPlaying, canToggle, d } = usePlayback(
-    useShallow((s) => ({ has: s.hasPlayback, isPlaying: s.playback.isPlaying, canToggle: selectCanToggle(s), d: s.playback.disallows })),
-  )
+export interface TransportKeysProps {
+  isPlaying: boolean
+  canToggle: boolean
+  canPrevious: boolean
+  canNext: boolean
+  onToggle: () => void
+  onPrevious: () => void
+  onNext: () => void
+  /** Tutorial: which control is being taught. */
+  coach?: 'play' | 'skip'
+}
+
+/** Previous / Play-Pause / Next — the deck's three physical keys. Presentational. */
+export function TransportKeys(p: TransportKeysProps) {
   return (
     <div className="transport">
-      <button className="key key-skip" onClick={skipPrevious} disabled={!has || d.skippingPrev} aria-label="Previous">
+      <PressKey className="key key-skip" onClick={p.onPrevious} disabled={!p.canPrevious} aria-label="Previous" data-coach={p.coach === 'skip' || undefined}>
         <Icon name="previous" size={30} />
-      </button>
-      <PlayKey isPlaying={isPlaying} onPress={togglePlay} disabled={!canToggle} />
-      <button className="key key-skip" onClick={skipNext} disabled={!has || d.skippingNext} aria-label="Next">
+      </PressKey>
+      <PlayKey isPlaying={p.isPlaying} onPress={p.onToggle} disabled={!p.canToggle} coach={p.coach === 'play'} />
+      <PressKey className="key key-skip" onClick={p.onNext} disabled={!p.canNext} aria-label="Next" data-coach={p.coach === 'skip' || undefined}>
         <Icon name="next" size={30} />
-      </button>
+      </PressKey>
     </div>
   )
 }
 
-export function PlayKey({ isPlaying, onPress, disabled, small }: { isPlaying: boolean; onPress: () => void; disabled?: boolean; small?: boolean }) {
+/** The transport bound to Spotify. Buttons Spotify says it will reject are disabled. */
+export function Transport() {
+  const s = usePlayback(
+    useShallow((s) => ({ has: s.hasPlayback, isPlaying: s.playback.isPlaying, canToggle: selectCanToggle(s), d: s.playback.disallows })),
+  )
   return (
-    <button className={`key key-play ${small ? 'key-play-sm' : ''}`} onClick={onPress} disabled={disabled} aria-label={isPlaying ? 'Pause' : 'Play'}>
+    <TransportKeys
+      isPlaying={s.isPlaying}
+      canToggle={s.canToggle}
+      canPrevious={s.has && !s.d.skippingPrev}
+      canNext={s.has && !s.d.skippingNext}
+      onToggle={togglePlay}
+      onPrevious={skipPrevious}
+      onNext={skipNext}
+    />
+  )
+}
+
+export function PlayKey({ isPlaying, onPress, disabled, small, coach }: { isPlaying: boolean; onPress: () => void; disabled?: boolean; small?: boolean; coach?: boolean }) {
+  return (
+    <PressKey
+      className={`key key-play ${small ? 'key-play-sm' : ''}`}
+      onClick={onPress}
+      disabled={disabled}
+      aria-label={isPlaying ? 'Pause' : 'Play'}
+      depth={0.95}
+      data-coach={coach || undefined}
+    >
       <Icon name={isPlaying ? 'pause' : 'play'} size={small ? 24 : 34} />
-    </button>
+    </PressKey>
   )
 }

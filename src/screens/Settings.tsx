@@ -1,4 +1,10 @@
-import { back } from '../app/router'
+import type { ReactNode } from 'react'
+import { useShallow } from 'zustand/react/shallow'
+import { FullscreenButton } from '../app/Rail'
+import { back, navigate } from '../app/router'
+import { fullscreenSupported, isStandalone } from '../lib/fullscreen'
+import { feedback } from '../sensory/feedback'
+import { hapticsAvailable } from '../sensory/haptics'
 import { logout } from '../spotify/auth'
 import { useSession } from '../store/session'
 import { LYRIC_SIZES, useSettings, type Theme } from '../store/settings'
@@ -10,14 +16,30 @@ const THEMES: Array<{ value: Theme; label: string }> = [
   { value: 'black', label: 'Black' },
 ]
 
+type BoolSetting = 'sound' | 'haptics' | 'autoScroll'
+
+function setFlag(key: BoolSetting, value: boolean) {
+  useSettings.setState({ [key]: value })
+  feedback.play('toggle') // after the change: turning sound on is confirmed by hearing it
+}
+
 export function Settings() {
   const name = useSession((s) => s.displayName)
-  const { lyricSize, autoScroll, theme } = useSettings()
+  const { lyricSize, autoScroll, theme, sound, haptics } = useSettings(
+    useShallow((s) => ({ lyricSize: s.lyricSize, autoScroll: s.autoScroll, theme: s.theme, sound: s.sound, haptics: s.haptics })),
+  )
 
   return (
     <div className="page">
       <header className="page-head">
-        <button className="icon-btn" onClick={() => back('/')} aria-label="Back">
+        <button
+          className="icon-btn"
+          onClick={() => {
+            feedback.play('back')
+            back('/')
+          }}
+          aria-label="Back"
+        >
           <Icon name="back" />
         </button>
         <h1 className="page-title">Settings</h1>
@@ -33,10 +55,26 @@ export function Settings() {
             Connected{name ? ` as ${name}` : ''}
             <span className="group-detail">Disconnecting removes your Spotify sign-in and data from this device.</span>
           </span>
-          <button className="btn btn-small btn-danger" onClick={() => logout()}>
+          <button
+            className="btn btn-small btn-danger"
+            onClick={() => {
+              feedback.play('spotify-disconnected')
+              logout()
+            }}
+          >
             Disconnect
           </button>
         </div>
+      </section>
+
+      <section className="group" aria-labelledby="set-feel">
+        <h2 id="set-feel" className="group-title">
+          Feel
+        </h2>
+        <Switch label="Sound" detail="Quiet clicks and ticks for controls. Mixes under your music." checked={sound} onChange={(v) => setFlag('sound', v)} />
+        {hapticsAvailable() && (
+          <Switch label="Haptics" detail="Taps you can feel on supported phones." checked={haptics} onChange={(v) => setFlag('haptics', v)} />
+        )}
       </section>
 
       <section className="group" aria-labelledby="set-lyrics">
@@ -47,55 +85,64 @@ export function Settings() {
           <span className="group-label" id="lyric-size-label">
             Text size
           </span>
-          <div className="seg" role="radiogroup" aria-labelledby="lyric-size-label">
-            {LYRIC_SIZES.map((s, i) => (
-              <label key={s.label}>
-                <input type="radio" name="lyric-size" checked={lyricSize === i} onChange={() => useSettings.setState({ lyricSize: i })} />
-                <span>{s.label}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-        <label className="group-row">
-          <span className="group-label">
-            Follow the current line
-            <span className="group-detail">For timed lyrics. Scrolling yourself always pauses it.</span>
-          </span>
-          <input
-            type="checkbox"
-            role="switch"
-            className="switch"
-            checked={autoScroll}
-            onChange={(e) => useSettings.setState({ autoScroll: e.target.checked })}
+          <Segmented
+            name="lyric-size"
+            labelledBy="lyric-size-label"
+            options={LYRIC_SIZES.map((s, i) => ({ value: i, label: s.label }))}
+            value={lyricSize}
+            onChange={(i) => useSettings.setState({ lyricSize: i })}
           />
-        </label>
+        </div>
+        <Switch
+          label="Follow the current line"
+          detail="For timed lyrics. Scrolling yourself always pauses it."
+          checked={autoScroll}
+          onChange={(v) => setFlag('autoScroll', v)}
+        />
       </section>
 
-      <section className="group" aria-labelledby="set-theme">
-        <h2 id="set-theme" className="group-title">
-          Theme
+      <section className="group" aria-labelledby="set-display">
+        <h2 id="set-display" className="group-title">
+          Display
         </h2>
         <div className="group-row">
           <span className="group-label" id="theme-label">
             Screen
             <span className="group-detail">Black is best for OLED phones and TVs.</span>
           </span>
-          <div className="seg" role="radiogroup" aria-labelledby="theme-label">
-            {THEMES.map((t) => (
-              <label key={t.value}>
-                <input type="radio" name="theme" checked={theme === t.value} onChange={() => useSettings.setState({ theme: t.value })} />
-                <span>{t.label}</span>
-              </label>
-            ))}
-          </div>
+          <Segmented name="theme" labelledBy="theme-label" options={THEMES} value={theme} onChange={(t) => useSettings.setState({ theme: t })} />
         </div>
+        {fullscreenSupported() && !isStandalone() && (
+          <div className="group-row">
+            <span className="group-label">
+              Full screen
+              <span className="group-detail">Fullscreen gives PartyDeck the complete display.</span>
+            </span>
+            <FullscreenButton />
+          </div>
+        )}
       </section>
 
-      <section className="group" aria-labelledby="set-install">
-        <h2 id="set-install" className="group-title">
+      <section className="group" aria-labelledby="set-app">
+        <h2 id="set-app" className="group-title">
           App
         </h2>
         <InstallRow />
+        <div className="group-row">
+          <span className="group-label">
+            Tutorial
+            <span className="group-detail">A 20-second walkthrough on a silent practice deck.</span>
+          </span>
+          <button
+            className="btn btn-small"
+            onClick={() => {
+              feedback.play('select')
+              navigate('/tutorial')
+            }}
+          >
+            Replay
+          </button>
+        </div>
       </section>
 
       <section className="group" aria-labelledby="set-about">
@@ -119,12 +166,56 @@ export function Settings() {
   )
 }
 
+function Switch({ label, detail, checked, onChange }: { label: string; detail?: ReactNode; checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label className="group-row">
+      <span className="group-label">
+        {label}
+        {detail && <span className="group-detail">{detail}</span>}
+      </span>
+      <input type="checkbox" role="switch" className="switch" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+    </label>
+  )
+}
+
+function Segmented<T extends string | number>({
+  name,
+  labelledBy,
+  options,
+  value,
+  onChange,
+}: {
+  name: string
+  labelledBy: string
+  options: ReadonlyArray<{ value: T; label: string }>
+  value: T
+  onChange: (v: T) => void
+}) {
+  return (
+    <div className="seg" role="radiogroup" aria-labelledby={labelledBy}>
+      {options.map((o) => (
+        <label key={o.label}>
+          <input
+            type="radio"
+            name={name}
+            checked={value === o.value}
+            onChange={() => {
+              feedback.play('select')
+              onChange(o.value)
+            }}
+          />
+          <span>{o.label}</span>
+        </label>
+      ))}
+    </div>
+  )
+}
+
 function InstallRow() {
   const prompt = useUi((s) => s.installPrompt)
-  const standalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as { standalone?: boolean }).standalone
   const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
 
-  if (standalone) {
+  if (isStandalone()) {
     return (
       <div className="group-row">
         <span className="group-label">
@@ -144,6 +235,7 @@ function InstallRow() {
         <button
           className="btn btn-small"
           onClick={async () => {
+            feedback.play('select')
             await prompt.prompt()
             await prompt.userChoice
             useUi.setState({ installPrompt: null })

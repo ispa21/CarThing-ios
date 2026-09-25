@@ -1,20 +1,18 @@
-import { AnimatePresence, m } from 'motion/react'
 import { useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
-import { back, linkHandler } from '../app/router'
-import { Transport } from '../app/Transport'
-import { seekTo, syncNow } from '../spotify/playbackService'
-import { usePlayback } from '../store/playback'
-import { openDevices } from '../store/ui'
-import { Artwork } from '../ui/Artwork'
+import { Deck } from '../app/Deck'
+import { linkHandler } from '../app/router'
+import { usePhonePortrait } from '../lib/orientation'
+import { feedback } from '../sensory/feedback'
+import { seekTo, skipNext, skipPrevious, syncNow, togglePlay } from '../spotify/playbackService'
+import { selectCanToggle, usePlayback } from '../store/playback'
+import { openDevices, useUi } from '../store/ui'
 import { spotifyClock } from '../ui/clock'
 import { EmptyState } from '../ui/Feedback'
 import { Icon } from '../ui/Icon'
-import { Scrubber } from '../ui/Scrubber'
 import { Sheet } from '../ui/Sheet'
 
-const ease = [0.23, 1, 0.32, 1] as const
-
+/** The deck — PartyDeck's home screen. */
 export function NowPlaying() {
   const [menuOpen, setMenuOpen] = useState(false)
   const s = usePlayback(
@@ -30,21 +28,32 @@ export function NowPlaying() {
       url: s.playback.url,
       durationMs: s.playback.durationMs,
       deviceName: s.playback.deviceName,
-      cantSeek: s.playback.disallows.seeking,
+      isPlaying: s.playback.isPlaying,
+      canToggle: selectCanToggle(s),
+      d: s.playback.disallows,
     })),
   )
 
+  const chooseDevice = () => {
+    feedback.play('select')
+    openDevices()
+  }
+
   return (
     <div className="np">
-      <header className="np-bar">
-        <button className="icon-btn" onClick={() => back('/')} aria-label="Back">
-          <Icon name="back" />
-        </button>
-        <h1 className="sr-only">Now Playing</h1>
-        <button className="icon-btn" onClick={() => setMenuOpen(true)} aria-label="More options">
-          <Icon name="more" />
-        </button>
-      </header>
+      <h1 className="sr-only">Now Playing</h1>
+      <button
+        className="icon-btn np-more"
+        onClick={() => {
+          feedback.play('select')
+          setMenuOpen(true)
+        }}
+        aria-label="More options"
+      >
+        <Icon name="more" />
+      </button>
+
+      <RotateHint />
 
       {s.error && s.has && (
         <p className="np-status" role="status">
@@ -70,73 +79,60 @@ export function NowPlaying() {
             </EmptyState>
           ) : (
             <EmptyState title="Nothing playing" detail="Start something in Spotify, or pick a device and play from Search.">
-              <button className="btn btn-primary" onClick={openDevices}>
+              <button className="btn btn-primary" onClick={chooseDevice}>
                 Choose device
               </button>
-              <a className="btn" href="/search" onClick={linkHandler}>
+              <a
+                className="btn"
+                href="/search"
+                onClick={(e) => {
+                  feedback.play('select')
+                  linkHandler(e)
+                }}
+              >
                 Search
               </a>
             </EmptyState>
           )}
         </div>
       ) : (
-        <div className="np-body">
-          <div className="np-art">
-            <AnimatePresence initial={false}>
-              <m.div
-                key={s.art ?? 'none'}
-                className="np-art-layer"
-                initial={{ opacity: 0, scale: 0.97 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.4, ease }}
-              >
-                <Artwork src={s.art} alt={s.album ? `${s.album} cover` : `${s.title} artwork`} />
-              </m.div>
-            </AnimatePresence>
-          </div>
-
-          <div className="np-panel">
-            <div className="np-meta">
-              <AnimatePresence mode="popLayout" initial={false}>
-                <m.div
-                  key={s.trackId}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.24, ease }}
-                >
-                  <h2 className="np-title">{s.title}</h2>
-                  <p className="np-artist">{s.artist}</p>
-                  {s.album && <p className="np-album">{s.album}</p>}
-                </m.div>
-              </AnimatePresence>
-              {s.url && (
-                <a className="np-attr" href={s.url} target="_blank" rel="noopener noreferrer">
-                  Open in Spotify
-                </a>
-              )}
-            </div>
-
-            <Scrubber clock={spotifyClock} durationMs={s.durationMs} onSeek={seekTo} disabled={s.cantSeek} label="Song position" />
-            <Transport />
-
-            <div className="np-foot">
-              <a className="chip" href="/queue" onClick={linkHandler}>
-                <Icon name="queue" size={20} />
-                Queue
+        <Deck
+          trackKey={s.trackId}
+          art={s.art}
+          artAlt={s.album ? `${s.album} cover` : `${s.title} artwork`}
+          title={s.title}
+          artist={s.artist}
+          album={s.album}
+          clock={spotifyClock}
+          durationMs={s.durationMs}
+          onSeek={seekTo}
+          seekDisabled={s.d.seeking}
+          transport={{
+            isPlaying: s.isPlaying,
+            canToggle: s.canToggle,
+            canPrevious: !s.d.skippingPrev,
+            canNext: !s.d.skippingNext,
+            onToggle: togglePlay,
+            onPrevious: skipPrevious,
+            onNext: skipNext,
+          }}
+          onSwipe={(dir) => void (dir === 'next' ? skipNext() : skipPrevious())}
+          attribution={
+            s.url && (
+              <a className="np-attr" href={s.url} target="_blank" rel="noopener noreferrer">
+                Open in Spotify
               </a>
-              <button className="chip chip-device" onClick={openDevices} aria-label={`Playing on ${s.deviceName ?? 'unknown device'}. Change device`}>
-                <Icon name="speaker" size={18} />
+            )
+          }
+          footer={
+            <div className="np-foot">
+              <button className="chip chip-device" onClick={chooseDevice} aria-label={`Playing on ${s.deviceName ?? 'unknown device'}. Change device`}>
+                <span className="led" aria-hidden="true" />
                 <span>{s.deviceName ?? 'Choose device'}</span>
               </button>
-              <a className="chip" href="/lyrics" onClick={linkHandler}>
-                <Icon name="lyrics" size={20} />
-                Lyrics
-              </a>
             </div>
-          </div>
-        </div>
+          }
+        />
       )}
 
       <Sheet open={menuOpen} onClose={() => setMenuOpen(false)} title="Options">
@@ -152,19 +148,50 @@ export function NowPlaying() {
             <button
               onClick={() => {
                 setMenuOpen(false)
-                openDevices()
+                chooseDevice()
               }}
             >
               <Icon name="speaker" /> Choose device
             </button>
           </li>
           <li>
-            <a href="/settings" onClick={linkHandler}>
+            <a
+              href="/settings"
+              onClick={(e) => {
+                feedback.play('select')
+                linkHandler(e)
+              }}
+            >
               <Icon name="settings" /> Settings
             </a>
           </li>
         </ul>
       </Sheet>
+    </div>
+  )
+}
+
+/** Phones held upright get a compact deck and a gentle nudge — never a wall. */
+function RotateHint() {
+  const portrait = usePhonePortrait()
+  const dismissed = useUi((s) => s.rotateHintDismissed)
+  if (!portrait || dismissed) return null
+  return (
+    <div className="rotate-hint" role="note">
+      <span className="rotate-glyph" aria-hidden="true">
+        <Icon name="rotate" size={22} />
+      </span>
+      <span>Turn your phone sideways for the full deck.</span>
+      <button
+        className="icon-btn"
+        aria-label="Dismiss"
+        onClick={() => {
+          feedback.play('back')
+          useUi.setState({ rotateHintDismissed: true })
+        }}
+      >
+        <Icon name="close" size={18} />
+      </button>
     </div>
   )
 }

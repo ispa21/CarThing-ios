@@ -254,7 +254,7 @@ main:focus {
   }
 }
 
-/* ── Shell ─────────────────────────────────────────────────────────────── */
+/* ── Shell & rail ──────────────────────────────────────────────────────── */
 
 .shell {
   height: 100%;
@@ -290,37 +290,60 @@ main:focus {
   }
 }
 
-.nav {
+/* The control strip. Phones upright: mini deck above the tabs. Landscape: one row. */
+.rail {
   position: relative;
   z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'deck deck'
+    'tabs tools';
+  align-items: center;
+  column-gap: 4px;
   padding: 0 var(--pad-r) var(--safe-b) var(--pad-l);
-  background: color-mix(in oklab, var(--screen) 86%, transparent);
+  background: color-mix(in oklab, var(--screen) 88%, transparent);
   backdrop-filter: blur(20px) saturate(140%);
   -webkit-backdrop-filter: blur(20px) saturate(140%);
   border-top: 1px solid var(--line);
 }
 
-.nav > * {
-  max-width: 640px;
-  margin-inline: auto;
+.rail-deck {
+  grid-area: deck;
+  min-width: 0;
 }
 
-.dock ul {
+.rail-deck:empty {
+  display: none;
+}
+
+.rail-tabs {
+  grid-area: tabs;
   display: flex;
 }
 
-.dock li {
+.rail-tabs li {
   flex: 1;
 }
 
-.dock-item {
+.rail-tools {
+  grid-area: tools;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+.rail-tab {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 3px;
+  width: 100%;
   min-height: 58px;
+  border-radius: 12px;
   color: var(--ink-3);
   font-size: 0.6875rem;
   font-weight: 600;
@@ -328,19 +351,20 @@ main:focus {
   transition: color 160ms ease;
 }
 
-.dock-item:active svg {
-  transform: scale(0.9);
-}
-
-.dock-item svg {
+.rail-tab svg {
   transition: transform 120ms var(--ease-out);
 }
 
-.dock-item[aria-current='page'] {
+.rail-tab:active svg {
+  transform: scale(0.9);
+}
+
+.rail-tab[aria-current] {
   color: var(--ink);
 }
 
-.dock-item[aria-current='page']::before {
+/* The active lamp — the same amber LED as the power key. */
+.rail-tab[aria-current]::before {
   content: '';
   position: absolute;
   top: 5px;
@@ -351,13 +375,53 @@ main:focus {
   box-shadow: 0 0 8px var(--signal-glow);
 }
 
+@media (orientation: landscape) and (min-width: 600px) {
+  .rail {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    grid-template-areas: 'deck tabs tools';
+    min-height: 60px;
+  }
+
+  .rail-deck:empty {
+    display: block;
+  }
+
+  .rail-tabs {
+    gap: 2px;
+  }
+
+  .rail-tabs li {
+    flex: none;
+  }
+
+  .rail-tab {
+    flex-direction: row;
+    gap: 8px;
+    min-height: 48px;
+    padding: 0 14px;
+    font-size: 0.8125rem;
+  }
+
+  .rail-tab[aria-current]::before {
+    top: auto;
+    bottom: 3px;
+    left: 50%;
+    margin-left: -2px;
+  }
+
+  .rail .mini {
+    margin: 6px 0;
+    max-width: 320px;
+  }
+}
+
 .mini {
   position: relative;
   display: flex;
   align-items: center;
   gap: 4px;
   margin-top: 8px;
-  padding: 6px 6px 6px 6px;
+  padding: 6px;
   border-radius: var(--r-m);
   background: var(--raised);
   overflow: hidden;
@@ -886,22 +950,21 @@ button.row-main:active {
   word-break: break-all;
 }
 
-/* ── Now Playing ───────────────────────────────────────────────────────── */
+/* ── The deck (Now Playing) ────────────────────────────────────────────── */
 
 .np {
+  position: relative;
   height: 100%;
   display: flex;
   flex-direction: column;
-  padding: var(--safe-t) var(--pad-r) calc(var(--safe-b) + 12px) var(--pad-l);
+  padding: calc(var(--safe-t) + 12px) var(--pad-r) 16px var(--pad-l);
 }
 
-.np-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 56px;
-  /* Optically align glyphs with the content edge; cap to the appliance frame on wide screens. */
-  margin-inline: max(-10px, calc((100% - 1140px) / 2));
+.np-more {
+  position: absolute;
+  z-index: 3;
+  top: calc(var(--safe-t) + 6px);
+  right: calc(var(--pad-r) - 10px);
 }
 
 .np-status {
@@ -916,7 +979,7 @@ button.row-main:active {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: clamp(20px, 4vh, 40px);
+  gap: clamp(16px, 3.5vh, 36px);
   width: 100%;
   max-width: 520px;
   margin: 0 auto;
@@ -924,12 +987,19 @@ button.row-main:active {
 
 .np-art {
   position: relative;
-  width: min(100%, 46vh);
+  flex: none;
+  width: min(100%, 40vh);
   aspect-ratio: 1;
   margin-inline: auto;
   border-radius: 10px;
   background: var(--raised);
   box-shadow: 0 24px 60px -24px rgb(0 0 0 / 0.7);
+  touch-action: pan-y;
+  cursor: grab;
+}
+
+.np-art:active {
+  cursor: grabbing;
 }
 
 .np-art-layer {
@@ -941,6 +1011,10 @@ button.row-main:active {
   width: 100%;
   height: 100%;
   border-radius: 10px;
+}
+
+.np-art-layer img {
+  pointer-events: none; /* the drag belongs to the housing, not the image */
 }
 
 .np-panel {
@@ -1000,9 +1074,13 @@ button.row-main:active {
 .np-foot {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 4px;
+  justify-content: center;
   margin: 0 -14px;
+}
+
+.chip-device .led {
+  width: 6px;
+  height: 6px;
 }
 
 .np-empty {
@@ -1011,17 +1089,64 @@ button.row-main:active {
   place-items: center;
 }
 
-/* Car Thing heritage: in landscape, art on the left, the deck on the right. */
-@media (orientation: landscape) and (min-width: 640px) {
+.rotate-hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  align-self: flex-start;
+  max-width: calc(100% - 44px);
+  margin-bottom: 4px;
+  padding: 4px 4px 4px 12px;
+  border-radius: 14px;
+  background: var(--raised);
+  color: var(--ink-2);
+  font-size: 0.875rem;
+  line-height: 1.3;
+}
+
+.rotate-glyph {
+  display: grid;
+  color: var(--signal);
+}
+
+.rotate-glyph svg {
+  animation: rotate-nudge 3.2s var(--ease-in-out, ease-in-out) 3;
+}
+
+@keyframes rotate-nudge {
+  0%,
+  45% {
+    transform: rotate(0);
+  }
+  65%,
+  90% {
+    transform: rotate(-90deg);
+  }
+  100% {
+    transform: rotate(0);
+  }
+}
+
+/* Landscape is PartyDeck's identity: art left, instrument panel right, rail below. */
+@media (orientation: landscape) and (min-width: 600px) {
+  .screen[data-route='now'] {
+    overflow: hidden;
+  }
+
+  .np {
+    padding-top: calc(var(--safe-t) + 16px);
+  }
+
   .np-body {
     flex-direction: row;
     align-items: center;
-    max-width: 1120px;
-    gap: clamp(24px, 5vw, 80px);
+    max-width: 1180px;
+    gap: clamp(20px, 4.5vw, 80px);
   }
 
   .np-art {
-    width: min(44vw, calc(100dvh - 120px - var(--safe-t) - var(--safe-b)), 620px);
+    width: auto;
+    height: min(100%, 44vw, 640px);
     margin: 0;
   }
 
@@ -1029,25 +1154,42 @@ button.row-main:active {
     flex: 1;
     max-width: 560px;
   }
+
+  .np-foot {
+    justify-content: flex-start;
+  }
+
+  .rotate-hint {
+    display: none;
+  }
 }
 
 @media (orientation: landscape) and (max-height: 500px) {
-  .np-bar {
-    min-height: 44px;
+  .np {
+    padding-top: calc(var(--safe-t) + 10px);
+    padding-bottom: 10px;
   }
 
   .np-title {
-    font-size: 1.75rem;
+    font-size: 1.625rem;
     -webkit-line-clamp: 1;
   }
 
-  .np-album,
-  .np-attr {
+  .np-artist {
+    margin-top: 2px;
+    font-size: 1rem;
+  }
+
+  .np-album {
     display: none;
   }
 
   .np-panel {
     gap: 4px;
+  }
+
+  .np-foot .chip {
+    min-height: 36px;
   }
 }
 
@@ -1144,8 +1286,8 @@ button.row-main:active {
   place-items: center;
   flex: none;
   transition:
-    transform 110ms var(--ease-out),
     background-color 160ms ease,
+    box-shadow 120ms ease,
     opacity 160ms ease;
 }
 
@@ -1153,6 +1295,7 @@ button.row-main:active {
   opacity: 0.3;
 }
 
+/* Scale is sprung by Motion (PressKey); CSS only handles what the press looks like. */
 .key-skip {
   width: 64px;
   height: 64px;
@@ -1161,7 +1304,6 @@ button.row-main:active {
 }
 
 .key-skip:active:not(:disabled) {
-  transform: scale(0.92);
   background: var(--raised);
 }
 
@@ -1178,8 +1320,7 @@ button.row-main:active {
 }
 
 .key-play:active:not(:disabled) {
-  transform: scale(0.95);
-  box-shadow: inset 0 -1px 0 rgb(0 0 0 / 0.14);
+  box-shadow: inset 0 -1px 0 rgb(0 0 0 / 0.14); /* bottoming out */
 }
 
 .key-play-sm {
@@ -1774,6 +1915,578 @@ button.row-main:active {
   bottom: calc(var(--safe-b) + 32px);
 }
 
+/* ── Library shelf & queue (landscape) ─────────────────────────────────── */
+
+/* Landscape phones: playlists become a shelf of presets you flick through. */
+@media (orientation: landscape) and (max-height: 600px) {
+  /* The lit rail tab already says "Search"; give the height to the shelf. */
+  .screen[data-route='search'] .page-head {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .screen[data-route='search'] .page {
+    padding-top: calc(var(--safe-t) + 12px);
+  }
+
+  .screen[data-route='search'] .section-title {
+    margin-top: 14px;
+  }
+
+  .tiles {
+    grid-auto-flow: column;
+    grid-template-columns: none;
+    grid-auto-columns: clamp(110px, 32vh, 180px);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--pad-l);
+    margin-inline: calc(-1 * var(--pad-l)) calc(-1 * var(--pad-r));
+    padding: 0 var(--pad-r) 8px var(--pad-l);
+    scrollbar-width: none;
+  }
+
+  .tiles::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tile {
+    scroll-snap-align: start;
+  }
+}
+
+.page:has(.queue-layout) {
+  max-width: 1000px;
+}
+
+@media (orientation: landscape) and (min-width: 760px) {
+  .queue-layout {
+    display: grid;
+    grid-template-columns: minmax(220px, 2fr) 3fr;
+    gap: clamp(20px, 4vw, 48px);
+    align-items: start;
+  }
+
+  .queue-now {
+    position: sticky;
+    top: 0;
+  }
+}
+
+/* ── Onboarding: powering on the device ────────────────────────────────── */
+
+.onboard {
+  min-height: 100%;
+  display: grid;
+  grid-template-rows: 1fr auto auto;
+  justify-items: center;
+  align-items: center;
+  gap: 28px;
+  padding: calc(var(--safe-t) + 32px) var(--pad-r) calc(var(--safe-b) + 20px) var(--pad-l);
+  text-align: center;
+}
+
+.onboard-mark {
+  display: grid;
+  gap: 14px;
+  justify-items: center;
+}
+
+/* Standby → on: the wordmark and its lamp wake when the key is pressed. */
+.onboard .wordmark {
+  opacity: 0.6;
+  transition: opacity 500ms ease;
+}
+
+.onboard .wordmark .led {
+  background: var(--ink-3);
+  box-shadow: none;
+  transition:
+    background-color 300ms ease 120ms,
+    box-shadow 400ms ease 120ms;
+}
+
+.onboard[data-lit] .wordmark {
+  opacity: 1;
+}
+
+.onboard[data-lit] .wordmark .led {
+  background: var(--signal);
+  box-shadow: 0 0 14px var(--signal-glow);
+}
+
+.onboard-tagline {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.5rem, 1rem + 2.4vw, 2.5rem);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  color: var(--ink-2);
+}
+
+.onboard-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2rem, 1.2rem + 3vw, 3.5rem);
+  line-height: 1.04;
+  letter-spacing: -0.025em;
+}
+
+.onboard-sub {
+  color: var(--ink-2);
+  font-size: 1.125rem;
+}
+
+.onboard-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-2);
+  font-weight: 600;
+}
+
+.onboard-status svg {
+  color: var(--signal);
+}
+
+.onboard-action {
+  display: grid;
+  justify-items: center;
+  width: 100%;
+  animation: screen-in 260ms var(--ease-out) both;
+}
+
+.onboard-demo {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: 0 12px;
+  border-radius: 12px;
+  color: var(--ink-3);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+@media (orientation: landscape) and (min-width: 600px) {
+  .onboard {
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    grid-template-rows: 1fr auto;
+    grid-template-areas:
+      'mark action'
+      'demo demo';
+    max-width: 1100px;
+    margin: 0 auto;
+    padding-top: calc(var(--safe-t) + 20px);
+    text-align: left;
+  }
+
+  .onboard-mark {
+    grid-area: mark;
+    justify-items: start;
+    justify-self: start;
+  }
+
+  .onboard-action {
+    grid-area: action;
+  }
+
+  .onboard-demo {
+    grid-area: demo;
+  }
+
+  .onboard-rotate {
+    grid-template-areas: none;
+  }
+}
+
+/* The showcase key. */
+.power {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+}
+
+.power-housing {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 132px;
+  height: 132px;
+}
+
+.power-ring {
+  position: absolute;
+  inset: 0;
+  transform: rotate(-90deg);
+  pointer-events: none; /* the key under it takes the press */
+}
+
+.power-ring-track,
+.power-ring-light {
+  fill: none;
+  stroke-width: 2.5;
+}
+
+.power-ring-track {
+  stroke: var(--line-strong);
+}
+
+.power-ring-light {
+  stroke: var(--signal);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  opacity: 0; /* a round cap would leave a dot at rest */
+  transition:
+    stroke-dashoffset 540ms var(--ease-out),
+    opacity 80ms ease;
+}
+
+.power[data-lit] .power-ring-light {
+  stroke-dashoffset: 0;
+  opacity: 1;
+}
+
+.power-key {
+  display: grid;
+  place-items: center;
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--ink-on-light);
+  box-shadow:
+    inset 0 -4px 0 rgb(0 0 0 / 0.16),
+    0 18px 40px -16px rgb(0 0 0 / 0.9);
+  transition: box-shadow 120ms ease;
+}
+
+.power-key:active {
+  box-shadow:
+    inset 0 -1px 0 rgb(0 0 0 / 0.16),
+    0 8px 20px -12px rgb(0 0 0 / 0.9);
+}
+
+.power-label {
+  color: var(--ink-2);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.connect {
+  display: grid;
+  gap: 14px;
+  width: min(100%, 360px);
+}
+
+.btn-connect {
+  min-height: 56px;
+  font-size: 1.0625rem;
+  border-radius: 16px;
+}
+
+.connect {
+  text-align: center;
+}
+
+.connect .fine {
+  margin: 0 auto;
+}
+
+.dev-setup {
+  padding: 4px 14px 12px;
+  border-radius: var(--r-m);
+  background: var(--raised);
+  color: var(--ink-2);
+  font-size: 0.875rem;
+  text-align: left;
+}
+
+.dev-setup summary {
+  display: flex;
+  align-items: center;
+  min-height: var(--tap);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dev-setup p + p,
+.dev-setup pre {
+  margin-top: 8px;
+}
+
+.dev-setup pre {
+  padding: 10px;
+  border-radius: 10px;
+  background: var(--screen);
+  color: var(--ink);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.dev-setup a {
+  color: var(--signal);
+  text-decoration: underline;
+}
+
+/* Orientation: glyph, message and escape hatch as one centred group. */
+.onboard-rotate {
+  grid-template-rows: none;
+  align-content: center;
+  gap: 20px;
+}
+
+.rotate-demo {
+  display: grid;
+  place-items: center;
+  width: 120px;
+  height: 120px;
+}
+
+.rotate-phone {
+  position: relative;
+  width: 44px;
+  height: 80px;
+  border: 3px solid var(--ink);
+  border-radius: 11px;
+  animation: rotate-phone 2.8s var(--ease-in-out) infinite;
+}
+
+.rotate-phone::before {
+  content: '';
+  position: absolute;
+  top: 7px;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  margin-left: -2.5px;
+  border-radius: 50%;
+  background: var(--signal);
+  box-shadow: 0 0 8px var(--signal-glow);
+}
+
+@keyframes rotate-phone {
+  0%,
+  30% {
+    transform: rotate(0);
+  }
+  55%,
+  85% {
+    transform: rotate(-90deg);
+  }
+  100% {
+    transform: rotate(0);
+  }
+}
+
+/* ── Tutorial ──────────────────────────────────────────────────────────── */
+
+.tutorial {
+  position: relative;
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+}
+
+.tutorial-top {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 44px;
+  padding: calc(var(--safe-t) + 4px) calc(var(--pad-r) - 8px) 0 var(--pad-l);
+}
+
+.tutorial-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-3);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.tutorial-steps {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.tutorial-steps li {
+  width: 18px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--line-strong);
+  transition: background-color 240ms ease;
+}
+
+.tutorial-steps li[data-state='current'] {
+  background: var(--ink);
+}
+
+.tutorial-steps li[data-state='done'] {
+  background: var(--signal);
+}
+
+.coach {
+  padding: 2px var(--pad-r) 0 var(--pad-l);
+  font-size: clamp(1.0625rem, 0.9rem + 0.9vw, 1.375rem);
+  line-height: 1.3;
+}
+
+.coach strong {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.coach span {
+  color: var(--ink-2);
+}
+
+.tutorial-deck {
+  height: auto;
+  min-height: 0;
+  padding-top: 6px;
+}
+
+/* The control being taught glows like a lit key. */
+[data-coach] {
+  box-shadow:
+    0 0 0 2px var(--signal),
+    0 0 22px var(--signal-glow);
+  animation: coach-glow 1.4s ease-in-out infinite alternate;
+}
+
+@keyframes coach-glow {
+  from {
+    box-shadow:
+      0 0 0 2px var(--signal),
+      0 0 0 transparent;
+  }
+}
+
+.practice-panel {
+  position: absolute;
+  z-index: 4;
+  right: var(--pad-r);
+  bottom: calc(76px + var(--safe-b));
+  width: min(420px, calc(100% - var(--pad-l) - var(--pad-r)));
+  max-height: 72%;
+  overflow: auto;
+  padding: 6px 16px 14px;
+  border-radius: var(--r-l);
+  background: var(--raised);
+  box-shadow:
+    inset 0 0 0 1px var(--line),
+    0 20px 60px rgb(0 0 0 / 0.55);
+}
+
+.practice-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 48px;
+}
+
+.practice-panel-head h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+.practice-panel-head .icon-btn {
+  margin-right: -10px;
+}
+
+.practice-lyrics {
+  left: var(--pad-l);
+  width: auto;
+}
+
+.practice-lyrics-lines {
+  display: grid;
+  gap: 0.3em;
+  padding-bottom: 6px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.5rem, 1rem + 2.4vw, 2.5rem);
+  line-height: 1.12;
+  letter-spacing: -0.018em;
+}
+
+.practice-lyrics-lines li {
+  opacity: 0.32;
+  transition: opacity 450ms var(--ease-out);
+}
+
+.practice-lyrics-lines li[data-state='current'] {
+  opacity: 1;
+}
+
+.coach-card {
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  bottom: calc(80px + var(--safe-b));
+  translate: -50% 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: min(460px, calc(100% - 32px));
+  padding: 14px 14px 14px 18px;
+  border-radius: 18px;
+  background: var(--raised-2);
+  box-shadow:
+    inset 0 0 0 1px var(--line),
+    0 18px 50px rgb(0 0 0 / 0.55);
+  font-size: 0.9375rem;
+}
+
+.coach-card p {
+  flex: 1;
+  color: var(--ink-2);
+}
+
+/* The finish is its own moment: the practice deck dims, one card, one key. */
+.tutorial-done {
+  position: absolute;
+  z-index: 6;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--safe-t) var(--pad-r) var(--safe-b) var(--pad-l);
+  background: rgb(0 0 0 / 0.55);
+}
+
+.tutorial-done .coach-card {
+  position: static;
+  translate: none;
+}
+
+.coach-done {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  padding: 22px;
+  text-align: center;
+}
+
+.coach-card .coach-done-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.75rem;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.coach-done .btn {
+  margin-top: 8px;
+}
+
 /* ── Pointer / hover (never on touch) ──────────────────────────────────── */
 
 @media (hover: hover) and (pointer: fine) {
@@ -1807,7 +2520,8 @@ button.row-main:active {
     color: var(--ink);
   }
 
-  .dock-item:hover {
+  .rail-tab:hover,
+  .onboard-demo:hover {
     color: var(--ink-2);
   }
 
@@ -1849,8 +2563,16 @@ button.row-main:active {
   .skel,
   .led-pulse,
   .icon-btn[data-spin] svg,
-  .field[data-busy] svg {
+  .field[data-busy] svg,
+  .rotate-phone,
+  .rotate-glyph svg,
+  .onboard-action,
+  [data-coach] {
     animation: none;
+  }
+
+  .power-ring-light {
+    transition-duration: 0ms;
   }
 
   @starting-style {
@@ -1867,7 +2589,7 @@ button.row-main:active {
 }
 
 @media (prefers-reduced-transparency: reduce) {
-  .nav {
+  .rail {
     background: var(--screen);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;

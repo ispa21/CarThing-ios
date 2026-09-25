@@ -1,8 +1,9 @@
-import { domAnimation, LazyMotion, MotionConfig } from 'motion/react'
+import { domMax, LazyMotion, MotionConfig } from 'motion/react'
 import { useEffect, useRef } from 'react'
+import { Onboarding } from '../onboarding/Onboarding'
+import { Tutorial } from '../onboarding/Tutorial'
+import { Welcome } from '../onboarding/Welcome'
 import { Callback } from '../screens/Callback'
-import { Connect } from '../screens/Connect'
-import { Home } from '../screens/Home'
 import { LyricsScreen } from '../screens/Lyrics'
 import { NowPlaying } from '../screens/NowPlaying'
 import { Queue } from '../screens/Queue'
@@ -13,29 +14,35 @@ import { useSession } from '../store/session'
 import { THEME_COLORS, useSettings } from '../store/settings'
 import { Toaster } from '../ui/Feedback'
 import { DeviceSheet } from './DeviceSheet'
-import { Dock, MiniPlayer } from './Dock'
-import { matchRoute, usePathname, type Route } from './router'
+import { Rail } from './Rail'
+import { matchRoute, navigate, usePathname, type Route } from './router'
 import { useShortcuts } from './shortcuts'
 
 const TITLES: Record<Route, string> = {
-  home: 'PartyDeck',
+  now: 'PartyDeck',
   search: 'Search · PartyDeck',
   queue: 'Queue · PartyDeck',
-  now: 'Now Playing · PartyDeck',
   lyrics: 'Lyrics · PartyDeck',
   'lyrics-demo': 'Lyrics demo · PartyDeck',
   settings: 'Settings · PartyDeck',
   callback: 'Connecting · PartyDeck',
+  tutorial: 'Tutorial · PartyDeck',
 }
 
-const IMMERSIVE: Route[] = ['now', 'lyrics', 'lyrics-demo']
+/** Full-screen routes without the rail. */
+const IMMERSIVE: Route[] = ['lyrics', 'lyrics-demo', 'tutorial']
 
 export function App() {
   const route = matchRoute(usePathname())
   const connected = useSession((s) => s.connected)
+  const justConnected = useSession((s) => s.justConnected)
   const theme = useSettings((s) => s.theme)
+  const welcomed = useSettings((s) => s.welcomed)
+  const onboarded = useSettings((s) => s.onboarded)
+  const onboarding = connected && (justConnected || !onboarded)
 
-  useShortcuts(route, connected)
+  // No global shortcuts while onboarding or practising: Space must not pause your real music.
+  useShortcuts(route, connected, !onboarding && route !== 'tutorial')
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
@@ -48,17 +55,17 @@ export function App() {
 
   let content
   if (route === 'callback') content = <Callback />
-  else if (connected) content = <ConnectedApp route={route} />
+  else if (connected) content = <ConnectedApp route={route} onboarding={onboarding} />
   else if (route === 'lyrics-demo')
     content = (
       <div className="shell" data-immersive>
         <Screen route={route} immersive />
       </div>
     )
-  else content = <Connect />
+  else content = <Welcome startAt={welcomed ? 'connect' : 'welcome'} />
 
   return (
-    <LazyMotion features={domAnimation} strict>
+    <LazyMotion features={domMax} strict>
       <MotionConfig reducedMotion="user">
         {content}
         <Toaster />
@@ -67,22 +74,25 @@ export function App() {
   )
 }
 
-function ConnectedApp({ route }: { route: Route }) {
+function ConnectedApp({ route, onboarding }: { route: Route; onboarding: boolean }) {
+  // Sync runs through onboarding too, so the deck wakes with your current track.
   useEffect(() => {
     startPlaybackSync()
     return stopPlaybackSync
   }, [])
 
+  if (onboarding)
+    return (
+      <div className="shell" data-immersive>
+        <Onboarding />
+      </div>
+    )
+
   const immersive = IMMERSIVE.includes(route)
   return (
-    <div className="shell" data-immersive={immersive || undefined}>
+    <div className="shell" data-immersive={immersive || undefined} data-route={route}>
       <Screen route={route} immersive={immersive} />
-      {!immersive && (
-        <div className="nav">
-          <MiniPlayer />
-          <Dock route={route} />
-        </div>
-      )}
+      {!immersive && <Rail route={route} />}
       <DeviceSheet />
     </div>
   )
@@ -104,14 +114,21 @@ function Screen({ route, immersive = false }: { route: Route; immersive?: boolea
   }, [route])
 
   return (
-    <main key={route} ref={ref} className="screen" data-immersive={immersive || undefined} tabIndex={-1}>
-      {route === 'home' && <Home />}
+    <main key={route} ref={ref} className="screen" data-immersive={immersive || undefined} data-route={route} tabIndex={-1}>
+      {route === 'now' && <NowPlaying />}
       {route === 'search' && <Search />}
       {route === 'queue' && <Queue />}
-      {route === 'now' && <NowPlaying />}
       {route === 'lyrics' && <LyricsScreen source="spotify" />}
       {route === 'lyrics-demo' && <LyricsScreen source="demo" />}
       {route === 'settings' && <Settings />}
+      {route === 'tutorial' && (
+        <Tutorial
+          onFinish={() => {
+            useSettings.setState({ onboarded: true })
+            navigate('/', { replace: true })
+          }}
+        />
+      )}
     </main>
   )
 }

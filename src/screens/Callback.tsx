@@ -23,7 +23,10 @@ const NOTICES: Record<AuthFailure, FriendlyError> = {
 export function Callback() {
   useEffect(() => {
     completeLogin(new URLSearchParams(window.location.search))
-      .then((to) => navigate(to, { replace: true }))
+      .then((to) => {
+        useSession.setState({ justConnected: true }) // → "Spotify connected · Power on"
+        navigate(to, { replace: true })
+      })
       .catch((e: unknown) => {
         useSession.setState({ notice: NOTICES[e instanceof AuthError ? e.kind : 'exchange'] })
         navigate('/', { replace: true })

@@ -8,8 +8,9 @@ import { SOURCES } from './sources'
  *   Space / K  play-pause      ← / →  seek 10s      N / P  next / previous
  *   /  search   Q  queue   L  lyrics   Esc  leave Now Playing / Lyrics
  */
-export function useShortcuts(route: Route, connected: boolean) {
+export function useShortcuts(route: Route, connected: boolean, enabled = true) {
   useEffect(() => {
+    if (!enabled) return
     const onKey = (e: KeyboardEvent) => {
       // Ignore auto-repeat: holding → must not fire dozens of Spotify requests a second.
       if (e.defaultPrevented || e.repeat || e.metaKey || e.ctrlKey || e.altKey) return
@@ -35,8 +36,7 @@ export function useShortcuts(route: Route, connected: boolean) {
           return
         }
         case 'Escape':
-          if (route === 'now') back('/')
-          else if (route === 'lyrics' || demo) back(source.backTo)
+          if (route === 'lyrics' || demo) back(source.backTo)
           return
       }
       if (!connected) return
@@ -61,5 +61,5 @@ export function useShortcuts(route: Route, connected: boolean) {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [route, connected])
+  }, [route, connected, enabled])
 }
