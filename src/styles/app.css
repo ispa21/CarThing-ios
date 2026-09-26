@@ -1028,6 +1028,15 @@ button.row-main:active {
   min-width: 0;
 }
 
+.np-meta-stack {
+  display: grid;
+}
+
+.np-meta-stack > * {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+
 .np-title {
   font-family: var(--font-display);
   font-weight: 600;

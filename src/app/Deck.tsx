@@ -38,19 +38,23 @@ export function Deck(p: DeckProps) {
       <SwipeArt art={p.art} alt={p.artAlt} onSwipe={p.onSwipe} />
       <div className="np-panel">
         <div className="np-meta">
-          <AnimatePresence mode="popLayout" initial={false}>
-            <m.div
-              key={p.trackKey}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.24, ease }}
-            >
-              <h2 className="np-title">{p.title}</h2>
-              <p className="np-artist">{p.artist}</p>
-              {p.album && <p className="np-album">{p.album}</p>}
-            </m.div>
-          </AnimatePresence>
+          {/* Outgoing and incoming titles share one grid cell. (Not mode="popLayout":
+              it injects a <style> element, which our CSP rightly blocks.) */}
+          <div className="np-meta-stack">
+            <AnimatePresence initial={false}>
+              <m.div
+                key={p.trackKey}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.24, ease }}
+              >
+                <h2 className="np-title">{p.title}</h2>
+                <p className="np-artist">{p.artist}</p>
+                {p.album && <p className="np-album">{p.album}</p>}
+              </m.div>
+            </AnimatePresence>
+          </div>
           {p.attribution}
         </div>
         <Scrubber clock={p.clock} durationMs={p.durationMs} onSeek={p.onSeek} disabled={p.seekDisabled} label="Song position" />

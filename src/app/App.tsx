@@ -38,6 +38,7 @@ export function App() {
   const justConnected = useSession((s) => s.justConnected)
   const theme = useSettings((s) => s.theme)
   const welcomed = useSettings((s) => s.welcomed)
+  const hasNotice = useSession((s) => s.notice !== null)
   const onboarded = useSettings((s) => s.onboarded)
   const onboarding = connected && (justConnected || !onboarded)
 
@@ -62,7 +63,8 @@ export function App() {
         <Screen route={route} immersive />
       </div>
     )
-  else content = <Welcome startAt={welcomed ? 'connect' : 'welcome'} />
+  // A notice (declined, expired, not allow-listed…) belongs next to the Connect button.
+  else content = <Welcome startAt={welcomed || hasNotice ? 'connect' : 'welcome'} />
 
   return (
     <LazyMotion features={domMax} strict>
