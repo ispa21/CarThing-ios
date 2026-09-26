@@ -205,13 +205,14 @@ export function togglePlay() {
 export function skipNext() {
   if (!can('skippingNext')) return Promise.resolve(false)
   feedback.play('next-track')
-  return command(api.skipToNext)
+  // The new song starts at 0 — show that now; art and title follow the resync. Rolled back on failure.
+  return command(api.skipToNext, { progressMs: 0 })
 }
 
 export function skipPrevious() {
   if (!can('skippingPrev')) return Promise.resolve(false)
   feedback.play('previous-track')
-  return command(api.skipToPrevious)
+  return command(api.skipToPrevious, { progressMs: 0 }) // previous restarts or goes back: either way, 0
 }
 
 export function seekTo(ms: number) {

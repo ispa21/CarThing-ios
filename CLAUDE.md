@@ -20,6 +20,15 @@ Car Thing–inspired Spotify controller PWA: Now Playing deck, search, queue, gi
   - `/me` has no `product`
   - playlist `tracks` became `items`
 - Never render a button that doesn't work. Show a real state instead ("Nothing playing", "Lyrics unavailable"…).
+- **Landscape-first.** Design for phone landscape, then tablet, then desktop. Phone portrait is a compact fallback (`lib/orientation.ts`). The deck is `/`.
+
+## Sensory rules
+
+- UI speaks semantic events: `feedback.play('queue-add')` (`src/sensory`). Never import `web-haptics` or `cuelume` anywhere else.
+- Add new meanings to `sensory/interactionMap.ts` by reusing an existing cue. Don't invent a new sound per event.
+- Only user commands and UI handlers call `feedback.play`, synchronously in the gesture (iOS haptics need it). Never from polling, store subscriptions or timers.
+- Feedback is supplementary: every state must also be visible and announced. Primary keys use `ui/PressKey` (spring press, no scale under reduced motion).
+- No injected `<style>` (CSP is `style-src 'self'`). Avoid Motion's `AnimatePresence mode="popLayout"`, which injects one; stack items in a grid cell instead.
 
 ## Conventions
 
@@ -41,7 +50,7 @@ Car Thing–inspired Spotify controller PWA: Now Playing deck, search, queue, gi
 ## Skill workflow (from ~/claude-skills-backup-20260918)
 
 - Plan: build-planner.
-- Design: apple-design, emil-design-eng, frontend-design.
+- Design: apple-design, emil-design-eng, animate, frontend-design.
 - Before deploy: security-sweep.
 - After features: code-review (two axes: standards and spec).
 - Always finish with verification before claiming anything works.

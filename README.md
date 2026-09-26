@@ -6,12 +6,23 @@ PartyDeck is an independent project. It isn't made by or affiliated with Spotify
 
 ## Features
 
-- **Now Playing**: artwork, title, artist, album, a live progress bar you can drag or tap, play/pause, previous/next, the current device, and links to Queue and Lyrics. On phones it's portrait. In landscape and on tablets and desktops it uses the Car Thing layout: art on the left, the deck on the right.
-- **Search**: songs, artists, albums and playlists, debounced as you type. Tap a row to play it, **+** adds a song to the queue, **↗** opens it in Spotify.
+PartyDeck is **landscape-first**. The phone held sideways is the primary canvas, then tablets, then desktop. Phones held upright get a compact fallback.
+
+- **The deck** (home, `/`): artwork on the left, the instrument panel on the right, a control rail along the bottom. The panel holds title, artist, a drag-or-tap progress bar, three physical keys, and the device. **Swipe the artwork** sideways to skip. Upright phones get a compact deck and a dismissible "Turn your phone sideways" hint.
+- **Rail**: a mini deck (on other screens), then Home · Search · Queue · Lyrics, then full screen and Settings. Upright phones show the mini deck above the tabs.
+- **Search**: songs, artists, albums and playlists, debounced as you type. When the field is empty it shows **your playlists** as a shelf, which scrolls sideways on landscape phones. Tap a row to play it, **+** adds a song to the queue, **↗** opens it in Spotify.
 - **Queue**: what's playing now and what's up next, straight from Spotify's queue.
 - **Lyrics reader**: huge, high-contrast type sized for phones through TVs. Controls fade out while you read, and manual scrolling is never overridden. A demo at `/lyrics/demo` shows timed follow and "Jump to current". See [Lyrics](#lyrics-architecture) for why Spotify tracks get a static reader.
 - **Devices**: pick which Spotify Connect device plays. If nothing is active, PartyDeck asks you to choose instead of failing silently.
-- **Settings**: disconnect, lyrics text size, follow current line, Graphite/Black theme, install, and version.
+- **Physical feel**: every control answers with a proportional mix of haptic, sound, motion and state change (see [Sensory system](#sensory-system)). Keys compress and spring back.
+- **Power-on onboarding**, described in [Onboarding](#onboarding):
+  1. Welcome
+  2. Continue with Spotify
+  3. Spotify connected, then Power on
+  4. Turn sideways (upright phones only)
+  5. A 20-second interactive tutorial on a silent practice deck
+- **Full screen**: offered where the browser allows it. On iPhone, PartyDeck suggests Add to Home Screen instead. It's never required.
+- **Settings**: disconnect, Sound, Haptics (touch devices), lyrics text size, follow current line, Graphite/Black theme, full screen, install, replay tutorial, and version.
 - **PWA**: installable, standalone, safe-area aware, with an offline app shell. Playback itself needs a connection, and the app says so.
 - **Keyboard** (desktop):
 
@@ -23,7 +34,7 @@ PartyDeck is an independent project. It isn't made by or affiliated with Spotify
   | / | Search |
   | Q | Queue |
   | L | Lyrics |
-  | Esc | Leave Now Playing or Lyrics |
+  | Esc | Leave Lyrics |
 
 ## Architecture
 
@@ -43,20 +54,65 @@ screens/* + ui/* ─ subscribe with selectors; progress painted per frame via re
 - **Stack**: Vite 8, React 19, TypeScript, Zustand, Motion, vite-plugin-pwa, Vitest, oxlint. No backend.
 - **Playback sync**: `/me/player` is polled every 5s while playing and every 15s otherwise, and never while the tab is hidden. It resyncs about 1s after every command and right when a song should end. Between polls the progress bar is interpolated locally (`lib/progress.ts`) and painted with `requestAnimationFrame` straight to the DOM, so React doesn't re-render per frame.
 - **Commands are optimistic**: play/pause flips instantly, and the change is rolled back if Spotify rejects it. Buttons Spotify reports as disallowed (`actions.disallows`) are disabled, not faked.
-- **Routing** is a ~40-line History API router (`app/router.ts`). `vercel.json` rewrites every path to `index.html`.
+- **Routing** is a ~40-line History API router (`app/router.ts`): `/` is the deck, plus `/search`, `/queue`, `/lyrics`, `/lyrics/demo`, `/settings`, `/tutorial` and `/callback`. `vercel.json` rewrites every path to `index.html`.
 - **Future second screen**: `rooms/RoomService.ts` defines the interface for `/controller` → `/screen/:roomId`, with an in-memory mock. It isn't wired into the UI yet.
 
 ```
 src/
-  app/       shell, router, dock + mini player, transport, device sheet, shortcuts
-  spotify/   pkce, auth, api, normalize, playbackService, errors, types
-  store/     zustand stores
-  lyrics/    lrc parser, engine, follow reducer, resolver + providers, demo clock, policy
-  screens/   Connect, Callback, Home, Search, NowPlaying, Queue, Lyrics, Settings
-  ui/        icons, artwork, scrubber, sheet, rows, feedback, clock hooks
-  rooms/     RoomService interface (future)
-  styles/    tokens.css, app.css
+  app/         shell, router, rail + mini deck, deck, transport keys, device sheet, shortcuts, sources
+  sensory/     feedback.play(event) over WebHaptics + Cuelume; the interaction vocabulary
+  onboarding/  welcome, power key, power-on, orientation, tutorial + practice deck, flow machine
+  spotify/     pkce, auth, api, normalize, playbackService, errors, types
+  store/       zustand stores
+  lyrics/      lrc parser, engine, follow reducer, resolver + providers, demo clock, policy
+  screens/     Callback, NowPlaying (deck), Search, PlaylistShelf, Queue, Lyrics, Settings
+  ui/          icons, artwork, scrubber, press key, sheet, rows, feedback, clock hooks
+  lib/         progress, debounce, latest-request runner, gesture, orientation, fullscreen
+  rooms/       RoomService interface (future)
+  styles/      tokens.css, app.css
 ```
+
+## Sensory system
+
+```
+UI handler / user command ──► feedback.play('next-track')
+                                  │  Sound + Haptics settings · 60ms dedupe · capability checks
+                                  ├─► sensory/haptics.ts ─► WebHaptics (touch devices only)
+                                  └─► sensory/sounds.ts  ─► Cuelume (synthesized, no audio files)
+```
+
+- **Semantic events, not effects.** Components call `feedback.play('queue-add')` and never touch WebHaptics or Cuelume. `sensory/interactionMap.ts` maps about 35 events onto 7 haptic presets and 9 cues. Consistency beats variety, and response is proportional: navigation gets a selection tick, the primary key a medium tap and a "pulse", confirmations a success pattern.
+- **User actions only.** Feedback fires from the command functions in `playbackService` and from UI handlers. It never fires from polling; a test runs a minute of polls and asserts silence. Calls run synchronously inside the gesture, because iOS only gives haptics that way.
+- **Always optional.** No haptics (desktop), no Web Audio, muted in Settings, or reduced motion: everything still works, and every state is also shown on screen.
+- **Plays nicely with music.**
+  - Cue volume is modest.
+  - iOS audio is set to the `ambient` session, so a tick never pauses Spotify on the same phone, and the silent switch is respected.
+  - There's one lazily created `AudioContext`, and no sound before the first user gesture.
+- **Future-ready.** Room events (`room-joined`, `reaction`, `listener-arrival`…) are already in the vocabulary. The layer doesn't depend on Spotify.
+
+Libraries: [WebHaptics](https://haptics.lochie.me/) `0.0.6` and [Cuelume](https://cuelume.dev/) `0.2.2`, both pinned exactly because they're 0.x.
+
+## Onboarding
+
+`onboarding/flow.ts` is a pure, tested state machine:
+
+```
+not connected:      welcome ─Continue─► connect ─Continue with Spotify─► Spotify sign-in
+back from Spotify:  connected ─Power on─► [turn sideways] ─► [tutorial] ─► the deck
+```
+
+- **Welcome** is PartyDeck in standby. The one bold control is a large key: it compresses and clicks, lights its LED ring, and wakes the wordmark.
+- **Connect** has one button. Developer setup (Client ID, redirect URI) appears only in a collapsed **Developer setup** panel, and only on builds that aren't configured.
+- **Power on**: the page is fresh after the Spotify redirect, and browsers block sound and iOS haptics until the user interacts. So the boot starts with the user's press instead of pretending.
+- **Turn sideways** only appears for upright phones. It continues by itself when you rotate, and "Continue in portrait" is always there.
+- **Tutorial** (`/tutorial`, replayable from Settings) has five steps you perform:
+  1. Play
+  2. Skip, by pressing or swiping
+  3. Queue
+  4. Lyrics
+  5. Full screen
+
+  It runs on a **silent practice deck** of three original demo tracks, so learning "next" can't skip your real music, and it works with no active device. Skip is always available.
 
 ## Local development
 
@@ -70,7 +126,7 @@ npm run dev                  # → http://127.0.0.1:5173
 
 Open **http://127.0.0.1:5173**, not `localhost`. Spotify rejects `localhost` redirect URIs, and PKCE state is stored per origin. PartyDeck redirects `localhost` to `127.0.0.1` automatically.
 
-Without a Client ID the app shows setup instructions, and the lyrics demo at `/lyrics/demo` still works.
+Without a Client ID the Connect screen shows a collapsed **Developer setup** panel, and the lyrics demo at `/lyrics/demo` still works.
 
 ## Spotify Developer setup
 
@@ -141,6 +197,16 @@ The tests cover:
 - Retry-After parsing and the 429 cooldown/backoff
 - Error-to-message mapping
 - The latest-request-wins search runner (abort, stale responses)
+- Sensory:
+  - the map uses only real WebHaptics and Cuelume names
+  - proportionality
+  - Sound and Haptics settings
+  - dedupe
+  - failing channels
+  - no hardware
+  - polling never plays feedback
+  - commands cue synchronously
+- The onboarding flow machine, tutorial steps, and the swipe-to-skip commit rule
 
 ## Building
 

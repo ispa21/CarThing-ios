@@ -2,6 +2,7 @@ import { AnimatePresence, m, useReducedMotion } from 'motion/react'
 import { useCallback, useEffect, useReducer, useRef, useState, type CSSProperties } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { back, linkHandler } from '../app/router'
+import { FullscreenButton } from '../app/Rail'
 import { SOURCES } from '../app/sources'
 import { PlayKey } from '../app/Transport'
 import { DEMO_TRACK } from '../lyrics/demo'
@@ -206,6 +207,7 @@ export function LyricsScreen({ source }: { source: PlaybackSource }) {
               {/* The demo clock is silent — say so rather than imply playback. */}
               {(demo || track.artist) && <span className="lyrics-track-artist">{demo ? 'Demo, no audio' : track.artist}</span>}
             </div>
+            <FullscreenButton />
             <button className="icon-btn" onClick={cycleSize} aria-label={`Text size: ${size.label}. Change`}>
               <Icon name="textSize" />
             </button>
