@@ -1,10 +1,9 @@
 import type { ReactNode } from 'react'
 import { useShallow } from 'zustand/react/shallow'
-import { FullscreenButton } from '../app/Rail'
+import { FullscreenButton } from '../ui/FullscreenButton'
 import { back, navigate } from '../app/router'
-import { fullscreenSupported, isStandalone } from '../lib/fullscreen'
-import { feedback } from '../sensory/feedback'
-import { hapticsAvailable } from '../sensory/haptics'
+import { canOfferFullscreen, isStandalone } from '../lib/fullscreen'
+import { feedback, hapticsAvailable } from '../sensory/feedback'
 import { logout } from '../spotify/auth'
 import { useSession } from '../store/session'
 import { LYRIC_SIZES, useSettings, type Theme } from '../store/settings'
@@ -112,7 +111,7 @@ export function Settings() {
           </span>
           <Segmented name="theme" labelledBy="theme-label" options={THEMES} value={theme} onChange={(t) => useSettings.setState({ theme: t })} />
         </div>
-        {fullscreenSupported() && !isStandalone() && (
+        {canOfferFullscreen() && (
           <div className="group-row">
             <span className="group-label">
               Full screen

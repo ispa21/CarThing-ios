@@ -2,7 +2,7 @@ import { AnimatePresence, m, useReducedMotion } from 'motion/react'
 import { useCallback, useEffect, useReducer, useRef, useState, type CSSProperties } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { back, linkHandler } from '../app/router'
-import { FullscreenButton } from '../app/Rail'
+import { FullscreenButton } from '../ui/FullscreenButton'
 import { SOURCES } from '../app/sources'
 import { PlayKey } from '../app/Transport'
 import { DEMO_TRACK } from '../lyrics/demo'
@@ -156,10 +156,7 @@ export function LyricsScreen({ source }: { source: PlaybackSource }) {
     if (shouldAutoScroll(mode, { timed, autoScroll })) scrollToCurrent(true)
   }, [mode, timed, autoScroll, scrollToCurrent])
 
-  const userScrolled = () => {
-    if (mode === 'following') feedback.play('lyrics-manual-scroll') // mapped to silence: reading shouldn't be noisy
-    dispatch({ type: 'userScroll' })
-  }
+  const userScrolled = () => dispatch({ type: 'userScroll' }) // silent on purpose: reading shouldn't be noisy
   const jump = () => {
     feedback.play('jump-to-current')
     dispatch({ type: 'jump' })

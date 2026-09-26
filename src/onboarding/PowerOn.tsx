@@ -1,5 +1,5 @@
 import { useReducedMotion } from 'motion/react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { feedback } from '../sensory/feedback'
 import { useSession } from '../store/session'
 import { Icon } from '../ui/Icon'
@@ -15,11 +15,21 @@ export function PowerOn({ onDone }: { onDone: () => void }) {
   const [booting, setBooting] = useState(false)
   const reduce = useReducedMotion()
 
+  // Always call the latest onDone (it knows the current orientation), and clean up on unmount.
+  const done = useRef(onDone)
+  useEffect(() => {
+    done.current = onDone
+  })
+  useEffect(() => {
+    if (!booting) return
+    const t = setTimeout(() => done.current(), reduce ? 120 : 640) // the ring sweep, then the next step
+    return () => clearTimeout(t)
+  }, [booting, reduce])
+
   const press = () => {
     if (booting) return
     feedback.play('power-on')
     setBooting(true)
-    setTimeout(onDone, reduce ? 120 : 640) // the ring sweep, then the deck
   }
 
   return (
@@ -28,7 +38,9 @@ export function PowerOn({ onDone }: { onDone: () => void }) {
         <p className="onboard-status">
           <Icon name="check" size={18} /> Spotify connected
         </p>
-        <h1 className="onboard-title">Ready when you are.</h1>
+        <h1 className="onboard-title" tabIndex={-1} data-step-focus>
+          Ready when you are.
+        </h1>
         <p className="onboard-sub">{name ? `Signed in as ${name}.` : 'Signed in.'}</p>
       </div>
       <div className="onboard-action">

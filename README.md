@@ -8,10 +8,10 @@ PartyDeck is an independent project. It isn't made by or affiliated with Spotify
 
 PartyDeck is **landscape-first**. The phone held sideways is the primary canvas, then tablets, then desktop. Phones held upright get a compact fallback.
 
-- **The deck** (home, `/`): artwork on the left, the instrument panel on the right, a control rail along the bottom. The panel holds title, artist, a drag-or-tap progress bar, three physical keys, and the device. **Swipe the artwork** sideways to skip. Upright phones get a compact deck and a dismissible "Turn your phone sideways" hint.
+- **The deck** (home, `/`): artwork on the left, the instrument panel on the right, a control rail along the bottom. The panel holds title, artist, a drag-or-tap progress bar, three physical keys, and the device. **Swipe the artwork** sideways to skip. With nothing playing, the deck shows your playlists. Upright phones get a compact deck and a dismissible "Turn your phone sideways" hint.
 - **Rail**: a mini deck (on other screens), then Home · Search · Queue · Lyrics, then full screen and Settings. Upright phones show the mini deck above the tabs.
 - **Search**: songs, artists, albums and playlists, debounced as you type. When the field is empty it shows **your playlists** as a shelf, which scrolls sideways on landscape phones. Tap a row to play it, **+** adds a song to the queue, **↗** opens it in Spotify.
-- **Queue**: what's playing now and what's up next, straight from Spotify's queue.
+- **Queue**: what's playing now and what's up next, straight from Spotify's queue. Adding from Search confirms on the row. Spotify's Web API has no way to remove or reorder queue items, so PartyDeck doesn't pretend to.
 - **Lyrics reader**: huge, high-contrast type sized for phones through TVs. Controls fade out while you read, and manual scrolling is never overridden. A demo at `/lyrics/demo` shows timed follow and "Jump to current". See [Lyrics](#lyrics-architecture) for why Spotify tracks get a static reader.
 - **Devices**: pick which Spotify Connect device plays. If nothing is active, PartyDeck asks you to choose instead of failing silently.
 - **Physical feel**: every control answers with a proportional mix of haptic, sound, motion and state change (see [Sensory system](#sensory-system)). Keys compress and spring back.
@@ -105,14 +105,16 @@ back from Spotify:  connected ─Power on─► [turn sideways] ─► [tutorial
 - **Connect** has one button. Developer setup (Client ID, redirect URI) appears only in a collapsed **Developer setup** panel, and only on builds that aren't configured.
 - **Power on**: the page is fresh after the Spotify redirect, and browsers block sound and iOS haptics until the user interacts. So the boot starts with the user's press instead of pretending.
 - **Turn sideways** only appears for upright phones. It continues by itself when you rotate, and "Continue in portrait" is always there.
-- **Tutorial** (`/tutorial`, replayable from Settings) has five steps you perform:
+- **Tutorial** (`/tutorial`, replayable from Settings) has seven steps you perform:
   1. Play
-  2. Skip, by pressing or swiping
-  3. Queue
-  4. Lyrics
-  5. Full screen
+  2. Pause
+  3. Skip, by pressing or swiping
+  4. Queue
+  5. Home, which teaches the rail
+  6. Lyrics
+  7. Full screen
 
-  It runs on a **silent practice deck** of three original demo tracks, so learning "next" can't skip your real music, and it works with no active device. Skip is always available.
+  It runs on a **silent practice deck** of three original demo tracks, so learning "next" can't skip your real music, and it works with no active device. The rail is the real layout. Skip is always available.
 
 ## Local development
 

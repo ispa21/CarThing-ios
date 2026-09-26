@@ -1,18 +1,29 @@
 // The interactive tutorial: you perform each action; reading is optional.
 
-export type TutorialAction = 'play' | 'pause' | 'next' | 'previous' | 'open-queue' | 'open-lyrics' | 'fullscreen' | 'acknowledge'
+export type TutorialAction =
+  | 'play'
+  | 'pause'
+  | 'next'
+  | 'previous'
+  | 'open-queue'
+  | 'go-home'
+  | 'open-lyrics'
+  | 'fullscreen'
+  | 'acknowledge'
 
 export interface TutorialStep {
-  id: 'play' | 'skip' | 'queue' | 'lyrics' | 'fullscreen'
+  id: 'play' | 'pause' | 'skip' | 'queue' | 'home' | 'lyrics' | 'fullscreen'
   title: string
   hint: string
   accepts: readonly TutorialAction[]
 }
 
 export const TUTORIAL_STEPS: readonly TutorialStep[] = [
-  { id: 'play', title: 'Press play.', hint: 'The big key starts and stops the music.', accepts: ['play'] },
+  { id: 'play', title: 'Press play.', hint: 'The big key starts the music.', accepts: ['play'] },
+  { id: 'pause', title: 'Now pause it.', hint: 'Same key, press it again.', accepts: ['pause'] },
   { id: 'skip', title: 'Skip ahead.', hint: 'Press next, or swipe the artwork sideways.', accepts: ['next', 'previous'] },
   { id: 'queue', title: 'Open the queue.', hint: 'Everything up next lives here.', accepts: ['open-queue'] },
+  { id: 'home', title: 'Back to the deck.', hint: 'Tap Home in the rail. It always brings you here.', accepts: ['go-home'] },
   { id: 'lyrics', title: 'Open the lyrics.', hint: 'A big, calm reader for the song.', accepts: ['open-lyrics'] },
   { id: 'fullscreen', title: 'Take the whole screen.', hint: 'Fullscreen gives PartyDeck the complete display.', accepts: ['fullscreen', 'acknowledge'] },
 ]

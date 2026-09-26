@@ -65,27 +65,43 @@ export function Deck(p: DeckProps) {
   )
 }
 
-/** Drag the artwork sideways to skip. 1:1 with the finger, rubber-banded, one tick at the commit point. */
+/**
+ * Drag the artwork sideways to skip. The art is anchored, so it follows the finger
+ * with rubber-band resistance; one tick when the commit point is crossed.
+ * The skip itself commits on the native pointerup — inside the user gesture, so
+ * iOS haptics work (Motion's drag callbacks run in a later animation frame) — and
+ * a pointercancel (the browser took over to scroll) never skips.
+ */
 function SwipeArt({ art, alt, onSwipe }: { art: string | null; alt: string; onSwipe?: (d: SwipeDirection) => void }) {
+  const drag = useRef<{ x: number; v: number } | null>(null)
   const armed = useRef(false)
   return (
     <m.div
       className="np-art"
       drag={onSwipe ? 'x' : false}
+      dragDirectionLock
       dragConstraints={{ left: 0, right: 0 }}
-      dragElastic={0.18}
+      dragElastic={0.35}
       dragSnapToOrigin
       onDrag={(_, info) => {
+        drag.current = { x: info.offset.x, v: info.velocity.x }
         const past = Math.abs(info.offset.x) >= SWIPE_COMMIT_PX
         if (past !== armed.current) {
           armed.current = past
-          if (past) feedback.play('tick') // one tick at the threshold, never continuous
+          if (past) feedback.play('tick') // best effort (not a gesture event on iOS); never continuous
         }
       }}
-      onDragEnd={(_, info) => {
+      onPointerDown={(e) => e.currentTarget.setPointerCapture(e.pointerId)} // a mouse released off the art still commits
+      onPointerUp={() => {
+        const d = drag.current
+        drag.current = null
         armed.current = false
-        const dir = swipeDirection(info.offset.x, info.velocity.x)
+        const dir = d && swipeDirection(d.x, d.v)
         if (dir) onSwipe?.(dir)
+      }}
+      onPointerCancel={() => {
+        drag.current = null
+        armed.current = false
       }}
     >
       <AnimatePresence initial={false}>

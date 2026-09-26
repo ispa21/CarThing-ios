@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { Deck } from '../app/Deck'
-import { linkHandler } from '../app/router'
+import { tickLink } from '../app/router'
 import { usePhonePortrait } from '../lib/orientation'
 import { feedback } from '../sensory/feedback'
 import { seekTo, skipNext, skipPrevious, syncNow, togglePlay } from '../spotify/playbackService'
@@ -11,6 +11,7 @@ import { spotifyClock } from '../ui/clock'
 import { EmptyState } from '../ui/Feedback'
 import { Icon } from '../ui/Icon'
 import { Sheet } from '../ui/Sheet'
+import { PlaylistShelf } from './PlaylistShelf'
 
 /** The deck — PartyDeck's home screen. */
 export function NowPlaying() {
@@ -78,21 +79,19 @@ export function NowPlaying() {
               </button>
             </EmptyState>
           ) : (
-            <EmptyState title="Nothing playing" detail="Start something in Spotify, or pick a device and play from Search.">
-              <button className="btn btn-primary" onClick={chooseDevice}>
-                Choose device
-              </button>
-              <a
-                className="btn"
-                href="/search"
-                onClick={(e) => {
-                  feedback.play('select')
-                  linkHandler(e)
-                }}
-              >
-                Search
-              </a>
-            </EmptyState>
+            // Nothing playing: the deck is never a dead end — your playlists are right here.
+            <div className="np-idle">
+              <div className="np-idle-head">
+                <div>
+                  <p className="np-idle-title">Nothing playing</p>
+                  <p className="np-idle-sub">Pick a playlist, or choose where to play.</p>
+                </div>
+                <button className="btn btn-small" onClick={chooseDevice}>
+                  Choose device
+                </button>
+              </div>
+              <PlaylistShelf />
+            </div>
           )}
         </div>
       ) : (
@@ -155,13 +154,7 @@ export function NowPlaying() {
             </button>
           </li>
           <li>
-            <a
-              href="/settings"
-              onClick={(e) => {
-                feedback.play('select')
-                linkHandler(e)
-              }}
-            >
+            <a href="/settings" onClick={tickLink}>
               <Icon name="settings" /> Settings
             </a>
           </li>
@@ -179,7 +172,7 @@ function RotateHint() {
   return (
     <div className="rotate-hint" role="note">
       <span className="rotate-glyph" aria-hidden="true">
-        <Icon name="rotate" size={22} />
+        <Icon name="phone" size={22} />
       </span>
       <span>Turn your phone sideways for the full deck.</span>
       <button

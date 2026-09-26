@@ -51,4 +51,7 @@ export function createFeedback(adapters: FeedbackAdapters, now: () => number = (
 
 export type Feedback = ReturnType<typeof createFeedback>
 
+/** Capability, for settings UI (e.g. only offer a Haptics switch where it can work). */
+export { hapticsAvailable } from './haptics'
+
 export const feedback: Feedback = createFeedback({ haptic: triggerHaptic, sound: playSound })

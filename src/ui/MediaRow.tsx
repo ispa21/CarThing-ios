@@ -1,7 +1,8 @@
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import type { MediaItem, MediaKind } from '../spotify/normalize'
 import { Artwork } from './Artwork'
 import { Icon } from './Icon'
+import { PressKey } from './PressKey'
 
 const KIND_LABEL: Record<MediaKind, string> = {
   track: 'Song',
@@ -15,12 +16,20 @@ interface Props {
   item: MediaItem
   /** Tapping the row plays it. Omit for display-only rows (queue). */
   onPlay?: (item: MediaItem) => void
-  onQueue?: (item: MediaItem) => void
+  /** Resolves true once Spotify accepted it; the row then confirms. */
+  onQueue?: (item: MediaItem) => Promise<boolean>
   lead?: ReactNode
   showKind?: boolean
 }
 
 export function MediaRow({ item, onPlay, onQueue, lead, showKind = false }: Props) {
+  const [added, setAdded] = useState(false)
+  useEffect(() => {
+    if (!added) return
+    const t = setTimeout(() => setAdded(false), 1800)
+    return () => clearTimeout(t)
+  }, [added])
+
   const body = (
     <>
       {lead}
@@ -44,9 +53,17 @@ export function MediaRow({ item, onPlay, onQueue, lead, showKind = false }: Prop
         <div className="row-main">{body}</div>
       )}
       {onQueue && (
-        <button className="icon-btn" onClick={() => onQueue(item)} aria-label={`Add ${item.title} to queue`}>
-          <Icon name="add" />
-        </button>
+        <PressKey
+          className="icon-btn"
+          data-added={added || undefined}
+          depth={0.9}
+          onClick={async () => {
+            if (await onQueue(item)) setAdded(true)
+          }}
+          aria-label={added ? `${item.title} added to queue` : `Add ${item.title} to queue`}
+        >
+          <Icon name={added ? 'check' : 'add'} />
+        </PressKey>
       )}
       {item.url && (
         <a className="icon-btn icon-btn-quiet" href={item.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${item.title} in Spotify`}>

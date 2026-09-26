@@ -26,7 +26,9 @@ Car Thing–inspired Spotify controller PWA: Now Playing deck, search, queue, gi
 
 - UI speaks semantic events: `feedback.play('queue-add')` (`src/sensory`). Never import `web-haptics` or `cuelume` anywhere else.
 - Add new meanings to `sensory/interactionMap.ts` by reusing an existing cue. Don't invent a new sound per event.
-- Only user commands and UI handlers call `feedback.play`, synchronously in the gesture (iOS haptics need it). Never from polling, store subscriptions or timers.
+- Only user commands and UI handlers call `feedback.play`, synchronously in the gesture (iOS haptics need it). Never from polling, store or media-query subscriptions, or timers.
+- Confirmations that follow a network round trip (`queue-add`, `device-connected`, `playback-error`) are outside the gesture. Their sound plays, but their haptic is best-effort (Android only). The press itself always gets an in-gesture cue.
+- Command layers own their feedback: `playbackService` (Spotify), `onboarding/practiceDeck` (tutorial), and `SOURCES.demo` (lyrics demo).
 - Feedback is supplementary: every state must also be visible and announced. Primary keys use `ui/PressKey` (spring press, no scale under reduced motion).
 - No injected `<style>` (CSP is `style-src 'self'`). Avoid Motion's `AnimatePresence mode="popLayout"`, which injects one; stack items in a grid cell instead.
 
@@ -35,7 +37,7 @@ Car Thing–inspired Spotify controller PWA: Now Playing deck, search, queue, gi
 - Pure logic lives in plain `.ts` modules with colocated `*.test.ts`. The Vitest environment is node, with no DOM.
 - Styling: plain CSS in `src/styles/`, with tokens in `tokens.css`.
   - Signal amber (`--signal`) is only for live state: progress, active, focus.
-  - Animate only `transform` and `opacity`.
+  - Move things with `transform` and `opacity` only. Brief colour or shadow transitions on small controls are fine. No looping animation of anything else (the coach halo loops opacity on a pseudo-element). The power ring's one-off `stroke-dashoffset` sweep is the single sanctioned exception.
   - Gate hover styles behind `(hover: hover) and (pointer: fine)`.
   - Respect `prefers-reduced-motion`.
 - Touch targets ≥ 44px. Every icon-only button has an `aria-label`.

@@ -1,12 +1,13 @@
 import { useReducedMotion } from 'motion/react'
 import { useState } from 'react'
-import { linkHandler } from '../app/router'
 import { feedback } from '../sensory/feedback'
 import { beginLogin } from '../spotify/auth'
 import { isSpotifyConfigured, redirectOrigin, SPOTIFY_REDIRECT_URI } from '../spotify/config'
 import { useSession } from '../store/session'
 import { useSettings } from '../store/settings'
+import { tickLink } from '../app/router'
 import { PressKey } from '../ui/PressKey'
+import { nextStep } from './flow'
 import { PowerKey } from './PowerKey'
 
 /**
@@ -24,7 +25,8 @@ export function Welcome({ startAt }: { startAt: 'welcome' | 'connect' }) {
     setLit(true)
     useSettings.setState({ welcomed: true })
     // Let the ring sweep register before the panel changes (not a loading delay).
-    setTimeout(() => setStep('connect'), reduce ? 0 : 420)
+    const next = nextStep('welcome', 'continue', { connected: false, justConnected: false, welcomed: true, onboarded: false, phonePortrait: false })
+    if (next === 'connect') setTimeout(() => setStep(next), reduce ? 0 : 420)
   }
 
   return (
@@ -42,24 +44,22 @@ export function Welcome({ startAt }: { startAt: 'welcome' | 'connect' }) {
       </div>
 
       <div className="onboard-action" key={step}>
-        {step === 'welcome' ? <PowerKey label="Continue" icon="forward" lit={lit} onPress={onContinue} /> : <ConnectPanel />}
+        {step === 'welcome' ? (
+          <PowerKey label="Continue" icon="forward" lit={lit} onPress={onContinue} />
+        ) : (
+          <ConnectPanel focus={startAt === 'welcome'} />
+        )}
       </div>
 
-      <a
-        className="onboard-demo"
-        href="/lyrics/demo"
-        onClick={(e) => {
-          feedback.play('select')
-          linkHandler(e)
-        }}
-      >
+      <a className="onboard-demo" href="/lyrics/demo" onClick={tickLink}>
         Try the lyrics reader
       </a>
     </main>
   )
 }
 
-function ConnectPanel() {
+/** `focus`: arrived by pressing Continue — keep keyboard and screen-reader focus with the flow. */
+function ConnectPanel({ focus }: { focus: boolean }) {
   const notice = useSession((s) => s.notice)
   const [opening, setOpening] = useState(false)
   const ready = isSpotifyConfigured && window.location.origin === redirectOrigin
@@ -82,7 +82,7 @@ function ConnectPanel() {
           {notice.detail && <span>{notice.detail}</span>}
         </div>
       )}
-      <PressKey className="btn btn-primary btn-connect" onClick={connect} disabled={!ready || opening} depth={0.97}>
+      <PressKey className="btn btn-primary btn-connect" onClick={connect} disabled={!ready || opening} depth={0.97} autoFocus={focus}>
         {opening ? 'Opening Spotify…' : 'Continue with Spotify'}
       </PressKey>
       <p className="fine">You sign in on Spotify's own page. Controlling playback needs Spotify Premium.</p>

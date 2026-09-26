@@ -1,5 +1,6 @@
 import { domMax, LazyMotion, MotionConfig } from 'motion/react'
 import { useEffect, useRef } from 'react'
+import { initialStep } from '../onboarding/flow'
 import { Onboarding } from '../onboarding/Onboarding'
 import { Tutorial } from '../onboarding/Tutorial'
 import { Welcome } from '../onboarding/Welcome'
@@ -40,7 +41,10 @@ export function App() {
   const welcomed = useSettings((s) => s.welcomed)
   const hasNotice = useSession((s) => s.notice !== null)
   const onboarded = useSettings((s) => s.onboarded)
-  const onboarding = connected && (justConnected || !onboarded)
+  // Where the user is comes from the tested state machine (onboarding/flow.ts).
+  // A notice (declined, expired, not allow-listed…) belongs next to the Connect button.
+  const step = initialStep({ connected, justConnected, welcomed: welcomed || hasNotice, onboarded, phonePortrait: false })
+  const onboarding = step === 'connected'
 
   // No global shortcuts while onboarding or practising: Space must not pause your real music.
   useShortcuts(route, connected, !onboarding && route !== 'tutorial')
@@ -63,8 +67,7 @@ export function App() {
         <Screen route={route} immersive />
       </div>
     )
-  // A notice (declined, expired, not allow-listed…) belongs next to the Connect button.
-  else content = <Welcome startAt={welcomed || hasNotice ? 'connect' : 'welcome'} />
+  else content = <Welcome startAt={step === 'welcome' ? 'welcome' : 'connect'} />
 
   return (
     <LazyMotion features={domMax} strict>

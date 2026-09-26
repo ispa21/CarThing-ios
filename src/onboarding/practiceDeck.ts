@@ -4,6 +4,7 @@
 import { create } from 'zustand'
 import { DEMO_LRC, DEMO_TRACK, PRACTICE_LRC } from '../lyrics/demo'
 import { interpolateProgress } from '../lib/progress'
+import { feedback } from '../sensory/feedback'
 import type { Clock } from '../ui/clock'
 
 /** Original abstract artwork in the PartyDeck palette, as inline SVG (CSP allows data: images). */
@@ -50,14 +51,36 @@ const set = usePracticeDeck.setState
 const position = () => interpolateProgress(get(), get().syncedAt, Date.now())
 const wrap = (i: number) => (i + PRACTICE_TRACKS.length) % PRACTICE_TRACKS.length
 
+/**
+ * The practice deck's command layer. Like playbackService for Spotify, the
+ * user-facing commands play their own feedback (synchronously, in the gesture);
+ * reset/stop are silent housekeeping.
+ */
 export const practice = {
   reset: () => set(start(0, false)),
-  toggle: () => set({ progressMs: position(), syncedAt: Date.now(), isPlaying: !get().isPlaying }),
-  pause: () => set({ progressMs: position(), syncedAt: Date.now(), isPlaying: false }),
-  next: () => set(start(wrap(get().index + 1), get().isPlaying)),
-  /** Like a real deck: restart the song unless you're in its first 3 seconds. */
-  previous: () => (position() > 3000 ? set({ progressMs: 0, syncedAt: Date.now() }) : set(start(wrap(get().index - 1), get().isPlaying))),
-  seek: (ms: number) => set({ progressMs: Math.max(0, Math.min(ms, get().durationMs)), syncedAt: Date.now() }),
+  stop: () => set({ progressMs: position(), syncedAt: Date.now(), isPlaying: false }),
+  /** Returns what the key did, so the tutorial can check the step. */
+  toggle: (): 'play' | 'pause' => {
+    const playing = get().isPlaying
+    feedback.play(playing ? 'pause' : 'play')
+    set({ progressMs: position(), syncedAt: Date.now(), isPlaying: !playing })
+    return playing ? 'pause' : 'play'
+  },
+  /** Skipping starts the next song playing, like a real deck. */
+  next: () => {
+    feedback.play('next-track')
+    set(start(wrap(get().index + 1), true))
+  },
+  /** Restart the song unless you're in its first 3 seconds. */
+  previous: () => {
+    feedback.play('previous-track')
+    if (position() > 3000) set({ progressMs: 0, syncedAt: Date.now(), isPlaying: true })
+    else set(start(wrap(get().index - 1), true))
+  },
+  seek: (ms: number) => {
+    feedback.play('seek')
+    set({ progressMs: Math.max(0, Math.min(ms, get().durationMs)), syncedAt: Date.now() })
+  },
 }
 
 export const practiceClock: Clock = {

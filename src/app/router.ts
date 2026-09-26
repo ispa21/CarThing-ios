@@ -2,6 +2,7 @@
 // router library would be dead weight. Vercel rewrites every path to index.html.
 
 import { useSyncExternalStore, type MouseEvent } from 'react'
+import { feedback } from '../sensory/feedback'
 
 export type Route = 'now' | 'search' | 'queue' | 'lyrics' | 'lyrics-demo' | 'settings' | 'callback' | 'tutorial'
 
@@ -48,6 +49,12 @@ export function navigate(to: string, { replace = false } = {}) {
 export function back(fallback = '/') {
   if (currentIdx() > 0) window.history.back()
   else navigate(fallback, { replace: true })
+}
+
+/** linkHandler plus the navigation tick — for in-app links the user taps. */
+export function tickLink(e: MouseEvent<HTMLAnchorElement>) {
+  feedback.play('select')
+  linkHandler(e)
 }
 
 /** onClick for <a href>: SPA navigation, but let modified clicks open new tabs. */

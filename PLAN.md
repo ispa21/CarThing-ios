@@ -214,7 +214,7 @@ The palette is deliberately small: 7 haptic presets and 9 sounds.
 | jump-to-current | light | release | Clear but restrained |
 | queue-add, device-connected, success | success | success | Confirmation |
 | spotify-connected, ready, room-joined | success | ready | The system is live |
-| power-on | heavy | arrival | Boot. Once per install |
+| power-on | heavy | arrival | Boot. Once per sign-in (the press after returning from Spotify) |
 | error, playback-error | error | error | Refusal |
 | warning, spotify-disconnected, device-lost | warning | none | Attention without noise |
 | focus, loading, lyrics-follow, lyrics-manual-scroll, reaction, listener-arrival, listener-departure | none | none | Reserved or silent. Proportionality |
@@ -229,14 +229,16 @@ returning, already onboarded:  deck
 
 - `welcome` is shown once (`welcomed`). After that, a disconnected user goes straight to `connect`.
 - **Orientation**: only on phone portrait. It auto-advances when the phone turns. "Continue in portrait" never blocks.
-- **Tutorial** at `/tutorial`, replayable from Settings. It uses a practice deck of silent demo tracks, so it can't skip your real music. Five performed steps:
+- **Tutorial** at `/tutorial`, replayable from Settings. It uses a practice deck of silent demo tracks, so it can't skip your real music. Seven performed steps:
   1. Play
-  2. Skip (next or previous)
-  3. Queue
-  4. Lyrics
-  5. Fullscreen, or "Add to Home Screen" if fullscreen isn't possible
+  2. Pause
+  3. Skip (next, previous, or swipe)
+  4. Queue
+  5. Home, which teaches navigation
+  6. Lyrics
+  7. Fullscreen, or acknowledge where the browser can't do it
 
-  It runs 15–30s and has Skip.
+  The rail is the real layout: Search is shown, disabled, because it needs Spotify. It runs 15–30s and has Skip.
 
 ## Orientation states
 
@@ -246,7 +248,11 @@ returning, already onboarded:  deck
 ## Motion rules (from apple-design / emil / animate)
 
 - Keys: press to `scale(0.96)` in ~100ms, release on a critically damped spring (`bounce: 0`, 0.3s). Reduced motion keeps the colour change and drops the scale.
-- Swipe the art to skip: 1:1 drag, rubber-banding (`dragElastic: 0.18`), commit on distance > 80px or velocity > 500px/s, one selection tick when the threshold is crossed, and no continuous vibration.
+- Swipe the art to skip: the art is anchored, so it follows the finger with rubber-band resistance (`dragElastic: 0.35`, direction-locked).
+  - It commits on finger distance > 80px or velocity > 500px/s.
+  - The commit runs in the native `pointerup`, inside the gesture, because Motion's drag callbacks run in rAF.
+  - A `pointercancel` never skips.
+  - One tick sounds when the threshold is crossed, with no continuous vibration.
 - Boot: an LED ring sweep and the wordmark brightening. It runs < 700ms, only after the Power on press. No fake loading.
 - Orientation glyph: a rotation loop that stops under reduced motion.
 

@@ -67,26 +67,33 @@ describe('onboarding flow', () => {
 describe('interactive tutorial', () => {
   const run = (actions: TutorialAction[]) => actions.reduce(advanceTutorial, 0)
 
-  it('has five performed steps', () => {
-    expect(TUTORIAL_STEPS.map((s) => s.id)).toEqual(['play', 'skip', 'queue', 'lyrics', 'fullscreen'])
+  const ALL: TutorialAction[] = ['play', 'pause', 'next', 'open-queue', 'go-home', 'open-lyrics', 'fullscreen']
+
+  it('teaches play/pause, next/previous, navigation, queue, lyrics and fullscreen — by doing', () => {
+    expect(TUTORIAL_STEPS.map((s) => s.id)).toEqual(['play', 'pause', 'skip', 'queue', 'home', 'lyrics', 'fullscreen'])
   })
 
   it('advances only when you perform the step', () => {
     expect(run(['pause'])).toBe(0) // wrong action
     expect(run(['play'])).toBe(1)
     expect(run(['play', 'open-lyrics'])).toBe(1) // out of order
+    expect(run(['play', 'pause'])).toBe(2)
   })
 
   it('accepts next or previous for the skip step', () => {
-    expect(run(['play', 'previous'])).toBe(2)
-    expect(run(['play', 'next'])).toBe(2)
+    expect(run(['play', 'pause', 'previous'])).toBe(3)
+    expect(run(['play', 'pause', 'next'])).toBe(3)
   })
 
-  it('completes after all five; fullscreen can be acknowledged where unsupported', () => {
-    const done = run(['play', 'next', 'open-queue', 'open-lyrics', 'acknowledge'])
-    expect(isTutorialComplete(done)).toBe(true)
-    expect(isTutorialComplete(run(['play', 'next', 'open-queue', 'open-lyrics', 'fullscreen']))).toBe(true)
-    expect(isTutorialComplete(4)).toBe(false)
+  it('navigation: going Home is its own step, after the queue', () => {
+    expect(run(['play', 'pause', 'next', 'go-home'])).toBe(3) // Home before opening the queue doesn't count
+    expect(run(['play', 'pause', 'next', 'open-queue', 'go-home'])).toBe(5)
+  })
+
+  it('completes after all seven; fullscreen can be acknowledged where unsupported', () => {
+    expect(isTutorialComplete(run(ALL))).toBe(true)
+    expect(isTutorialComplete(run([...ALL.slice(0, -1), 'acknowledge']))).toBe(true)
+    expect(isTutorialComplete(run(ALL.slice(0, -1)))).toBe(false)
   })
 
   it('extra actions after completion are harmless', () => {

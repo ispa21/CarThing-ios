@@ -1,14 +1,15 @@
 import { useRef, type MouseEvent } from 'react'
 import { useShallow } from 'zustand/react/shallow'
-import { fullscreenSupported, isStandalone, toggleFullscreen, useIsFullscreen } from '../lib/fullscreen'
 import { feedback } from '../sensory/feedback'
 import { togglePlay } from '../spotify/playbackService'
 import { selectCanToggle, usePlayback } from '../store/playback'
 import { openDevices } from '../store/ui'
 import { Artwork } from '../ui/Artwork'
+import { FullscreenButton } from '../ui/FullscreenButton'
 import { spotifyClock, useClockPainter } from '../ui/clock'
 import { Icon, type IconName } from '../ui/Icon'
-import { linkHandler, PATHS, type Route } from './router'
+import { PressKey } from '../ui/PressKey'
+import { linkHandler, PATHS, tickLink, type Route } from './router'
 
 const TABS: Array<{ route: Route; label: string; icon: IconName }> = [
   { route: 'now', label: 'Home', icon: 'nowPlaying' },
@@ -17,8 +18,9 @@ const TABS: Array<{ route: Route; label: string; icon: IconName }> = [
   { route: 'lyrics', label: 'Lyrics', icon: 'lyrics' },
 ]
 
-const navigateWithTick = (e: MouseEvent<HTMLAnchorElement>) => {
-  feedback.play('select')
+/** Opening the reader is its own (same-sounding) event, so it can diverge later. */
+const openLyrics = (e: MouseEvent<HTMLAnchorElement>) => {
+  feedback.play('lyrics-open')
   linkHandler(e)
 }
 
@@ -34,7 +36,12 @@ export function Rail({ route }: { route: Route }) {
       <ul className="rail-tabs">
         {TABS.map((t) => (
           <li key={t.route}>
-            <a className="rail-tab" href={PATHS[t.route]} onClick={navigateWithTick} aria-current={route === t.route ? 'page' : undefined}>
+            <a
+              className="rail-tab"
+              href={PATHS[t.route]}
+              onClick={t.route === 'lyrics' ? openLyrics : tickLink}
+              aria-current={route === t.route ? 'page' : undefined}
+            >
               <Icon name={t.icon} />
               <span>{t.label}</span>
             </a>
@@ -46,7 +53,7 @@ export function Rail({ route }: { route: Route }) {
         <a
           className="icon-btn"
           href={PATHS.settings}
-          onClick={navigateWithTick}
+          onClick={tickLink}
           aria-label="Settings"
           aria-current={route === 'settings' ? 'page' : undefined}
         >
@@ -54,25 +61,6 @@ export function Rail({ route }: { route: Route }) {
         </a>
       </div>
     </nav>
-  )
-}
-
-export function FullscreenButton({ coach, onEntered }: { coach?: boolean; onEntered?: () => void }) {
-  const active = useIsFullscreen()
-  if (!fullscreenSupported() || isStandalone()) return null
-  return (
-    <button
-      className="icon-btn"
-      data-coach={coach || undefined}
-      aria-label={active ? 'Exit full screen' : 'Full screen'}
-      aria-pressed={active}
-      onClick={async () => {
-        feedback.play('select')
-        if (await toggleFullscreen()) onEntered?.()
-      }}
-    >
-      <Icon name={active ? 'collapse' : 'expand'} />
-    </button>
   )
 }
 
@@ -112,16 +100,16 @@ function MiniDeck() {
   }
   return (
     <div className="mini">
-      <a className="mini-main" href="/" onClick={navigateWithTick} aria-label={`Open the deck: ${s.title}${s.artist ? ` by ${s.artist}` : ''}`}>
+      <a className="mini-main" href="/" onClick={tickLink} aria-label={`Open the deck: ${s.title}${s.artist ? ` by ${s.artist}` : ''}`}>
         <Artwork src={s.art} className="art-sm" />
         <span className="mini-text">
           <span className="mini-title">{s.title}</span>
           <span className="mini-sub">{s.artist}</span>
         </span>
       </a>
-      <button className="icon-btn icon-btn-strong" onClick={togglePlay} disabled={!s.canToggle} aria-label={s.isPlaying ? 'Pause' : 'Play'}>
+      <PressKey className="icon-btn icon-btn-strong" onClick={togglePlay} disabled={!s.canToggle} aria-label={s.isPlaying ? 'Pause' : 'Play'} depth={0.9}>
         <Icon name={s.isPlaying ? 'pause' : 'play'} />
-      </button>
+      </PressKey>
       <span className="mini-line" aria-hidden="true">
         <span ref={lineRef} />
       </span>

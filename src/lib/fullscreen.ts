@@ -10,6 +10,9 @@ export const isStandalone = () =>
   typeof window !== 'undefined' &&
   (window.matchMedia('(display-mode: standalone)').matches || (navigator as Navigator & { standalone?: boolean }).standalone === true)
 
+/** Offer our own full-screen key only where it can work and isn't already an installed app. */
+export const canOfferFullscreen = () => fullscreenSupported() && !isStandalone()
+
 export async function toggleFullscreen(): Promise<boolean> {
   if (!fullscreenSupported()) return false
   try {

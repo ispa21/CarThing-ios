@@ -113,12 +113,6 @@ const paths = {
       <path d="M7.1 6.6a7 7 0 1 0 9.8 0" />
     </>
   ),
-  rotate: (
-    <>
-      <rect x="7" y="3" width="10" height="18" rx="2.2" />
-      <path d="M11 18h2" />
-    </>
-  ),
   check: <path d="m5 12.5 4.5 4.5L19 7.5" />,
   forward: <path d="M5 12h13M13 6l6 6-6 6" />,
   close: <path d="M6 6l12 12M18 6 6 18" />,
