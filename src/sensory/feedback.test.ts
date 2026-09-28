@@ -1,8 +1,7 @@
 import { sounds as cuelumeSounds } from 'cuelume'
-import { defaultPatterns } from 'web-haptics'
 import { describe, expect, it, vi } from 'vitest'
 import { createFeedback, DEDUPE_MS } from './feedback'
-import { triggerHaptic } from './haptics'
+import { triggerHaptic, VIBRATION } from './haptics'
 import { INTERACTIONS } from './interactionMap'
 import { playSound } from './sounds'
 import type { FeedbackEvent } from './types'
@@ -18,10 +17,10 @@ function setup() {
 describe('interaction map', () => {
   const events = Object.keys(INTERACTIONS) as FeedbackEvent[]
 
-  it('maps only to real WebHaptics presets and Cuelume cues', () => {
+  it('maps only to haptic levels the adapter can render and to real Cuelume cues', () => {
     for (const e of events) {
       const { haptic, sound } = INTERACTIONS[e]
-      if (haptic) expect(Object.keys(defaultPatterns), `${e} haptic`).toContain(haptic)
+      if (haptic) expect(Object.keys(VIBRATION), `${e} haptic`).toContain(haptic)
       if (sound) expect(cuelumeSounds, `${e} sound`).toContain(sound)
     }
   })
@@ -29,7 +28,7 @@ describe('interaction map', () => {
   it('keeps the vocabulary small (consistency over variety)', () => {
     const haptics = new Set(events.map((e) => INTERACTIONS[e].haptic).filter(Boolean))
     const cues = new Set(events.map((e) => INTERACTIONS[e].sound).filter(Boolean))
-    expect(haptics.size).toBeLessThanOrEqual(8)
+    expect(haptics.size).toBeLessThanOrEqual(7)
     expect(cues.size).toBeLessThanOrEqual(11)
   })
 
@@ -50,7 +49,7 @@ describe('feedback.play', () => {
   it('fires the mapped haptic and sound', () => {
     const { fb, haptic, sound } = setup()
     fb.play('next-track')
-    expect(haptic).toHaveBeenCalledWith('rigid')
+    expect(haptic).toHaveBeenCalledWith('medium')
     expect(sound).toHaveBeenCalledWith('page')
   })
 

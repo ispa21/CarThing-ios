@@ -9,7 +9,7 @@ const CONFIRM: Cue = { haptic: 'success', sound: 'success' }
 const LIVE: Cue = { haptic: 'success', sound: 'ready' }
 const REFUSE: Cue = { haptic: 'error', sound: 'error' }
 const ATTENTION: Cue = { haptic: 'warning', sound: null }
-const SKIP: Cue = { haptic: 'rigid', sound: 'page' }
+const SKIP: Cue = { haptic: 'medium', sound: 'page' } // same weight as play; the sound tells them apart
 
 export const INTERACTIONS: Record<FeedbackEvent, Cue> = {
   select: SELECT,

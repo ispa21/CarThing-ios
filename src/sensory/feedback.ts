@@ -30,7 +30,8 @@ export function createFeedback(adapters: FeedbackAdapters, now: () => number = (
       const prev = lastPlayed.get(event)
       if (prev !== undefined && t - prev < DEDUPE_MS) return
       lastPlayed.set(event, t)
-      // Haptic first: on iOS it must run synchronously inside the gesture.
+      // Haptic first. On iPhone it must be asked for synchronously inside the tap:
+      // HapticSwitch decides whether to tick when that click finishes (haptics.ts).
       if (cue.haptic && prefs.haptics) {
         try {
           adapters.haptic(cue.haptic)
