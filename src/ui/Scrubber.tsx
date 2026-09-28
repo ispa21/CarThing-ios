@@ -145,7 +145,9 @@ export function Scrubber({ clock, durationMs, onSeek, disabled = false, label = 
         <span ref={elapsedRef} className="scrub-elapsed">
           0:00
         </span>
-        <span ref={remainingRef}>−{formatTime(durationMs)}</span>
+        <span ref={remainingRef} className="scrub-remaining">
+          −{formatTime(durationMs)}
+        </span>
       </div>
     </div>
   )

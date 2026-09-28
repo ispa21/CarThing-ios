@@ -29,7 +29,7 @@
 }
 
 .art-sm {
-  width: 42px;
+  width: var(--tap); /* the mini deck's link is at least a full target tall */
 }
 
 .art-row {
@@ -54,6 +54,18 @@
 .rows {
   display: flex;
   flex-direction: column;
+}
+
+/* Tracklists are mounted on a metal panel. */
+.results .rows,
+.queue-next .rows {
+  padding: 2px var(--s-3);
+  border: 1px solid var(--outline);
+  border-radius: var(--r-l);
+  background: var(--metal);
+  box-shadow:
+    var(--bevel),
+    0 4px 0 var(--outline);
 }
 
 .rows > li {
@@ -85,7 +97,10 @@
 }
 
 .row + .row {
-  box-shadow: inset 0 1px 0 var(--hairline);
+  /* a machined groove: a dark cut, then a thin highlight */
+  box-shadow:
+    inset 0 1px 0 rgb(0 0 0 / 0.55),
+    inset 0 2px 0 rgb(255 255 255 / 0.035);
 }
 
 .row-main {
@@ -105,7 +120,7 @@
 
 a.row-main:active,
 button.row-main:active {
-  background: var(--surface-1);
+  background: var(--surface-3);
   scale: 0.985;
 }
 
@@ -152,9 +167,6 @@ button.row-main:active {
   color: var(--ink-3);
 }
 
-.row-led {
-  margin: 0 calc(2.4em - 7px) 0 0;
-}
 
 .results[data-stale] {
   opacity: 0.55;
@@ -222,7 +234,11 @@ button.row-main:active {
 .tile-main .art {
   width: 100%;
   border-radius: var(--r-s);
-  box-shadow: 0 0 0 1px var(--hairline);
+  /* each cover in its own small bezel, like the deck's screen */
+  box-shadow:
+    0 0 0 3px #0d0f11,
+    0 0 0 4px var(--outline),
+    0 6px 0 var(--outline);
   transition:
     translate var(--dur-base) var(--ease-out),
     box-shadow var(--dur-base) var(--ease-out);
@@ -293,7 +309,7 @@ button.row-main:active {
 /* ── Skeletons ── */
 
 .skel {
-  background: var(--surface-2);
+  background: var(--surface-3);
   animation: skel 1.1s ease-in-out infinite alternate;
 }
 
@@ -325,8 +341,7 @@ button.row-main:active {
 
 .skel-keys {
   display: flex;
-  gap: var(--s-4);
-  margin-top: var(--s-4);
+  gap: var(--s-3);
 }
 
 .skel-key {
@@ -356,8 +371,12 @@ button.row-main:active {
   flex-direction: column;
   align-items: center;
   gap: var(--s-2);
-  max-width: 38ch;
+  max-width: 44ch;
   margin: var(--s-7) auto;
+  padding: var(--s-6) var(--s-5) var(--s-5);
+  border-radius: var(--r-l);
+  background: var(--bay);
+  box-shadow: var(--recess);
   text-align: center;
   animation: row-in var(--dur-slow) var(--ease-expo) both;
 }
@@ -368,7 +387,9 @@ button.row-main:active {
 
 .empty[data-tone='error'] .led {
   background: var(--error);
-  box-shadow: 0 0 12px rgb(255 117 102 / 0.45);
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.6),
+    0 0 12px var(--error-glow);
 }
 
 .empty-title {
@@ -396,14 +417,15 @@ button.row-main:active {
 @media (hover: hover) and (pointer: fine) {
   a.row-main:hover,
   button.row-main:hover {
-    background: var(--surface-1);
+    background: rgb(255 255 255 / 0.035);
   }
 
   .tile-main:hover .art {
-    translate: 0 -4px;
+    translate: 0 -3px;
     box-shadow:
-      0 0 0 1px var(--hairline-strong),
-      0 18px 34px -18px rgb(0 0 0 / 0.9);
+      0 0 0 3px #0d0f11,
+      0 0 0 4px var(--outline),
+      0 9px 0 var(--outline);
   }
 
   .tile-main:hover .tile-title {
@@ -466,7 +488,9 @@ button.row-main:active {
   width: 104px;
   border-radius: var(--r-s);
   box-shadow:
-    0 0 0 1px var(--hairline),
+    0 0 0 4px #0d0f11,
+    0 0 0 5px var(--outline),
+    0 7px 0 var(--outline),
     0 24px 48px -24px rgb(0 0 0 / 0.9);
 }
 

@@ -73,7 +73,19 @@ describe('normalizePlayback', () => {
       uri: 'spotify:track:t1',
       url: 'https://open.spotify.com/track/t1',
       kind: 'track',
-      disallows: { pausing: false, resuming: false, seeking: false, skippingNext: false, skippingPrev: true },
+      shuffle: false,
+      repeat: 'off',
+      volume: 40,
+      disallows: {
+        pausing: false,
+        resuming: false,
+        seeking: false,
+        skippingNext: false,
+        skippingPrev: true,
+        shuffling: false,
+        repeatingContext: false,
+        repeatingTrack: false,
+      },
     })
   })
 
@@ -195,5 +207,26 @@ describe('safeSpotifyUrl', () => {
     expect(safeSpotifyUrl('https://open.spotify.com.evil.io/x')).toBeNull()
     expect(safeSpotifyUrl('not a url')).toBeNull()
     expect(safeSpotifyUrl(undefined)).toBeNull()
+  })
+})
+
+describe('normalizePlayback: modes and volume', () => {
+  const base = { device: null, progress_ms: 0, is_playing: true, item: null }
+  it('reads shuffle and repeat, defaulting to off', () => {
+    expect(normalizePlayback({ ...base, shuffle_state: true, repeat_state: 'track' })).toMatchObject({ shuffle: true, repeat: 'track' })
+    expect(normalizePlayback({ ...base, repeat_state: 'context' }).repeat).toBe('context')
+    expect(normalizePlayback({ ...base, repeat_state: 'bogus' }).repeat).toBe('off')
+    expect(normalizePlayback(base)).toMatchObject({ shuffle: false, repeat: 'off' })
+  })
+  it('only offers volume the device lets us set', () => {
+    const device = { id: 'd', name: 'D', type: 'Speaker', is_active: true, is_restricted: false }
+    expect(normalizePlayback({ ...base, device: { ...device, volume_percent: 64, supports_volume: true } }).volume).toBe(64)
+    expect(normalizePlayback({ ...base, device: { ...device, volume_percent: 100, supports_volume: false } }).volume).toBeNull()
+    expect(normalizePlayback({ ...base, device: { ...device, volume_percent: null } }).volume).toBeNull()
+    expect(normalizePlayback({ ...base, device: { ...device, volume_percent: 140 } }).volume).toBe(100)
+  })
+  it('maps the mode disallows', () => {
+    const p = normalizePlayback({ ...base, actions: { disallows: { toggling_shuffle: true, toggling_repeat_track: true } } })
+    expect(p.disallows).toMatchObject({ shuffling: true, repeatingTrack: true, repeatingContext: false })
   })
 })

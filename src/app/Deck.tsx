@@ -44,7 +44,7 @@ export interface DeckProps {
   onSwipe?: (direction: SwipeDirection) => void
   /** The faceplate readout above the title: what the deck is doing. */
   status?: { text: string; live: boolean }
-  /** Under the metadata: Spotify link-back or a practice label. */
+  /** In the status row: the Spotify link-back. */
   attribution?: ReactNode
   /** Beside the keys: the output (device) selector. */
   footer?: ReactNode
@@ -52,6 +52,8 @@ export interface DeckProps {
   menu?: ReactNode
   /** Above the dial, beside the next key: what's coming. */
   next?: ReactNode
+  /** The mixer channel (modes, level), bolted to the console's side. */
+  channel?: ReactNode
 }
 
 /**
@@ -111,48 +113,52 @@ export function Deck(p: DeckProps) {
       />
       <div className="np-body">
         <SwipeArt art={p.art} alt={p.artAlt} dir={shown.dir} onSwipe={onSwipe} />
-        <div className="np-panel">
-          <div className="np-meta">
-            {(p.status || p.menu) && (
-              <div className="np-status-row">
-                {p.status && (
-                  <p className="np-status label">
-                    <span className="led" data-off={!p.status.live || undefined} aria-hidden="true" />
-                    <StatusText text={p.status.text} />
-                  </p>
-                )}
-                {p.menu}
+        {/* The console: a display bay (what's playing, the dial) over the keys, the channel strip bolted on the side. */}
+        <div className="np-console">
+          <div className="np-panel">
+            <div className="np-display">
+              {(p.status || p.menu || p.attribution) && (
+                <div className="np-status-row">
+                  {p.status && (
+                    <p className="np-status label">
+                      <span className="led" data-off={!p.status.live || undefined} aria-hidden="true" />
+                      <StatusText text={p.status.text} />
+                    </p>
+                  )}
+                  <div className="np-status-tools">
+                    {p.attribution}
+                    {p.menu}
+                  </div>
+                </div>
+              )}
+              {/* Outgoing and incoming lines share one grid cell. (Not mode="popLayout":
+                  it injects a <style> element, which our CSP rightly blocks.) */}
+              <div className="np-meta-stack" data-pending={skipping || undefined}>
+                <AnimatePresence initial={false}>
+                  <m.div key={p.trackKey} initial="enter" animate="center" exit="exit">
+                    <h2 className="np-mask">
+                      <m.span className="np-title" data-fit={titleFit(p.title)} variants={lineMotion} custom={0}>
+                        {p.title}
+                      </m.span>
+                    </h2>
+                    <p className="np-mask">
+                      <m.span className="np-artist" variants={lineMotion} custom={1}>
+                        {p.artist}
+                        {p.album && <span className="np-album"> — {p.album}</span>}
+                      </m.span>
+                    </p>
+                  </m.div>
+                </AnimatePresence>
               </div>
-            )}
-            {/* Outgoing and incoming lines share one grid cell. (Not mode="popLayout":
-                it injects a <style> element, which our CSP rightly blocks.) */}
-            <div className="np-meta-stack" data-pending={skipping || undefined}>
-              <AnimatePresence initial={false}>
-                <m.div key={p.trackKey} initial="enter" animate="center" exit="exit">
-                  <h2 className="np-mask">
-                    <m.span className="np-title" data-fit={titleFit(p.title)} variants={lineMotion} custom={0}>
-                      {p.title}
-                    </m.span>
-                  </h2>
-                  <p className="np-mask">
-                    <m.span className="np-artist" variants={lineMotion} custom={1}>
-                      {p.artist}
-                      {p.album && <span className="np-album"> — {p.album}</span>}
-                    </m.span>
-                  </p>
-                </m.div>
-              </AnimatePresence>
+              {p.next}
+              <Scrubber clock={p.clock} durationMs={p.durationMs} onSeek={p.onSeek} disabled={p.seekDisabled} label="Song position" />
             </div>
-            {p.attribution}
-          </div>
-          <div className="np-controls">
-            {p.next}
-            <Scrubber clock={p.clock} durationMs={p.durationMs} onSeek={p.onSeek} disabled={p.seekDisabled} label="Song position" />
             <div className="np-keys">
               <TransportKeys {...transport} />
               {p.footer}
             </div>
           </div>
+          {p.channel && <div className="np-channel">{p.channel}</div>}
         </div>
       </div>
     </>
@@ -160,24 +166,35 @@ export function Deck(p: DeckProps) {
 }
 
 /**
- * The next track, beside the next key. A link to the queue on the real deck; plain text
- * in the tutorial. Shown only where the panel has height to spare (CSS).
+ * What's coming, on the display beside the next key: up to three tracks with their
+ * queue numbers (CSS shows as many as the display has room for). A link to the Queue on
+ * the real deck; plain text in the tutorial.
  */
-export function UpNextLine({ title, subtitle, href, onClick }: { title: string; subtitle: string; href?: string; onClick?: MouseEventHandler<HTMLAnchorElement> }) {
+export function UpNextList({ items, href, onClick }: { items: { title: string; subtitle: string }[]; href?: string; onClick?: MouseEventHandler<HTMLAnchorElement> }) {
+  if (!items.length) return null
   const body = (
     <>
-      <span className="label">Up next</span>
-      <span className="np-next-title">{title}</span>
-      <span className="np-next-sub">{subtitle}</span>
-      {href && <Icon name="forward" size={16} />}
+      <span className="np-next-head">
+        <span className="label">Up next</span>
+        {href && <Icon name="forward" size={16} />}
+      </span>
+      <ol className="np-next-list">
+        {items.slice(0, 3).map((t, i) => (
+          <li key={i}>
+            <span className="readout np-next-num">{String(i + 1).padStart(2, '0')}</span>
+            <span className="np-next-title">{t.title}</span>
+            <span className="np-next-sub">{t.subtitle}</span>
+          </li>
+        ))}
+      </ol>
     </>
   )
   return href ? (
-    <a className="np-next" href={href} onClick={onClick}>
+    <a className="np-next" href={href} onClick={onClick} aria-label={`Up next: ${items[0].title}. Open the queue`}>
       {body}
     </a>
   ) : (
-    <p className="np-next">{body}</p>
+    <div className="np-next">{body}</div>
   )
 }
 

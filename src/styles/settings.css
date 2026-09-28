@@ -12,12 +12,14 @@
   margin-bottom: var(--s-3);
 }
 
+/* Each group is a rack module: metal, outlined, sitting on its hard drop. */
 .group-rows {
+  border: 1px solid var(--outline);
   border-radius: var(--r-l);
-  background: var(--surface-1);
+  background: var(--metal);
   box-shadow:
-    var(--edge-light),
-    inset 0 0 0 1px var(--hairline);
+    var(--bevel),
+    0 4px 0 var(--outline);
   overflow: hidden;
 }
 
@@ -32,7 +34,9 @@
 }
 
 .group-row + .group-row {
-  box-shadow: inset 0 1px 0 var(--hairline);
+  box-shadow:
+    inset 0 1px 0 rgb(0 0 0 / 0.55),
+    inset 0 2px 0 rgb(255 255 255 / 0.035);
 }
 
 label.group-row {
@@ -40,7 +44,7 @@ label.group-row {
 }
 
 label.group-row:active {
-  background: var(--surface-2);
+  background: rgb(255 255 255 / 0.03);
 }
 
 .group-row-stack,
@@ -83,6 +87,6 @@ label.group-row:active {
 
 @media (hover: hover) and (pointer: fine) {
   label.group-row:hover {
-    background: var(--surface-2);
+    background: rgb(255 255 255 / 0.03);
   }
 }

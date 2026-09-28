@@ -2,25 +2,23 @@
 
 Source of truth: [`src/styles/tokens.css`](../../../src/styles/tokens.css). Motion tokens are mirrored for Motion in [`src/ui/motion.ts`](../../../src/ui/motion.ts). This page explains the rules for using them; the values live in code.
 
-## Colour
+## Colour (v2 "Flight Deck")
 
 | Token | Use it for | Never |
 |---|---|---|
-| `--bg` | The display glass (body). Screens are transparent over it. | Cards. Surfaces go on top of the glass, not replace it. |
-| `--surface-1` | Resting panels (settings groups, mini deck, search field), pressed rows | Stacking two translucent surfaces |
-| `--surface-2` | Elevated: sheets, toasts, menus, skeletons | Large page areas |
-| `--surface-3` | Dark keys, selected segment, pressed rows inside sheets | `--ink-3` text on it (3.98:1) |
-| `--hairline` / `-strong` | Seams between rows and zones; outlines of chips | Borders around everything |
-| `--ink` | Titles, primary text, glyphs of active controls | — |
-| `--ink-2` | Secondary text (artist, details) | — |
-| `--ink-3` | Faceplate labels, meta, inactive tabs | Text on `--surface-3` |
-| `--ink-4` | Non-text: tick marks, disabled glyphs, off lamps | Any text |
-| `--signal` | **Live state only**: needle and lit ticks, play lamp, "Now playing"/playing LEDs, the active tab lamp, focus ring, the playing row in search | Decoration, emphasis, brand colour, buttons |
-| `--success` / `--warning` / `--error` | Their lamps and the "added" check; `--error-dim` for destructive buttons | Anything decorative |
-| `--key` / `--key-shade` / `--key-ink` | The physical key material: play key, power key, primary button, switch thumb | Surfaces |
-| `--ambient` (set per track) | The glow behind the cover | Anything drawn over the cover |
-
-Themes: `graphite` (default) and `black` (OLED: `--bg: #000`, no grain, dimmer ambient). `prefers-contrast: more` lifts `--ink-2/3` and hairlines.
+| `--bg` | The void behind the console | — |
+| `--metal` (+ `--bevel`) | Every panel: the deck console, tracklist panels, rack modules, sheets, toasts, the rail | Content you read at length |
+| `--bay` (+ `--recess`) | Recessed glass: display bays, the dial channel, the search field, fader slots, empty states | Controls |
+| `--surface-1/2/3` | Chassis flats, raised modules, dark keycaps | `--ink-3` text on keycaps (≈4.2:1) |
+| `--outline` | The hard 1px edge and the hard drop under keys (`--drop`, `--drop-pressed`) | Soft shadows |
+| `--hairline` / `-strong` | Printed rules on glass | Seams between rows (those are machined grooves: a dark cut + a highlight) |
+| `--ink` / `-2` / `-3` / `-4` | Text, secondary, labels, non-text marks | `-4` as text |
+| `--signal` (amber) | **Live**: playing lamp, lit ticks, needle, elapsed time, the active preset, focus | Anything decorative |
+| `--mode` (cyan) | **Engaged mode**: shuffle, repeat, a latched setting, a switch that's on | Live state |
+| `--success` (green) | **Linked**: the active output port, "added" | — |
+| `--error` (red) | **Fault**: error lamps, the armed Disconnect | — |
+| `--key` / `--key-shade` | The bone keycap: play, primary buttons, lever caps, the mini play key | Surfaces |
+| `--ambient` | The glow behind the cover | Anything on the cover |
 
 ## Type
 
@@ -38,8 +36,8 @@ The deck title sets `--np-t` per layout and a length tier (`data-fit="m"` ×0.8,
 ## Space, radius, depth, layers
 
 - **Space:** 4pt scale `--s-1` (4) … `--s-9` (96). Gutters: `--gutter` = `clamp(16px, 3.6vw, 48px)`, merged with safe areas into `--pad-l` / `--pad-r`.
-- **Radius:** `--r-xs` 4 (art thumbnails, skeleton lines) · `--r-s` 8 (large art, chips) · `--r-m` 12 (buttons, rows, icon buttons) · `--r-l` 20 (sheets, panels) · `--r-key` 22 (keycaps) · `--r-pill`.
-- **Depth:** `--edge-light` (a top edge catching light), `--shadow-float`, `--shadow-overlay` (sheets, toasts, jump pill), `--glow` (amber lamps). Keys carry their own recipe in `controls.css`: top highlight, bottom shade, drop shadow, collapsing on press.
+- **Radius (hard edges):** `--r-xs` 2 · `--r-s` 4 (art, LEDs, chips' inner parts) · `--r-m` 6 (keys, buttons, rows, bays) · `--r-l` 10 (modules, sheets) · `--r-key` 6.
+- **Depth:** `--drop` (`0 4px 0 --outline`, the neo-brutal hard drop) and `--drop-pressed`; `--bevel` (light on a top edge, dark on the bottom); `--recess` (glass set into metal); `--ambient-shadow`; `--shadow-overlay`; `--glow` (amber lamps). Keys press by translating down onto their drop.
 - **Layers:** `--z-rail` 2, `--z-float` 3, `--z-toast` 10; dialogs use the top layer.
 - **Targets:** `--tap` 44px minimum; the rail is `--rail-h` 64px in landscape.
 

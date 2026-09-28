@@ -1,4 +1,3 @@
-import { m } from 'motion/react'
 import { useRef, type MouseEvent } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { feedback } from '../sensory/feedback'
@@ -9,7 +8,6 @@ import { Artwork } from '../ui/Artwork'
 import { FullscreenButton } from '../ui/FullscreenButton'
 import { spotifyClock, useClockPainter } from '../ui/clock'
 import { Icon, type IconName } from '../ui/Icon'
-import { SPRING_TRAVEL } from '../ui/motion'
 import { PressKey } from '../ui/PressKey'
 import { linkHandler, PATHS, tickLink, type Route } from './router'
 
@@ -44,7 +42,6 @@ export function Rail({ route }: { route: Route }) {
               onClick={t.route === 'lyrics' ? openLyrics : tickLink}
               aria-current={route === t.route ? 'page' : undefined}
             >
-              {route === t.route && <RailLamp />}
               <Icon name={t.icon} />
               <span>{t.label}</span>
             </a>
@@ -65,11 +62,6 @@ export function Rail({ route }: { route: Route }) {
       </div>
     </nav>
   )
-}
-
-/** The lit indicator on the rail's top edge. One per rail; it travels to the active tab. */
-export function RailLamp({ id = 'rail-lamp' }: { id?: string }) {
-  return <m.span layoutId={id} className="rail-lamp" aria-hidden="true" transition={SPRING_TRAVEL} />
 }
 
 function MiniDeck() {

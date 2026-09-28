@@ -74,6 +74,9 @@ export interface RawDisallows {
   seeking?: boolean
   skipping_next?: boolean
   skipping_prev?: boolean
+  toggling_shuffle?: boolean
+  toggling_repeat_context?: boolean
+  toggling_repeat_track?: boolean
 }
 
 /** CurrentlyPlayingContextObject (GET /me/player). */
@@ -84,6 +87,9 @@ export interface RawPlayback {
   item: RawItem | null
   currently_playing_type?: string
   actions?: { disallows?: RawDisallows }
+  shuffle_state?: boolean
+  /** "off" | "context" | "track" */
+  repeat_state?: string
   context?: { uri: string; type: string } | null
   timestamp?: number
 }

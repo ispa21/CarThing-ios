@@ -70,17 +70,19 @@
 }
 
 .page-narrow {
-  max-width: 880px;
+  max-width: 900px;
 }
 
-/* Editorial head: a condensed headline, a readout on the far side, a hairline under both. */
+/* A stencilled headline over a machined rule: a groove, then a highlight. */
 .page-head {
   display: flex;
   align-items: flex-end;
   gap: var(--s-4);
   padding-bottom: var(--s-4);
   margin-bottom: var(--s-5);
-  border-bottom: 1px solid var(--hairline);
+  box-shadow:
+    inset 0 -1px 0 rgb(255 255 255 / 0.06),
+    inset 0 -3px 0 var(--outline);
 }
 
 .page-title {
@@ -88,7 +90,7 @@
   min-width: 0;
   font-stretch: var(--w-condensed);
   font-size: min(var(--t-headline), 13vh);
-  font-weight: 760;
+  font-weight: 800;
   line-height: 0.9;
   letter-spacing: -0.025em;
 }
@@ -120,7 +122,8 @@
   margin-top: 0;
 }
 
-/* ── The rail: the device's control strip ── */
+/* ── The rail: the console's preset strip ──
+   Tabs are latching keys: the current screen's key stays down, its lens lit amber. */
 
 .rail {
   position: relative;
@@ -131,14 +134,14 @@
     'deck'
     'tabs';
   align-items: center;
-  column-gap: var(--s-2);
-  padding: 0 var(--pad-r) var(--safe-b) var(--pad-l);
-  background: color-mix(in oklab, var(--bg) 82%, transparent);
-  backdrop-filter: blur(22px) saturate(150%);
-  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  column-gap: var(--s-3);
+  row-gap: var(--s-2);
+  padding: var(--s-2) var(--pad-r) calc(var(--safe-b) + var(--s-2)) var(--pad-l);
+  background: var(--metal);
   box-shadow:
-    inset 0 1px 0 var(--hairline),
-    inset 0 2px 0 rgb(0 0 0 / 0.25);
+    inset 0 1px 0 rgb(255 255 255 / 0.07),
+    0 -1px 0 var(--outline),
+    0 -12px 24px -12px rgb(0 0 0 / 0.8);
 }
 
 .rail-deck {
@@ -153,6 +156,7 @@
 .rail-tabs {
   grid-area: tabs;
   display: flex;
+  gap: 6px;
 }
 
 .rail-tabs li {
@@ -173,41 +177,57 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 4px;
   width: 100%;
-  min-height: 60px;
-  color: var(--ink-3);
+  min-height: 54px;
+  padding-top: 6px;
+  border: 1px solid var(--outline);
+  border-radius: var(--r-m);
+  background: linear-gradient(180deg, #2b3035, #212529);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.08),
+    0 3px 0 var(--outline);
+  color: var(--ink-2); /* keycaps are too light for --ink-3 text (4.2:1) */
   font-stretch: var(--w-expanded);
   font-size: 0.625rem;
-  font-weight: 650;
+  font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  transition: color var(--dur-fast) ease;
+  transition:
+    translate var(--dur-press) var(--ease-out),
+    box-shadow var(--dur-press) ease,
+    color var(--dur-fast) ease;
 }
 
-.rail-tab svg {
-  transition: scale var(--dur-press) var(--ease-out);
+/* Every preset key has a lens; only the latched one is lit. */
+.rail-tab::before {
+  content: '';
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  width: 16px;
+  height: 3px;
+  margin-left: -8px;
+  border-radius: 1px;
+  background: #1a1e22;
+  box-shadow: inset 0 1px 0 rgb(0 0 0 / 0.5);
 }
 
-.rail-tab:active svg {
-  scale: 0.88;
+.rail-tab:active {
+  translate: 0 3px;
+  box-shadow: 0 0 0 var(--outline);
 }
 
 .rail-tab[aria-current] {
+  translate: 0 2px;
+  background: linear-gradient(180deg, #202428, #1a1d21);
+  box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.5);
   color: var(--ink);
 }
 
-/* The lamp under the active tab. One element per rail, travelling between tabs (Motion layoutId). */
-.rail-lamp {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 22px;
-  height: 2px;
-  margin-left: -11px;
-  border-radius: 0 0 2px 2px;
+.rail-tab[aria-current]::before {
   background: var(--signal);
-  box-shadow: 0 0 10px var(--signal-glow), 0 0 2px var(--signal);
+  box-shadow: var(--glow);
 }
 
 .rail-tab[aria-disabled] {
@@ -219,6 +239,8 @@
     grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     grid-template-areas: 'deck tabs tools';
     min-height: var(--rail-h);
+    padding-top: var(--s-2);
+    padding-bottom: calc(var(--safe-b) + var(--s-2) + 3px);
   }
 
   .rail-deck:empty {
@@ -236,8 +258,8 @@
   .rail-tab {
     flex-direction: row;
     gap: var(--s-2);
-    min-height: var(--rail-h);
-    padding: 0 var(--s-4);
+    min-height: 48px;
+    padding: 4px var(--s-4) 0;
     font-size: 0.6875rem;
   }
 
@@ -278,33 +300,34 @@
   }
 }
 
-/* Small landscape phones (e.g. 667×375): tighter tabs so the puck still fits. */
+/* Small landscape phones (e.g. 667×375): tighter keys so the puck still fits. */
 @media (orientation: landscape) and (min-width: 480px) and (max-width: 759px) {
   .rail {
-    column-gap: 0;
+    column-gap: var(--s-2);
+  }
+
+  .rail-tabs {
+    gap: 4px;
   }
 
   .rail-tab {
-    padding: 0 var(--s-2);
+    padding: 4px var(--s-2) 0;
     gap: 6px;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
   }
 }
 
-/* ── Mini deck (in the rail, away from home) ── */
+/* ── Mini deck: a small display bay in the rail ── */
 
 .mini {
   position: relative;
   display: flex;
   align-items: center;
   gap: var(--s-1);
-  margin: var(--s-2) 0 0;
   padding: 5px;
-  border-radius: 14px;
-  background: var(--surface-1);
-  box-shadow:
-    var(--edge-light),
-    inset 0 0 0 1px var(--hairline);
+  border-radius: var(--r-m);
+  background: var(--bay);
+  box-shadow: var(--recess);
   overflow: hidden;
 }
 
@@ -314,7 +337,7 @@
   display: flex;
   align-items: center;
   gap: var(--s-3);
-  border-radius: 10px;
+  border-radius: var(--r-s);
   transition: scale var(--dur-press) var(--ease-out);
 }
 
@@ -336,7 +359,7 @@
 }
 
 .mini-title {
-  font-weight: 600;
+  font-weight: 650;
   font-size: 0.9375rem;
   line-height: 1.25;
 }
@@ -344,6 +367,16 @@
 .mini-sub {
   color: var(--ink-2);
   font-size: 0.8125rem;
+}
+
+/* The mini play key is a small bone cap. */
+.mini .icon-btn-strong {
+  border: 1px solid var(--outline);
+  background: linear-gradient(180deg, var(--key), var(--key-shade));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.6),
+    0 2px 0 var(--outline);
+  color: var(--key-ink);
 }
 
 .mini-line {
@@ -382,18 +415,20 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .rail-tab:hover {
-    color: var(--ink-2);
-  }
-
-  .rail-tab[aria-current]:hover {
+  .rail-tab:hover:not([aria-current]) {
     color: var(--ink);
+    background: linear-gradient(180deg, #32383e, #262a2f);
   }
 
   .mini-main:hover .mini-title {
     text-decoration: underline;
     text-decoration-color: var(--hairline-strong);
     text-underline-offset: 3px;
+  }
+
+  .mini .icon-btn-strong:hover {
+    background: linear-gradient(180deg, #f3f0e8, var(--key));
+    color: var(--key-ink);
   }
 }
 
@@ -404,8 +439,14 @@
     animation-name: fade-in;
   }
 
-  .rail-tab:active svg,
+  /* Latched keys still sit down (that's state); they just don't animate there. */
+  .rail-tab {
+    transition: color var(--dur-fast) ease;
+  }
+
+  .rail-tab:active,
   .mini-main:active {
+    translate: none;
     scale: none;
   }
 }
@@ -418,8 +459,6 @@
 
 @media (prefers-reduced-transparency: reduce) {
   .rail {
-    background: var(--bg);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+    background: var(--surface-1);
   }
 }

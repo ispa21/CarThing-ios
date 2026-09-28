@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
-import { Deck, UpNextLine } from '../app/Deck'
+import { ChannelStrip } from '../app/ChannelStrip'
+import { Deck, UpNextList } from '../app/Deck'
 import { tickLink } from '../app/router'
 import { usePhonePortrait } from '../lib/orientation'
 import { feedback } from '../sensory/feedback'
+import type { MediaItem } from '../spotify/normalize'
 import { refreshQueue, seekTo, skipNext, skipPrevious, syncNow, togglePlay } from '../spotify/playbackService'
 import { selectCanToggle, usePlayback } from '../store/playback'
 import { useSettings } from '../store/settings'
@@ -73,19 +75,21 @@ export function NowPlaying() {
       {!s.loaded ? (
         <div className="np-body" aria-busy="true">
           <div className="np-art skel" />
-          <div className="np-panel">
-            <div className="np-meta">
-              <span className="skel skel-line skel-label" />
-              <span className="skel skel-line skel-title" />
-              <span className="skel skel-line skel-short" />
-            </div>
-            <div className="np-controls">
-              <span className="skel skel-line skel-dial" />
-              <span className="skel-keys">
-                <span className="skel skel-key" />
-                <span className="skel skel-key" />
-                <span className="skel skel-key" />
-              </span>
+          <div className="np-console">
+            <div className="np-panel">
+              <div className="np-display">
+                <span className="skel skel-line skel-label" />
+                <span className="skel skel-line skel-title" />
+                <span className="skel skel-line skel-short" />
+                <span className="skel skel-line skel-dial" />
+              </div>
+              <div className="np-keys">
+                <span className="skel-keys">
+                  <span className="skel skel-key" />
+                  <span className="skel skel-key" />
+                  <span className="skel skel-key" />
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -138,11 +142,12 @@ export function NowPlaying() {
           status={{ text: s.isPlaying ? 'Now playing' : 'Paused', live: s.isPlaying }}
           menu={more}
           next={<UpNext uri={s.uri} />}
+          channel={<ChannelStrip />}
           attribution={
             (s.uri || s.url) && (
-              <SpotifyLink className="np-attr" uri={s.uri} url={s.url}>
-                Open in Spotify
-                <Icon name="external" size={14} />
+              <SpotifyLink className="np-attr label" uri={s.uri} url={s.url} label="Open in Spotify">
+                Spotify
+                <Icon name="external" size={13} />
               </SpotifyLink>
             )
           }
@@ -191,13 +196,14 @@ export function NowPlaying() {
  * failure); hidden when the queue isn't about the current song yet, or there's no room.
  */
 function UpNext({ uri }: { uri: string | null }) {
-  const next = usePlayback((st) => (st.queue.data?.current?.uri === uri ? (st.queue.data?.upNext[0] ?? null) : null))
+  const next = usePlayback((st) => (st.queue.data?.current?.uri === uri ? st.queue.data.upNext : NO_ITEMS))
   useEffect(() => {
     if (uri) void refreshQueue()
   }, [uri])
-  if (!next) return null
-  return <UpNextLine title={next.title} subtitle={next.subtitle} href="/queue" onClick={tickLink} />
+  return <UpNextList items={next} href="/queue" onClick={tickLink} />
 }
+
+const NO_ITEMS: MediaItem[] = []
 
 /** Phones held upright get a compact deck and a gentle nudge — never a wall. */
 function RotateHint() {

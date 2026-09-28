@@ -23,7 +23,7 @@ body {
   margin: 0;
   background-color: var(--bg);
   background-image:
-    radial-gradient(110% 70% at 18% -10%, rgb(255 236 214 / 0.045), transparent 62%),
+    radial-gradient(110% 70% at 18% -10%, rgb(190 215 255 / 0.05), transparent 62%),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .045 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   color: var(--ink);
   font-family: var(--font-ui);
@@ -127,9 +127,9 @@ main:focus,
 .label {
   font-stretch: var(--w-expanded);
   font-size: var(--t-label);
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.2;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
   color: var(--ink-3);
 }
@@ -144,11 +144,3 @@ main:focus,
   color: var(--ink-2);
 }
 
-.headline {
-  font-stretch: var(--w-condensed);
-  font-size: var(--t-headline);
-  font-weight: 760;
-  line-height: 0.92;
-  letter-spacing: -0.025em;
-  text-wrap: balance;
-}

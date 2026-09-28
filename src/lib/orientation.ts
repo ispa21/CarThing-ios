@@ -10,3 +10,14 @@ const subscribe = (cb: () => void) => {
 }
 
 export const usePhonePortrait = () => useSyncExternalStore(subscribe, () => window.matchMedia(PHONE_PORTRAIT_QUERY).matches)
+
+/** The landscape deck (art beside the console) — the same breakpoint the CSS uses. */
+export const LANDSCAPE_DECK_QUERY = '(orientation: landscape) and (min-width: 480px)'
+
+const subscribeLandscape = (cb: () => void) => {
+  const mq = window.matchMedia(LANDSCAPE_DECK_QUERY)
+  mq.addEventListener('change', cb)
+  return () => mq.removeEventListener('change', cb)
+}
+
+export const useLandscapeDeck = () => useSyncExternalStore(subscribeLandscape, () => window.matchMedia(LANDSCAPE_DECK_QUERY).matches)

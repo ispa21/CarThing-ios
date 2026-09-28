@@ -4,7 +4,7 @@ The rule: motion carries state (which way you went, what changed, that the key h
 
 ## Principles
 
-1. **Respond on press.** Keys compress on pointer-down (Motion `whileTap`, critically damped `SPRING_KEY`) and travel 1px with their shadow collapsing (CSS `translate` + `box-shadow`, which compose with Motion's inline `transform`). Buttons, chips and rows use CSS `scale` on `:active` (0.9–0.985 by size).
+1. **Respond on press, mechanically.** Keycaps travel 3px down onto their hard drop, which collapses (CSS `translate` + `box-shadow`, 90ms) — they don't shrink (`PressKey depth={1}`). Small icon buttons and rows still compress slightly (CSS `scale` 0.92–0.985).
 2. **Interruptible.** Springs for anything touched; CSS transitions (not keyframes) for anything that can re-trigger quickly. Nothing locks input while it animates.
 3. **Transform and opacity only.** The only other animated properties are small colour/shadow transitions on controls, the power ring's one-off `stroke-dashoffset` sweep, and the registered `--ambient` colour.
 4. **Exits are faster than entrances.** Sheets arrive in 360ms and leave in 240ms; titles leave in 180ms and arrive in 500ms.
@@ -17,7 +17,7 @@ The rule: motion carries state (which way you went, what changed, that the key h
 |---|---|---|
 | Screen enter (rail routes) | From the side you travelled along the rail (`data-dir` forward/back), otherwise rise 10px | 240ms `--ease-expo`, entrance only |
 | Immersive enter (lyrics, tutorial) | Fade + scale from 0.985 | 360ms `--ease-expo` |
-| Rail lamp | Motion `layoutId` travels to the active tab | `SPRING_TRAVEL` (bounce 0.12, 0.42s) |
+| Preset / latch keys | Travel 3px onto the hard drop on press; a latched key stays 2px down with its lens lit (no travelling indicator — hardware lenses don't move) | 90ms |
 | Track change: cover | Arrives from +56px on next, −56px on previous (the swipe direction), scale 0.985 → 1; the old cover leaves the other way | Enter 460ms expo, exit 200ms |
 | Track change: title and artist | Line masks: the old line leaves upward, the new rises in; artist 45ms after the title | Enter 500ms expo, exit 180ms |
 | Skip in flight | Title dims to 40% until the new track arrives (3s fallback) | 180ms |
