@@ -1,5 +1,12 @@
 # Implementation log
 
+## Update — v2 "Flight Deck" and Open in Spotify (2026-09-28, later)
+
+- **Open in Spotify (`1876f93`, owner's request):** rows and playlist tiles are links to the item's validated `spotify:` URI, which opens the Spotify app straight to it; ▶ keys still play on the current device, + still queues. If the app doesn't take over within 2.5s, a toast says so. `ui/SpotifyLink.tsx`, `safeSpotifyUri` (tested).
+- **Flight Deck (`e68eb40`, owner's brief):** neo-brutalism + skeuomorphism + a space-tech DJ booth. New materials (gunmetal, recessed glass, hard outlines and drops, hard radii), an indicator-light vocabulary (amber live, cyan mode, green linked, red fault), the console deck with a bezelled screen and a channel strip, latching preset keys, rack-module settings, metal drawers, annunciator toasts, a guard-plated power key. New real controls: shuffle, repeat and a volume fader (Spotify endpoints verified against the OpenAPI schema; existing scope). See [design-direction.md](../design-research/design-direction.md).
+- **QA:** the QA agent was stopped twice by rate limits; its probes were reused and the results recorded in [../qa/](../qa/).
+
+
 Branch `redesign`, from `main` @ `9a78d4f`.
 
 ## How the work was split
