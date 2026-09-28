@@ -20,6 +20,8 @@ interface Settings {
   welcomed: boolean
   /** Finished or skipped the interactive tutorial. */
   onboarded: boolean
+  /** Dismissed the "turn your phone sideways" hint (stays dismissed across launches). */
+  rotateHintDismissed: boolean
 }
 
 export const useSettings = create<Settings>()(
@@ -32,6 +34,7 @@ export const useSettings = create<Settings>()(
       haptics: true,
       welcomed: false,
       onboarded: false,
+      rotateHintDismissed: false,
     }),
     {
     name: 'partydeck.settings',

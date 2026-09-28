@@ -6,7 +6,8 @@ import { usePhonePortrait } from '../lib/orientation'
 import { feedback } from '../sensory/feedback'
 import { refreshQueue, seekTo, skipNext, skipPrevious, syncNow, togglePlay } from '../spotify/playbackService'
 import { selectCanToggle, usePlayback } from '../store/playback'
-import { openDevices, useUi } from '../store/ui'
+import { useSettings } from '../store/settings'
+import { openDevices } from '../store/ui'
 import { spotifyClock } from '../ui/clock'
 import { ErrorState } from '../ui/Feedback'
 import { Icon } from '../ui/Icon'
@@ -200,7 +201,7 @@ function UpNext({ uri }: { uri: string | null }) {
 /** Phones held upright get a compact deck and a gentle nudge — never a wall. */
 function RotateHint() {
   const portrait = usePhonePortrait()
-  const dismissed = useUi((s) => s.rotateHintDismissed)
+  const dismissed = useSettings((s) => s.rotateHintDismissed)
   if (!portrait || dismissed) return null
   return (
     <div className="rotate-hint" role="note">
@@ -213,7 +214,7 @@ function RotateHint() {
         aria-label="Dismiss"
         onClick={() => {
           feedback.play('back')
-          useUi.setState({ rotateHintDismissed: true })
+          useSettings.setState({ rotateHintDismissed: true })
         }}
       >
         <Icon name="close" size={18} />

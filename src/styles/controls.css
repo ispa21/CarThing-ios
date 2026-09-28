@@ -487,7 +487,7 @@
 
 .scrub-hit {
   position: relative;
-  height: 40px;
+  height: var(--tap);
   container-type: inline-size; /* the needle travels in cqw: compositor-only, no overflow */
   cursor: pointer;
   touch-action: pan-y;
@@ -642,6 +642,22 @@
   .field[data-busy] svg,
   .led-pulse {
     animation: none;
+  }
+
+  /* State still changes; it just doesn't travel. */
+  .seg::before,
+  .switch::before {
+    transition: none;
+  }
+
+  .key:active:not(:disabled),
+  .switch:active::before {
+    translate: none;
+    scale: none;
+  }
+
+  .switch:checked::before {
+    translate: 20px 0;
   }
 }
 

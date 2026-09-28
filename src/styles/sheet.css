@@ -131,12 +131,16 @@
   overscroll-behavior: contain;
 }
 
-.sheet-head {
+/* The grip and header are the handle: sticky while the list scrolls, dragged to close. */
+.sheet-grab {
   position: sticky;
   top: 0;
   z-index: 1;
+  margin: calc(-1 * var(--s-2)) 0 0;
+  padding-top: var(--s-2);
   background: var(--surface-2);
   box-shadow: 0 10px 12px -10px var(--surface-2);
+  touch-action: none;
 }
 
 /* Landscape phones (the primary canvas): a full-height side sheet from the right edge,
@@ -177,6 +181,11 @@
 
   .sheet-grip {
     display: none;
+  }
+
+  /* The chevron points the way the sheet leaves. */
+  .sheet-head .icon-btn svg {
+    rotate: -90deg;
   }
 }
 
