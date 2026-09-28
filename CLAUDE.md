@@ -45,7 +45,7 @@ Car Thing–inspired Spotify controller PWA: Now Playing deck, search, queue, gi
   - Respect `prefers-reduced-motion`.
 - Touch targets ≥ 44px. Every icon-only button has an `aria-label`.
 - Render lyrics and Spotify text only as text nodes. No `dangerouslySetInnerHTML`.
-- Links to Spotify go through `safeSpotifyUrl`.
+- Links to Spotify use `ui/SpotifyLink`: the validated `spotify:` URI (`safeSpotifyUri`) opens the Spotify app; without one it falls back to the `safeSpotifyUrl` https page. Never hand-roll a Spotify `<a>`.
 
 ## Env and secrets
 

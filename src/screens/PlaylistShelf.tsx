@@ -5,6 +5,8 @@ import { explainError, fetchPlaylists, playItem } from '../spotify/playbackServi
 import { Artwork } from '../ui/Artwork'
 import { EmptyState, ErrorState } from '../ui/Feedback'
 import { Icon } from '../ui/Icon'
+import { PressKey } from '../ui/PressKey'
+import { SpotifyLink } from '../ui/SpotifyLink'
 
 type State = { status: 'loading' } | { status: 'ready'; items: MediaItem[] } | { status: 'error'; error: FriendlyError }
 
@@ -60,17 +62,16 @@ export function PlaylistShelf() {
         <ul className="tiles" onWheel={onWheel}>
           {state.items.map((p) => (
             <li key={p.id} className="tile">
-              <button className="tile-play" onClick={() => playItem(p)} aria-label={`Play ${p.title}`}>
+              {/* The tile is the playlist: it opens in the Spotify app. ▶ plays it on your device. */}
+              <SpotifyLink className="tile-main" uri={p.uri} url={p.url} label={`Open ${p.title} in Spotify`}>
                 <Artwork src={p.art} />
                 <span className="tile-title">{p.title}</span>
-              </button>
+              </SpotifyLink>
               <span className="tile-sub">
                 <span>{p.subtitle}</span>
-                {p.url && (
-                  <a href={p.url} target="_blank" rel="noopener noreferrer" className="tile-link" aria-label={`Open ${p.title} in Spotify`}>
-                    <Icon name="external" size={16} />
-                  </a>
-                )}
+                <PressKey className="icon-btn tile-key" depth={0.9} onClick={() => void playItem(p)} aria-label={`Play ${p.title}`}>
+                  <Icon name="play" size={16} />
+                </PressKey>
               </span>
             </li>
           ))}

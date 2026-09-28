@@ -9,6 +9,7 @@ import { Artwork } from '../ui/Artwork'
 import { EmptyState, ErrorState, SkeletonRows } from '../ui/Feedback'
 import { Icon } from '../ui/Icon'
 import { MediaRow } from '../ui/MediaRow'
+import { SpotifyLink } from '../ui/SpotifyLink'
 
 /**
  * GET /me/player/queue. Spotify's Web API can add to the queue but can't
@@ -105,11 +106,11 @@ function NowCard({ item }: { item: MediaItem }) {
         <p className="queue-hero-sub">{item.subtitle}</p>
         <p className="queue-hero-meta">
           {item.durationMs ? <span className="readout">{formatTime(item.durationMs)}</span> : null}
-          {item.url && (
-            <a className="np-attr" href={item.url} target="_blank" rel="noopener noreferrer">
+          {(item.uri || item.url) && (
+            <SpotifyLink className="np-attr" uri={item.uri} url={item.url}>
               Open in Spotify
               <Icon name="external" size={14} />
-            </a>
+            </SpotifyLink>
           )}
         </p>
       </div>

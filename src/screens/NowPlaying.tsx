@@ -12,6 +12,7 @@ import { spotifyClock } from '../ui/clock'
 import { ErrorState } from '../ui/Feedback'
 import { Icon } from '../ui/Icon'
 import { Sheet } from '../ui/Sheet'
+import { SpotifyLink } from '../ui/SpotifyLink'
 import { PlaylistShelf } from './PlaylistShelf'
 
 /** The deck — PartyDeck's home screen. */
@@ -101,7 +102,7 @@ export function NowPlaying() {
                   Standby
                 </p>
                 <p className="np-idle-title">Nothing playing.</p>
-                <p className="np-idle-sub">Pick a playlist to start, or choose where to play.</p>
+                <p className="np-idle-sub">Open a playlist in Spotify, or press ▶ to play it right here.</p>
                 <button className="chip np-device" onClick={chooseDevice}>
                   <Icon name="speaker" size={18} />
                   <span>Choose device</span>
@@ -138,11 +139,11 @@ export function NowPlaying() {
           menu={more}
           next={<UpNext uri={s.uri} />}
           attribution={
-            s.url && (
-              <a className="np-attr" href={s.url} target="_blank" rel="noopener noreferrer">
+            (s.uri || s.url) && (
+              <SpotifyLink className="np-attr" uri={s.uri} url={s.url}>
                 Open in Spotify
                 <Icon name="external" size={14} />
-              </a>
+              </SpotifyLink>
             )
           }
           footer={
@@ -157,11 +158,11 @@ export function NowPlaying() {
 
       <Sheet open={menuOpen} onClose={() => setMenuOpen(false)} title="Options">
         <ul className="menu">
-          {s.url && (
+          {(s.uri || s.url) && (
             <li>
-              <a href={s.url} target="_blank" rel="noopener noreferrer">
+              <SpotifyLink uri={s.uri} url={s.url}>
                 <Icon name="external" /> Open in Spotify
-              </a>
+              </SpotifyLink>
             </li>
           )}
           <li>

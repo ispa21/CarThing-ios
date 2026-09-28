@@ -1,9 +1,10 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { formatTime } from '../lib/progress'
-import type { MediaItem, MediaKind } from '../spotify/normalize'
+import { safeSpotifyUri, type MediaItem, type MediaKind } from '../spotify/normalize'
 import { Artwork } from './Artwork'
 import { Icon } from './Icon'
 import { PressKey } from './PressKey'
+import { SpotifyLink } from './SpotifyLink'
 
 const KIND_LABEL: Record<MediaKind, string> = {
   track: 'Song',
@@ -15,7 +16,7 @@ const KIND_LABEL: Record<MediaKind, string> = {
 
 interface Props {
   item: MediaItem
-  /** Tapping the row plays it. Omit for display-only rows (queue). */
+  /** The ▶ key plays it on the current device. Omit for rows you can't play from (queue). */
   onPlay?: (item: MediaItem) => void
   /** Resolves true once Spotify accepted it; the row then confirms. */
   onQueue?: (item: MediaItem) => Promise<boolean>
@@ -46,10 +47,18 @@ export function MediaRow({ item, onPlay, onQueue, lead, showKind = false, live =
       </span>
     </>
   )
+  const playLabel = `Play ${item.title}${item.subtitle && item.kind !== 'artist' ? `, ${item.subtitle}` : ''}${live ? ', playing now' : ''}`
+  const linked = Boolean(safeSpotifyUri(item.uri) ?? item.url)
+
   return (
     <li className="row" data-live={live || undefined}>
-      {onPlay ? (
-        <button className="row-main" onClick={() => onPlay(item)} aria-label={`Play ${item.title}${item.subtitle && item.kind !== 'artist' ? `, ${item.subtitle}` : ''}${live ? ', playing now' : ''}`}>
+      {/* The row is the item: tapping it opens it in the Spotify app. Keys on the right act here. */}
+      {linked ? (
+        <SpotifyLink className="row-main" uri={item.uri} url={item.url} label={`Open ${item.title} in Spotify`}>
+          {body}
+        </SpotifyLink>
+      ) : onPlay ? (
+        <button className="row-main" onClick={() => onPlay(item)} aria-label={playLabel}>
           {body}
         </button>
       ) : (
@@ -73,10 +82,10 @@ export function MediaRow({ item, onPlay, onQueue, lead, showKind = false, live =
           <Icon name={added ? 'check' : 'add'} />
         </PressKey>
       )}
-      {item.url && (
-        <a className="icon-btn icon-btn-quiet" href={item.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${item.title} in Spotify`}>
-          <Icon name="external" size={20} />
-        </a>
+      {onPlay && linked && (
+        <PressKey className="icon-btn row-play" depth={0.9} onClick={() => onPlay(item)} aria-label={playLabel}>
+          <Icon name="play" size={20} />
+        </PressKey>
       )}
     </li>
   )
