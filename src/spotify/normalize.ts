@@ -74,6 +74,15 @@ export function safeSpotifyUrl(url: string | undefined | null): string | null {
   }
 }
 
+/**
+ * The Spotify app link for an item: its `spotify:` URI, which every platform hands to the
+ * installed app (iPhone, iPad, Android, Mac, Windows). Only well-formed URIs of kinds the
+ * app can open pass; anything else (local files, legacy user URIs) gets null.
+ */
+export function safeSpotifyUri(uri: string | undefined | null): string | null {
+  return uri && /^spotify:(track|album|artist|playlist|episode|show):[A-Za-z0-9]{22}$/.test(uri) ? uri : null
+}
+
 /** Only render images served over https. */
 function safeImageUrl(url: string | undefined): string | null {
   return url && url.startsWith('https://') ? url : null

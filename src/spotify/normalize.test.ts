@@ -7,6 +7,7 @@ import {
   normalizeQueue,
   normalizeSearch,
   pickImage,
+  safeSpotifyUri,
   safeSpotifyUrl,
 } from './normalize'
 import type { RawEpisode, RawPlayback, RawTrack } from './types'
@@ -167,6 +168,22 @@ describe('normalizeSearch / playlists', () => {
     expect(
       normalizePlaylist({ id: 'p', name: 'P', uri: 'spotify:playlist:p', images: [], tracks: { total: 1 } }).subtitle,
     ).toBe('1 song')
+  })
+})
+
+describe('safeSpotifyUri (opens the Spotify app)', () => {
+  it('allows well-formed URIs of kinds the app can open', () => {
+    expect(safeSpotifyUri('spotify:playlist:37i9dQZF1DXcBWIGoYBM5M')).toBe('spotify:playlist:37i9dQZF1DXcBWIGoYBM5M')
+    expect(safeSpotifyUri('spotify:track:4uLU6hMCjMI75M1A2tKUQC')).toBe('spotify:track:4uLU6hMCjMI75M1A2tKUQC')
+    expect(safeSpotifyUri('spotify:episode:512ojhOuo1ktJprKbVcKyQ')).not.toBeNull()
+  })
+  it('rejects anything else', () => {
+    expect(safeSpotifyUri('spotify:local:Artist:Album:Song:180')).toBeNull()
+    expect(safeSpotifyUri('spotify:user:bob:playlist:37i9dQZF1DXcBWIGoYBM5M')).toBeNull()
+    expect(safeSpotifyUri('spotify:track:short')).toBeNull()
+    expect(safeSpotifyUri('javascript:alert(1)//spotify:track:4uLU6hMCjMI75M1A2tKUQC')).toBeNull()
+    expect(safeSpotifyUri('spotify:track:4uLU6hMCjMI75M1A2tKUQC\nx')).toBeNull()
+    expect(safeSpotifyUri(null)).toBeNull()
   })
 })
 
