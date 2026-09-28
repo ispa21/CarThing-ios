@@ -3,6 +3,8 @@ import { createLatestRunner } from '../lib/latest'
 import type { FriendlyError } from '../spotify/errors'
 import { isSearchEmpty, type SearchView } from '../spotify/normalize'
 import { explainError, playItem, queueItem, searchCatalog } from '../spotify/playbackService'
+import { feedback } from '../sensory/feedback'
+import { usePlayback } from '../store/playback'
 import { EmptyState, SkeletonRows } from '../ui/Feedback'
 import { Icon } from '../ui/Icon'
 import { MediaRow } from '../ui/MediaRow'
@@ -24,6 +26,7 @@ const SECTIONS: Array<{ key: keyof SearchView; title: string; max: number }> = [
 
 export function Search() {
   const [query, setQuery] = useState('')
+  const playingUri = usePlayback((s) => s.playback.uri)
   const [state, setState] = useState<State>({ status: 'idle' })
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -93,9 +96,22 @@ export function Search() {
 
       {state.status === 'idle' && <PlaylistShelf />}
       {state.status === 'searching' && !results && <SkeletonRows count={6} />}
-      {state.status === 'empty' && <EmptyState title={`Nothing found for “${state.query}”`} detail="Check the spelling or try fewer words." />}
+      {state.status === 'empty' && (
+        <EmptyState title={`Nothing found for “${state.query}”`} detail="Check the spelling or try fewer words.">
+          <button
+            className="btn"
+            onClick={() => {
+              feedback.play('back')
+              onChange('')
+              inputRef.current?.focus()
+            }}
+          >
+            Clear search
+          </button>
+        </EmptyState>
+      )}
       {state.status === 'error' && (
-        <EmptyState title={state.error.title} detail={state.error.detail}>
+        <EmptyState tone="error" title={state.error.title} detail={state.error.detail}>
           <button className="btn" onClick={() => onChange(query)}>
             Try again
           </button>
@@ -106,11 +122,17 @@ export function Search() {
         <div className="results" data-stale={state.status === 'searching' || undefined}>
           {SECTIONS.map(({ key, title, max }) =>
             results[key].length ? (
-              <section key={key} aria-label={title}>
-                <h2 className="section-title">{title}</h2>
+              <section key={key} aria-label={title} data-kind={key}>
+                <h2 className="section-title label">{title}</h2>
                 <ul className="rows">
                   {results[key].slice(0, max).map((item) => (
-                    <MediaRow key={item.uri} item={item} onPlay={playItem} onQueue={item.kind === 'track' ? queueItem : undefined} showKind />
+                    <MediaRow
+                      key={item.uri}
+                      item={item}
+                      onPlay={playItem}
+                      onQueue={item.kind === 'track' ? queueItem : undefined}
+                      lead={item.uri === playingUri ? <span className="led row-led" aria-label="Playing now" /> : undefined}
+                    />
                   ))}
                 </ul>
               </section>

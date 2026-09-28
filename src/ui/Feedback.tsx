@@ -12,6 +12,7 @@ export function Toaster() {
     <div className="toast-region" role="status" aria-live="polite">
       {toast && (
         <div key={toast.id} className="toast" data-tone={toast.tone}>
+          <span className="led" aria-hidden="true" />
           {toast.text}
         </div>
       )}
@@ -19,9 +20,11 @@ export function Toaster() {
   )
 }
 
-export function EmptyState({ title, detail, children }: { title: string; detail?: string; children?: ReactNode }) {
+/** A lamp, a line, a way forward. `tone="error"` lights the lamp red; otherwise it's off (idle). */
+export function EmptyState({ title, detail, tone, children }: { title: string; detail?: string; tone?: 'error'; children?: ReactNode }) {
   return (
-    <div className="empty">
+    <div className="empty" data-tone={tone}>
+      <span className="led" data-off={tone ? undefined : true} aria-hidden="true" />
       <p className="empty-title">{title}</p>
       {detail && <p className="empty-detail">{detail}</p>}
       {children && <div className="empty-actions">{children}</div>}

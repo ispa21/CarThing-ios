@@ -36,8 +36,9 @@ export function PlaylistShelf() {
 
   return (
     <section aria-labelledby="playlists-title">
-      <h2 id="playlists-title" className="section-title">
+      <h2 id="playlists-title" className="section-title label">
         Your playlists
+        {state.status === 'ready' && state.items.length > 0 && <span className="readout">{state.items.length}</span>}
       </h2>
       {state.status === 'loading' && (
         <ul className="tiles" aria-hidden="true">
@@ -50,7 +51,7 @@ export function PlaylistShelf() {
         </ul>
       )}
       {state.status === 'error' && (
-        <EmptyState title={state.error.title} detail={state.error.detail}>
+        <EmptyState tone="error" title={state.error.title} detail={state.error.detail}>
           <button className="btn" onClick={retry}>
             Try again
           </button>

@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { FullscreenButton } from '../ui/FullscreenButton'
 import { back, navigate } from '../app/router'
@@ -29,7 +29,7 @@ export function Settings() {
   )
 
   return (
-    <div className="page">
+    <div className="page page-narrow">
       <header className="page-head">
         <button
           className="icon-btn"
@@ -46,122 +46,154 @@ export function Settings() {
       </header>
 
       <section className="group" aria-labelledby="set-spotify">
-        <h2 id="set-spotify" className="group-title">
+        <h2 id="set-spotify" className="group-title label">
           Spotify
         </h2>
-        <div className="group-row">
-          <span className="group-label">
-            Connected{name ? ` as ${name}` : ''}
-            <span className="group-detail">Disconnecting removes your Spotify sign-in and data from this device.</span>
-          </span>
-          <button
-            className="btn btn-small btn-danger"
-            onClick={() => {
-              feedback.play('spotify-disconnected')
-              logout()
-            }}
-          >
-            Disconnect
-          </button>
+        <div className="group-rows">
+          <div className="group-row">
+            <span className="group-label">
+              Connected{name ? ` as ${name}` : ''}
+              <span className="group-detail">Disconnecting removes your Spotify sign-in and data from this device.</span>
+            </span>
+            <DisconnectButton />
+          </div>
         </div>
       </section>
 
       <section className="group" aria-labelledby="set-feel">
-        <h2 id="set-feel" className="group-title">
+        <h2 id="set-feel" className="group-title label">
           Feel
         </h2>
-        <Switch label="Sound" detail="Quiet clicks and ticks for controls. Mixes under your music." checked={sound} onChange={(v) => setFlag('sound', v)} />
-        {hapticsAvailable() && (
-          <Switch label="Haptics" detail="Taps you can feel on supported phones." checked={haptics} onChange={(v) => setFlag('haptics', v)} />
-        )}
+        <div className="group-rows">
+          <Switch label="Sound" detail="Quiet clicks and ticks for controls. Mixes under your music." checked={sound} onChange={(v) => setFlag('sound', v)} />
+          {hapticsAvailable() && (
+            <Switch label="Haptics" detail="Taps you can feel on supported phones." checked={haptics} onChange={(v) => setFlag('haptics', v)} />
+          )}
+        </div>
       </section>
 
       <section className="group" aria-labelledby="set-lyrics">
-        <h2 id="set-lyrics" className="group-title">
+        <h2 id="set-lyrics" className="group-title label">
           Lyrics
         </h2>
-        <div className="group-row group-row-stack">
-          <span className="group-label" id="lyric-size-label">
-            Text size
-          </span>
-          <Segmented
-            name="lyric-size"
-            labelledBy="lyric-size-label"
-            options={LYRIC_SIZES.map((s, i) => ({ value: i, label: s.label }))}
-            value={lyricSize}
-            onChange={(i) => useSettings.setState({ lyricSize: i })}
+        <div className="group-rows">
+          <div className="group-row group-row-stack">
+            <span className="group-label" id="lyric-size-label">
+              Text size
+            </span>
+            <Segmented
+              name="lyric-size"
+              labelledBy="lyric-size-label"
+              options={LYRIC_SIZES.map((s, i) => ({ value: i, label: s.label }))}
+              value={lyricSize}
+              onChange={(i) => useSettings.setState({ lyricSize: i })}
+            />
+          </div>
+          <Switch
+            label="Follow the current line"
+            detail="For timed lyrics. Scrolling yourself always pauses it."
+            checked={autoScroll}
+            onChange={(v) => setFlag('autoScroll', v)}
           />
         </div>
-        <Switch
-          label="Follow the current line"
-          detail="For timed lyrics. Scrolling yourself always pauses it."
-          checked={autoScroll}
-          onChange={(v) => setFlag('autoScroll', v)}
-        />
       </section>
 
       <section className="group" aria-labelledby="set-display">
-        <h2 id="set-display" className="group-title">
+        <h2 id="set-display" className="group-title label">
           Display
         </h2>
-        <div className="group-row">
-          <span className="group-label" id="theme-label">
-            Screen
-            <span className="group-detail">Black is best for OLED phones and TVs.</span>
-          </span>
-          <Segmented name="theme" labelledBy="theme-label" options={THEMES} value={theme} onChange={(t) => useSettings.setState({ theme: t })} />
-        </div>
-        {canOfferFullscreen() && (
+        <div className="group-rows">
           <div className="group-row">
-            <span className="group-label">
-              Full screen
-              <span className="group-detail">Fullscreen gives PartyDeck the complete display.</span>
+            <span className="group-label" id="theme-label">
+              Screen
+              <span className="group-detail">Black is best for OLED phones and TVs.</span>
             </span>
-            <FullscreenButton />
+            <Segmented name="theme" labelledBy="theme-label" options={THEMES} value={theme} onChange={(t) => useSettings.setState({ theme: t })} />
           </div>
-        )}
+          {canOfferFullscreen() && (
+            <div className="group-row">
+              <span className="group-label">
+                Full screen
+                <span className="group-detail">Fullscreen gives PartyDeck the complete display.</span>
+              </span>
+              <FullscreenButton />
+            </div>
+          )}
+        </div>
       </section>
 
       <section className="group" aria-labelledby="set-app">
-        <h2 id="set-app" className="group-title">
+        <h2 id="set-app" className="group-title label">
           App
         </h2>
-        <InstallRow />
-        <div className="group-row">
-          <span className="group-label">
-            Tutorial
-            <span className="group-detail">A 20-second walkthrough on a silent practice deck.</span>
-          </span>
-          <button
-            className="btn btn-small"
-            onClick={() => {
-              feedback.play('select')
-              navigate('/tutorial')
-            }}
-          >
-            Replay
-          </button>
+        <div className="group-rows">
+          <InstallRow />
+          <div className="group-row">
+            <span className="group-label">
+              Tutorial
+              <span className="group-detail">A 20-second walkthrough on a silent practice deck.</span>
+            </span>
+            <button
+              className="btn btn-small"
+              onClick={() => {
+                feedback.play('select')
+                navigate('/tutorial')
+              }}
+            >
+              Replay
+            </button>
+          </div>
         </div>
       </section>
 
       <section className="group" aria-labelledby="set-about">
-        <h2 id="set-about" className="group-title">
+        <h2 id="set-about" className="group-title label">
           About
         </h2>
-        <div className="group-row">
-          <span className="group-label">
-            PartyDeck
-            <span className="group-detail">
-              Music, artwork and metadata come from Spotify. PartyDeck is an independent app, not made by or affiliated with Spotify.
+        <div className="group-rows">
+          <div className="group-row">
+            <span className="group-label">
+              PartyDeck
+              <span className="group-detail">
+                Music, artwork and metadata come from Spotify. PartyDeck is an independent app, not made by or affiliated with Spotify.
+              </span>
             </span>
-          </span>
-        </div>
-        <div className="group-row">
-          <span className="group-label">Version</span>
-          <span className="group-value">{__APP_VERSION__}</span>
+          </div>
+          <div className="group-row">
+            <span className="group-label">Version</span>
+            <span className="readout">{__APP_VERSION__}</span>
+          </div>
         </div>
       </section>
     </div>
+  )
+}
+
+/** Disconnecting deletes the sign-in, so it takes two presses: the first arms it for a few seconds. */
+function DisconnectButton() {
+  const [armed, setArmed] = useState(false)
+  useEffect(() => {
+    if (!armed) return
+    const t = setTimeout(() => setArmed(false), 4000)
+    return () => clearTimeout(t)
+  }, [armed])
+  return (
+    <button
+      className="btn btn-small btn-danger"
+      data-armed={armed || undefined}
+      aria-live="polite"
+      onClick={() => {
+        if (!armed) {
+          feedback.play('warning')
+          setArmed(true)
+          return
+        }
+        feedback.play('spotify-disconnected')
+        logout()
+      }}
+    >
+      {armed ? 'Press again to disconnect' : 'Disconnect'}
+    </button>
   )
 }
 
@@ -191,7 +223,12 @@ function Segmented<T extends string | number>({
   onChange: (v: T) => void
 }) {
   return (
-    <div className="seg" role="radiogroup" aria-labelledby={labelledBy}>
+    <div
+      className="seg"
+      role="radiogroup"
+      aria-labelledby={labelledBy}
+      style={{ '--i': Math.max(0, options.findIndex((o) => o.value === value)), '--n': options.length } as CSSProperties}
+    >
       {options.map((o) => (
         <label key={o.label}>
           <input

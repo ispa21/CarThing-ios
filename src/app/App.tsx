@@ -1,5 +1,5 @@
 import { domMax, LazyMotion, MotionConfig } from 'motion/react'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { initialStep } from '../onboarding/flow'
 import { Onboarding } from '../onboarding/Onboarding'
 import { Tutorial } from '../onboarding/Tutorial'
@@ -103,10 +103,23 @@ function ConnectedApp({ route, onboarding }: { route: Route; onboarding: boolean
   )
 }
 
+/** The rail's order, left to right: screens enter from the side you travelled toward. */
+const RAIL_ORDER: Route[] = ['now', 'search', 'queue', 'lyrics']
+
+function direction(from: Route, to: Route): 'forward' | 'back' | undefined {
+  const a = RAIL_ORDER.indexOf(from)
+  const b = RAIL_ORDER.indexOf(to)
+  if (a < 0 || b < 0 || a === b) return undefined
+  return b > a ? 'forward' : 'back'
+}
+
 /** Keyed per route so each screen mounts fresh (scroll resets, enter animation plays). */
 function Screen({ route, immersive = false }: { route: Route; immersive?: boolean }) {
   const ref = useRef<HTMLElement>(null)
   const first = useRef(true)
+  // Where we came from decides which way the new screen enters (state adjusted during render).
+  const [nav, setNav] = useState<{ route: Route; dir?: 'forward' | 'back' }>({ route })
+  if (nav.route !== route) setNav({ route, dir: direction(nav.route, route) })
 
   // Move focus to the new screen so screen readers announce the change (not on first load).
   useEffect(() => {
@@ -119,7 +132,7 @@ function Screen({ route, immersive = false }: { route: Route; immersive?: boolea
   }, [route])
 
   return (
-    <main key={route} ref={ref} className="screen" data-immersive={immersive || undefined} data-route={route} tabIndex={-1}>
+    <main key={route} ref={ref} className="screen" data-immersive={immersive || undefined} data-route={route} data-dir={nav.dir} tabIndex={-1}>
       {route === 'now' && <NowPlaying />}
       {route === 'search' && <Search />}
       {route === 'queue' && <Queue />}

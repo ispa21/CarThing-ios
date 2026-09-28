@@ -1,0 +1,88 @@
+/* ── Settings: a spec sheet ────────────────────────────────────────────── */
+
+.group {
+  margin-top: var(--s-6);
+}
+
+.group:first-of-type {
+  margin-top: 0;
+}
+
+.group-title {
+  margin-bottom: var(--s-3);
+}
+
+.group-rows {
+  border-radius: var(--r-l);
+  background: var(--surface-1);
+  box-shadow:
+    var(--edge-light),
+    inset 0 0 0 1px var(--hairline);
+  overflow: hidden;
+}
+
+.group-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  min-height: 64px;
+  padding: 14px 18px;
+  transition: background-color var(--dur-fast) ease;
+}
+
+.group-row + .group-row {
+  box-shadow: inset 0 1px 0 var(--hairline);
+}
+
+label.group-row {
+  cursor: pointer;
+}
+
+label.group-row:active {
+  background: var(--surface-2);
+}
+
+.group-row-stack,
+.group-row:has(.seg) {
+  flex-wrap: wrap;
+}
+
+.group-row:has(.seg) .seg {
+  min-width: min(100%, 320px);
+}
+
+.group-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-weight: 560;
+}
+
+.group-detail {
+  color: var(--ink-3);
+  font-size: var(--t-small);
+  font-weight: 400;
+  text-wrap: pretty;
+}
+
+/* Wide screens: the label column of a spec sheet, then the rows. */
+@media (min-width: 900px) {
+  .group {
+    display: grid;
+    grid-template-columns: 180px minmax(0, 1fr);
+    column-gap: var(--s-6);
+    align-items: start;
+  }
+
+  .group-title {
+    margin: 0;
+    padding-top: 26px;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  label.group-row:hover {
+    background: var(--surface-2);
+  }
+}

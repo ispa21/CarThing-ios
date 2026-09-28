@@ -1,13 +1,32 @@
-import { AnimatePresence, m } from 'motion/react'
-import { useRef, type ReactNode } from 'react'
+import { AnimatePresence, m, type Variants } from 'motion/react'
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { swipeDirection, SWIPE_COMMIT_PX, type SwipeDirection } from '../lib/gesture'
 import { feedback } from '../sensory/feedback'
 import { Artwork } from '../ui/Artwork'
 import type { Clock } from '../ui/clock'
+import { EASE_EXPO, EASE_OUT } from '../ui/motion'
 import { Scrubber } from '../ui/Scrubber'
+import { useArtColor } from '../ui/useArtColor'
 import { TransportKeys, type TransportKeysProps } from './Transport'
 
-const ease = [0.23, 1, 0.32, 1] as const
+/** +1: the next track arrives from the right (like a swipe left). −1: from the left. */
+type Dir = 1 | -1
+
+const artMotion: Variants = {
+  enter: (d: Dir) => ({ opacity: 0, x: 56 * d, scale: 0.985 }),
+  center: { opacity: 1, x: 0, scale: 1, transition: { duration: 0.46, ease: EASE_EXPO } },
+  exit: (d: Dir) => ({ opacity: 0, x: -40 * d, scale: 0.985, transition: { duration: 0.2, ease: EASE_OUT } }),
+}
+
+/** Line-mask change, like a marquee flipping: the old line leaves upward, the new one rises in. */
+const lineMotion: Variants = {
+  enter: { opacity: 0, y: '100%' },
+  center: (i: number) => ({ opacity: 1, y: '0%', transition: { duration: 0.5, ease: EASE_EXPO, delay: 0.05 + i * 0.045 } }),
+  exit: { opacity: 0, y: '-70%', transition: { duration: 0.18, ease: EASE_OUT } },
+}
+
+/** Title length decides its size tier: the marquee fits its words. */
+const titleFit = (t: string | null) => (!t || t.length <= 16 ? undefined : t.length <= 34 ? 'm' : 'l')
 
 export interface DeckProps {
   trackKey: string | null
@@ -22,46 +41,138 @@ export interface DeckProps {
   seekDisabled?: boolean
   transport: TransportKeysProps
   onSwipe?: (direction: SwipeDirection) => void
+  /** The faceplate readout above the title: what the deck is doing. */
+  status?: { text: string; live: boolean }
   /** Under the metadata: Spotify link-back or a practice label. */
   attribution?: ReactNode
+  /** Beside the keys: the output (device) selector. */
   footer?: ReactNode
+  /** End of the status row (the ⋮ menu). */
+  menu?: ReactNode
+  /** Above the dial, beside the next key: what's coming. */
+  next?: ReactNode
 }
 
 /**
  * The deck: artwork on the left, the instrument panel on the right (landscape),
- * stacked on phones held upright. Shared by Now Playing and the tutorial so
- * people practise on the real controls.
+ * stacked on phones held upright. The panel spans the artwork's height — what's
+ * playing at the top, the controls at the bottom. Shared by Now Playing and the
+ * tutorial so people practise on the real controls.
  */
 export function Deck(p: DeckProps) {
+  // The direction of the last skip, consumed by the next track change (state adjusted during render).
+  const [pending, setPending] = useState<Dir>(1)
+  const [shown, setShown] = useState<{ key: string | null; dir: Dir }>({ key: p.trackKey, dir: 1 })
+  // Between pressing skip and Spotify reporting the new track, the old title dims:
+  // honest "working" feedback instead of stale metadata beside a reset clock.
+  const [skipping, setSkipping] = useState(false)
+  if (shown.key !== p.trackKey) {
+    setShown({ key: p.trackKey, dir: pending })
+    setPending(1)
+    setSkipping(false)
+  }
+  useEffect(() => {
+    if (!skipping) return
+    const t = setTimeout(() => setSkipping(false), 3000) // the skip failed or was ignored
+    return () => clearTimeout(t)
+  }, [skipping])
+
+  const transport: TransportKeysProps = {
+    ...p.transport,
+    onNext: () => {
+      setPending(1)
+      setSkipping(true)
+      p.transport.onNext()
+    },
+    onPrevious: () => {
+      setPending(-1) // no dimming: "previous" usually restarts the same song
+      p.transport.onPrevious()
+    },
+  }
+  const onSwipe =
+    p.onSwipe &&
+    ((d: SwipeDirection) => {
+      setPending(d === 'next' ? 1 : -1)
+      setSkipping(d === 'next')
+      p.onSwipe?.(d)
+    })
+
+  const ambient = useArtColor(p.art)
+
   return (
-    <div className="np-body">
-      <SwipeArt art={p.art} alt={p.artAlt} onSwipe={p.onSwipe} />
-      <div className="np-panel">
-        <div className="np-meta">
-          {/* Outgoing and incoming titles share one grid cell. (Not mode="popLayout":
-              it injects a <style> element, which our CSP rightly blocks.) */}
-          <div className="np-meta-stack">
-            <AnimatePresence initial={false}>
-              <m.div
-                key={p.trackKey}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.24, ease }}
-              >
-                <h2 className="np-title">{p.title}</h2>
-                <p className="np-artist">{p.artist}</p>
-                {p.album && <p className="np-album">{p.album}</p>}
-              </m.div>
-            </AnimatePresence>
+    <>
+      {/* The room's light: a glow behind the art in the cover's own colour. Dims when paused. */}
+      <div
+        className="np-ambient"
+        data-dim={!p.transport.isPlaying || undefined}
+        style={ambient ? ({ '--ambient': ambient } as CSSProperties) : undefined}
+        aria-hidden="true"
+      />
+      <div className="np-body">
+        <SwipeArt art={p.art} alt={p.artAlt} dir={shown.dir} onSwipe={onSwipe} />
+        <div className="np-panel">
+          <div className="np-meta">
+            {(p.status || p.menu) && (
+              <div className="np-status-row">
+                {p.status && (
+                  <p className="np-status label">
+                    <span className="led" data-off={!p.status.live || undefined} aria-hidden="true" />
+                    <StatusText text={p.status.text} />
+                  </p>
+                )}
+                {p.menu}
+              </div>
+            )}
+            {/* Outgoing and incoming lines share one grid cell. (Not mode="popLayout":
+                it injects a <style> element, which our CSP rightly blocks.) */}
+            <div className="np-meta-stack" data-pending={skipping || undefined}>
+              <AnimatePresence initial={false}>
+                <m.div key={p.trackKey} initial="enter" animate="center" exit="exit">
+                  <h2 className="np-mask">
+                    <m.span className="np-title" data-fit={titleFit(p.title)} variants={lineMotion} custom={0}>
+                      {p.title}
+                    </m.span>
+                  </h2>
+                  <p className="np-mask">
+                    <m.span className="np-artist" variants={lineMotion} custom={1}>
+                      {p.artist}
+                      {p.album && <span className="np-album"> — {p.album}</span>}
+                    </m.span>
+                  </p>
+                </m.div>
+              </AnimatePresence>
+            </div>
+            {p.attribution}
           </div>
-          {p.attribution}
+          <div className="np-controls">
+            {p.next}
+            <Scrubber clock={p.clock} durationMs={p.durationMs} onSeek={p.onSeek} disabled={p.seekDisabled} label="Song position" />
+            <div className="np-keys">
+              <TransportKeys {...transport} />
+              {p.footer}
+            </div>
+          </div>
         </div>
-        <Scrubber clock={p.clock} durationMs={p.durationMs} onSeek={p.onSeek} disabled={p.seekDisabled} label="Song position" />
-        <TransportKeys {...p.transport} />
-        {p.footer}
       </div>
-    </div>
+    </>
+  )
+}
+
+/** State words roll rather than swap: the old word leaves upward, the new one rises in. */
+function StatusText({ text }: { text: string }) {
+  return (
+    <span className="roll">
+      <AnimatePresence initial={false}>
+        <m.span
+          key={text}
+          initial={{ y: '100%', opacity: 0 }}
+          animate={{ y: '0%', opacity: 1, transition: { duration: 0.32, ease: EASE_EXPO } }}
+          exit={{ y: '-100%', opacity: 0, transition: { duration: 0.16, ease: EASE_OUT } }}
+        >
+          {text}
+        </m.span>
+      </AnimatePresence>
+    </span>
   )
 }
 
@@ -72,7 +183,7 @@ export function Deck(p: DeckProps) {
  * iOS haptics work (Motion's drag callbacks run in a later animation frame) — and
  * a pointercancel (the browser took over to scroll) never skips.
  */
-function SwipeArt({ art, alt, onSwipe }: { art: string | null; alt: string; onSwipe?: (d: SwipeDirection) => void }) {
+function SwipeArt({ art, alt, dir, onSwipe }: { art: string | null; alt: string; dir: Dir; onSwipe?: (d: SwipeDirection) => void }) {
   const drag = useRef<{ x: number; v: number } | null>(null)
   const armed = useRef(false)
   return (
@@ -96,23 +207,17 @@ function SwipeArt({ art, alt, onSwipe }: { art: string | null; alt: string; onSw
         const d = drag.current
         drag.current = null
         armed.current = false
-        const dir = d && swipeDirection(d.x, d.v)
-        if (dir) onSwipe?.(dir)
+        const direction = d && swipeDirection(d.x, d.v)
+        if (direction) onSwipe?.(direction)
       }}
       onPointerCancel={() => {
         drag.current = null
         armed.current = false
       }}
     >
-      <AnimatePresence initial={false}>
-        <m.div
-          key={art ?? 'none'}
-          className="np-art-layer"
-          initial={{ opacity: 0, scale: 0.97 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.4, ease }}
-        >
+      {/* Same album, same art: no transition. A new cover arrives from the side you skipped toward. */}
+      <AnimatePresence initial={false} custom={dir}>
+        <m.div key={art ?? 'none'} className="np-art-layer" custom={dir} variants={artMotion} initial="enter" animate="center" exit="exit">
           <Artwork src={art} alt={alt} />
         </m.div>
       </AnimatePresence>

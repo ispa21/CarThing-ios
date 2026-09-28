@@ -1,0 +1,569 @@
+/* ── Lists, tiles, skeletons, empty states ─────────────────────────────── */
+
+/* ── Artwork (always uncropped and unaltered) ── */
+
+.art {
+  position: relative;
+  display: block;
+  flex: none;
+  aspect-ratio: 1;
+  border-radius: var(--r-xs);
+  overflow: hidden;
+  background: var(--surface-1);
+}
+
+.art img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* never crop Spotify artwork */
+  opacity: 0;
+  transition: opacity var(--dur-slow) ease;
+}
+
+.art img[data-loaded] {
+  opacity: 1;
+}
+
+.art-round {
+  border-radius: 50%;
+}
+
+.art-sm {
+  width: 42px;
+}
+
+.art-row {
+  width: 48px;
+}
+
+.art-empty {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  color: var(--ink-4);
+}
+
+.art-empty svg {
+  width: 36%;
+  height: 36%;
+}
+
+/* ── Rows: a tracklist, ruled like a record sleeve ── */
+
+.rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.rows > li {
+  animation: row-in var(--dur-slow) var(--ease-expo) both;
+}
+
+/* A short cascade for the first rows; the rest arrive with the last of them. */
+.rows > li:nth-child(2) { animation-delay: calc(1 * var(--stagger)); }
+.rows > li:nth-child(3) { animation-delay: calc(2 * var(--stagger)); }
+.rows > li:nth-child(4) { animation-delay: calc(3 * var(--stagger)); }
+.rows > li:nth-child(5) { animation-delay: calc(4 * var(--stagger)); }
+.rows > li:nth-child(6) { animation-delay: calc(5 * var(--stagger)); }
+.rows > li:nth-child(7) { animation-delay: calc(6 * var(--stagger)); }
+.rows > li:nth-child(n + 8) { animation-delay: calc(7 * var(--stagger)); }
+
+@keyframes row-in {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+}
+
+.row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 64px;
+}
+
+.row + .row {
+  box-shadow: inset 0 1px 0 var(--hairline);
+}
+
+.row-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px;
+  margin-left: -8px;
+  border-radius: var(--r-m);
+  text-align: left;
+  transition:
+    background-color var(--dur-fast) ease,
+    scale var(--dur-press) var(--ease-out);
+}
+
+button.row-main:active {
+  background: var(--surface-1);
+  scale: 0.985;
+}
+
+.row-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.row-title,
+.row-sub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row-title {
+  font-weight: 560;
+}
+
+.row-sub {
+  color: var(--ink-2);
+  font-size: var(--t-small);
+}
+
+.row-kind {
+  margin-right: 0.7em;
+  font-stretch: var(--w-expanded);
+  font-size: 0.625rem;
+  font-weight: 650;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.row-num {
+  width: 2.4em;
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: var(--t-readout);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+}
+
+.row-led {
+  margin: 0 calc(2.4em - 7px) 0 0;
+}
+
+.results[data-stale] {
+  opacity: 0.55;
+  transition: opacity var(--dur-base) ease 150ms;
+}
+
+/* Desktop search: songs are the long column, everything else sits beside it. */
+@media (min-width: 1000px) {
+  .results {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    grid-auto-flow: dense;
+    column-gap: clamp(32px, 4vw, 72px);
+    align-items: start;
+  }
+
+  .results > section {
+    grid-column: 2;
+  }
+
+  .results > section[data-kind='tracks'] {
+    grid-column: 1;
+    grid-row: 1 / span 3;
+  }
+}
+
+/* ── Tiles: playlists as presets ── */
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(156px, 40vw), 1fr));
+  gap: var(--s-5) var(--s-4);
+}
+
+.tiles > li {
+  animation: row-in var(--dur-slow) var(--ease-expo) both;
+}
+
+.tiles > li:nth-child(2) { animation-delay: calc(1 * var(--stagger)); }
+.tiles > li:nth-child(3) { animation-delay: calc(2 * var(--stagger)); }
+.tiles > li:nth-child(4) { animation-delay: calc(3 * var(--stagger)); }
+.tiles > li:nth-child(5) { animation-delay: calc(4 * var(--stagger)); }
+.tiles > li:nth-child(n + 6) { animation-delay: calc(5 * var(--stagger)); }
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.tile-play {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+  border-radius: var(--r-s);
+  transition: scale var(--dur-press) var(--ease-out);
+}
+
+.tile-play:active {
+  scale: 0.97;
+}
+
+.tile-play .art {
+  width: 100%;
+  border-radius: var(--r-s);
+  box-shadow: 0 0 0 1px var(--hairline);
+  transition:
+    translate var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out);
+}
+
+.tile-title {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tile-sub {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  margin-top: -4px;
+  color: var(--ink-3);
+  font-size: 0.8125rem;
+}
+
+.tile-sub > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tile-link {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: var(--tap);
+  height: var(--tap);
+  margin: -14px -14px -14px 0; /* 44px hit area without growing the row */
+  border-radius: var(--r-s);
+  color: var(--ink-3);
+  transition: color var(--dur-fast) ease;
+}
+
+/* Landscape phones: the shelf becomes a row of presets you flick through. */
+@media (orientation: landscape) and (max-height: 600px) {
+  .tiles {
+    grid-auto-flow: column;
+    grid-template-columns: none;
+    grid-auto-columns: clamp(110px, 32vh, 180px);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--pad-l);
+    margin-inline: calc(-1 * var(--pad-l)) calc(-1 * var(--pad-r));
+    padding: 0 var(--pad-r) var(--s-2) var(--pad-l);
+    scrollbar-width: none;
+  }
+
+  .tiles::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tile {
+    scroll-snap-align: start;
+  }
+}
+
+/* ── Skeletons ── */
+
+.skel {
+  background: var(--surface-1);
+  animation: skel 1.1s ease-in-out infinite alternate;
+}
+
+.skel-line {
+  display: block;
+  height: 0.9em;
+  width: 70%;
+  border-radius: var(--r-xs);
+}
+
+.skel-short {
+  width: 40%;
+}
+
+.skel-label {
+  width: 26%;
+  height: 0.7em;
+}
+
+.skel-title {
+  height: 2.6em;
+  width: 86%;
+}
+
+.skel-dial {
+  height: 14px;
+  width: 100%;
+}
+
+.row-skel .row-text {
+  gap: 8px;
+}
+
+.row-skel .art {
+  width: 48px;
+}
+
+@keyframes skel {
+  from {
+    opacity: 0.4;
+  }
+}
+
+/* ── Empty / error states: a lamp, a line, a way forward ── */
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-2);
+  max-width: 38ch;
+  margin: var(--s-7) auto;
+  text-align: center;
+  animation: row-in var(--dur-slow) var(--ease-expo) both;
+}
+
+.empty .led {
+  margin-bottom: var(--s-2);
+}
+
+.empty[data-tone='error'] .led {
+  background: var(--error);
+  box-shadow: 0 0 12px rgb(255 117 102 / 0.45);
+}
+
+.empty-title {
+  font-stretch: var(--w-condensed);
+  font-size: clamp(1.75rem, 1.4rem + 1.4vw, 2.5rem);
+  font-weight: 740;
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.empty-detail {
+  color: var(--ink-2);
+  text-wrap: pretty;
+}
+
+.empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: var(--s-4);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  button.row-main:hover {
+    background: var(--surface-1);
+  }
+
+  .tile-play:hover .art {
+    translate: 0 -4px;
+    box-shadow:
+      0 0 0 1px var(--hairline-strong),
+      0 18px 34px -18px rgb(0 0 0 / 0.9);
+  }
+
+  .tile-play:hover .tile-title {
+    text-decoration: underline;
+    text-decoration-color: var(--hairline-strong);
+    text-underline-offset: 3px;
+  }
+
+  .tile-link:hover {
+    color: var(--ink);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rows > li,
+  .tiles > li,
+  .empty {
+    animation-name: fade-in;
+  }
+
+  .skel {
+    animation: none;
+  }
+
+  button.row-main:active,
+  .tile-play:active {
+    scale: none;
+  }
+}
+
+.row-time {
+  flex: none;
+  padding: 0 var(--s-2);
+  color: var(--ink-3);
+}
+
+/* ── Queue: stepped depth — the live item is the largest thing on the page ── */
+
+.queue-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-6);
+}
+
+.queue-now-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.queue-hero {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  min-width: 0;
+}
+
+.queue-hero-art {
+  width: 104px;
+  border-radius: var(--r-s);
+  box-shadow:
+    0 0 0 1px var(--hairline),
+    0 24px 48px -24px rgb(0 0 0 / 0.9);
+}
+
+.queue-hero-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  min-width: 0;
+}
+
+.queue-hero-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-stretch: var(--w-condensed);
+  font-size: clamp(1.625rem, 1.1rem + 2vw, 3.25rem);
+  font-weight: 760;
+  line-height: 0.96;
+  letter-spacing: -0.022em;
+  padding-bottom: 0.06em;
+  overflow-wrap: anywhere;
+}
+
+.queue-hero-sub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink-2);
+  font-size: var(--t-lead);
+  font-weight: 500;
+}
+
+.queue-hero-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  margin-top: var(--s-1);
+}
+
+@media (orientation: landscape) and (min-width: 760px) {
+  .queue-layout {
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    gap: clamp(32px, 5vw, 88px);
+    align-items: start;
+  }
+
+  .queue-now {
+    position: sticky;
+    top: 0;
+  }
+
+  .queue-hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .queue-hero-art {
+    width: min(100%, 420px, 52vh);
+  }
+}
+
+/* Landscape phones: side by side, art sized by height. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .queue-layout {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: var(--s-5);
+    align-items: start;
+  }
+
+  .queue-now {
+    position: sticky;
+    top: 0;
+  }
+
+  .queue-hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .queue-hero-art {
+    width: min(100%, 34vh);
+  }
+
+  .queue-hero-title {
+    font-size: 1.5rem;
+    -webkit-line-clamp: 2;
+  }
+
+  .page-head {
+    margin-bottom: var(--s-4);
+    padding-bottom: var(--s-3);
+  }
+}
+
+@media (max-width: 420px) {
+  .row-time {
+    display: none;
+  }
+}
+
+/* Short landscape: the lit rail tab already says "Search"; give the height to the field and shelf. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .screen[data-route='search'] .page-head {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .page {
+    padding-top: calc(var(--safe-t) + var(--s-4));
+  }
+}

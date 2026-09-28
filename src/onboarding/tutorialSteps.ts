@@ -23,7 +23,7 @@ export const TUTORIAL_STEPS: readonly TutorialStep[] = [
   { id: 'pause', title: 'Now pause it.', hint: 'Same key, press it again.', accepts: ['pause'] },
   { id: 'skip', title: 'Skip ahead.', hint: 'Press next, or swipe the artwork sideways.', accepts: ['next', 'previous'] },
   { id: 'queue', title: 'Open the queue.', hint: 'Everything up next lives here.', accepts: ['open-queue'] },
-  { id: 'home', title: 'Back to the deck.', hint: 'Tap Home in the rail. It always brings you here.', accepts: ['go-home'] },
+  { id: 'home', title: 'Back to the deck.', hint: 'Tap Deck in the rail. It always brings you here.', accepts: ['go-home'] },
   { id: 'lyrics', title: 'Open the lyrics.', hint: 'A big, calm reader for the song.', accepts: ['open-lyrics'] },
   { id: 'fullscreen', title: 'Take the whole screen.', hint: 'Fullscreen gives PartyDeck the complete display.', accepts: ['fullscreen', 'acknowledge'] },
 ]

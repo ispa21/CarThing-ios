@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { formatTime } from '../lib/progress'
 import type { MediaItem, MediaKind } from '../spotify/normalize'
 import { Artwork } from './Artwork'
 import { Icon } from './Icon'
@@ -52,6 +53,11 @@ export function MediaRow({ item, onPlay, onQueue, lead, showKind = false }: Prop
       ) : (
         <div className="row-main">{body}</div>
       )}
+      {item.durationMs ? (
+        <span className="row-time readout" aria-hidden="true">
+          {formatTime(item.durationMs)}
+        </span>
+      ) : null}
       {onQueue && (
         <PressKey
           className="icon-btn"

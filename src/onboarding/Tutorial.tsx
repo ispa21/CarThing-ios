@@ -1,6 +1,7 @@
 import { AnimatePresence, m } from 'motion/react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Deck } from '../app/Deck'
+import { RailLamp } from '../app/Rail'
 import { canOfferFullscreen, isStandalone, useIsFullscreen } from '../lib/fullscreen'
 import { lyricsEngine } from '../lyrics/engine'
 import { parseLRC } from '../lyrics/lrc'
@@ -91,8 +92,8 @@ export function Tutorial({ onFinish }: { onFinish: () => void }) {
   return (
     <div className="tutorial">
       <header className="tutorial-top" inert={complete}>
-        <span className="tutorial-tag">
-          <span className="led" aria-hidden="true" /> Practice deck, no audio
+        <span className="tutorial-tag label">
+          <span className="led" aria-hidden="true" /> Practice deck · no audio
         </span>
         <ol className="tutorial-steps" aria-hidden="true">
           {TUTORIAL_STEPS.map((s, i) => (
@@ -162,8 +163,9 @@ export function Tutorial({ onFinish }: { onFinish: () => void }) {
         <ul className="rail-tabs">
           <li>
             <button className="rail-tab" data-coach={coach === 'home' || undefined} onClick={home} aria-current={!panel ? 'page' : undefined}>
-              <Icon name="nowPlaying" />
-              <span>Home</span>
+              {!panel && <RailLamp id="practice-lamp" />}
+              <Icon name="deck" />
+              <span>Deck</span>
             </button>
           </li>
           <li>
@@ -176,12 +178,14 @@ export function Tutorial({ onFinish }: { onFinish: () => void }) {
           </li>
           <li>
             <button className="rail-tab" data-coach={coach === 'queue' || undefined} onClick={() => open('queue')} aria-current={panel === 'queue' ? 'page' : undefined}>
+              {panel === 'queue' && <RailLamp id="practice-lamp" />}
               <Icon name="queue" />
               <span>Queue</span>
             </button>
           </li>
           <li>
             <button className="rail-tab" data-coach={coach === 'lyrics' || undefined} onClick={() => open('lyrics')} aria-current={panel === 'lyrics' ? 'page' : undefined}>
+              {panel === 'lyrics' && <RailLamp id="practice-lamp" />}
               <Icon name="lyrics" />
               <span>Lyrics</span>
             </button>

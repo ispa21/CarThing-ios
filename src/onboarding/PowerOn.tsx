@@ -34,17 +34,20 @@ export function PowerOn({ onDone }: { onDone: () => void }) {
 
   return (
     <main className="onboard onboard-boot" data-lit={booting || undefined}>
-      <div className="onboard-mark">
-        <p className="onboard-status">
-          <Icon name="check" size={18} /> Spotify connected
+      <header className="onboard-top">
+        <p className="onboard-state label">
+          <Icon name="check" size={14} />
+          Spotify connected
         </p>
+      </header>
+      <div className="onboard-action">
+        <PowerKey label="Power on" icon="power" lit={booting} onPress={press} />
+      </div>
+      <div className="onboard-mark">
         <h1 className="onboard-title" tabIndex={-1} data-step-focus>
           Ready when you are.
         </h1>
         <p className="onboard-sub">{name ? `Signed in as ${name}.` : 'Signed in.'}</p>
-      </div>
-      <div className="onboard-action">
-        <PowerKey label="Power on" icon="power" lit={booting} onPress={press} />
       </div>
     </main>
   )

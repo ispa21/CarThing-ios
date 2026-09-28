@@ -35,12 +35,10 @@ export function Callback() {
 
   return (
     <main className="standby">
-      <div className="standby-center">
-        <p className="wordmark wordmark-sm">
-          <span className="led led-pulse" aria-hidden="true" />
-          Connecting to Spotify…
-        </p>
-      </div>
+      <p className="standby-line label" role="status">
+        <span className="led led-pulse" aria-hidden="true" />
+        Connecting to Spotify…
+      </p>
     </main>
   )
 }
