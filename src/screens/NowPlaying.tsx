@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
-import { Deck } from '../app/Deck'
+import { Deck, UpNextLine } from '../app/Deck'
 import { tickLink } from '../app/router'
 import { usePhonePortrait } from '../lib/orientation'
 import { feedback } from '../sensory/feedback'
@@ -8,7 +8,7 @@ import { refreshQueue, seekTo, skipNext, skipPrevious, syncNow, togglePlay } fro
 import { selectCanToggle, usePlayback } from '../store/playback'
 import { openDevices, useUi } from '../store/ui'
 import { spotifyClock } from '../ui/clock'
-import { EmptyState } from '../ui/Feedback'
+import { ErrorState } from '../ui/Feedback'
 import { Icon } from '../ui/Icon'
 import { Sheet } from '../ui/Sheet'
 import { PlaylistShelf } from './PlaylistShelf'
@@ -79,17 +79,18 @@ export function NowPlaying() {
             </div>
             <div className="np-controls">
               <span className="skel skel-line skel-dial" />
+              <span className="skel-keys">
+                <span className="skel skel-key" />
+                <span className="skel skel-key" />
+                <span className="skel skel-key" />
+              </span>
             </div>
           </div>
         </div>
       ) : !s.has ? (
         <div className="np-empty">
           {s.error ? (
-            <EmptyState tone="error" title={s.error.title} detail={s.error.detail}>
-              <button className="btn" onClick={() => void syncNow()}>
-                Try again
-              </button>
-            </EmptyState>
+            <ErrorState error={s.error} onRetry={() => void syncNow()} />
           ) : (
             // Nothing playing: the deck is never a dead end — your playlists are right here.
             <div className="np-idle">
@@ -193,14 +194,7 @@ function UpNext({ uri }: { uri: string | null }) {
     if (uri) void refreshQueue()
   }, [uri])
   if (!next) return null
-  return (
-    <a className="np-next" href="/queue" onClick={tickLink}>
-      <span className="label">Up next</span>
-      <span className="np-next-title">{next.title}</span>
-      <span className="np-next-sub">{next.subtitle}</span>
-      <Icon name="forward" size={16} />
-    </a>
-  )
+  return <UpNextLine title={next.title} subtitle={next.subtitle} href="/queue" onClick={tickLink} />
 }
 
 /** Phones held upright get a compact deck and a gentle nudge — never a wall. */

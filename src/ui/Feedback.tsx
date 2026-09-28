@@ -1,5 +1,7 @@
 import { useEffect, type ReactNode } from 'react'
-import { useUi } from '../store/ui'
+import { feedback } from '../sensory/feedback'
+import type { FriendlyError } from '../spotify/errors'
+import { openDevices, useUi } from '../store/ui'
 
 export function Toaster() {
   const toast = useUi((s) => s.toast)
@@ -29,6 +31,40 @@ export function EmptyState({ title, detail, tone, children }: { title: string; d
       {detail && <p className="empty-detail">{detail}</p>}
       {children && <div className="empty-actions">{children}</div>}
     </div>
+  )
+}
+
+/**
+ * An error with the one way forward it actually has: "Try again" only when retrying can
+ * work, "Choose device" when there's no active device, nothing while Spotify has asked
+ * us to wait (a button that's guaranteed to fail is worse than none).
+ */
+export function ErrorState({ error, onRetry }: { error: FriendlyError; onRetry: () => void }) {
+  return (
+    <EmptyState tone="error" title={error.title} detail={error.detail}>
+      {error.action === 'retry' && (
+        <button
+          className="btn"
+          onClick={() => {
+            feedback.play('select')
+            onRetry()
+          }}
+        >
+          Try again
+        </button>
+      )}
+      {error.action === 'devices' && (
+        <button
+          className="btn"
+          onClick={() => {
+            feedback.play('select')
+            openDevices()
+          }}
+        >
+          Choose device
+        </button>
+      )}
+    </EmptyState>
   )
 }
 

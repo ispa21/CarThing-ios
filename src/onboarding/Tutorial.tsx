@@ -1,6 +1,6 @@
 import { AnimatePresence, m } from 'motion/react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Deck } from '../app/Deck'
+import { Deck, UpNextLine } from '../app/Deck'
 import { RailLamp } from '../app/Rail'
 import { canOfferFullscreen, isStandalone, useIsFullscreen } from '../lib/fullscreen'
 import { lyricsEngine } from '../lyrics/engine'
@@ -33,6 +33,7 @@ export function Tutorial({ onFinish }: { onFinish: () => void }) {
   const [panel, setPanel] = useState<Panel>(null)
   const deck = usePracticeDeck()
   const track = PRACTICE_TRACKS[deck.index]
+  const upNext = PRACTICE_TRACKS[(deck.index + 1) % PRACTICE_TRACKS.length]
   const step = TUTORIAL_STEPS[index]
   const complete = isTutorialComplete(index)
   const coach = complete ? null : step.id
@@ -149,6 +150,7 @@ export function Tutorial({ onFinish }: { onFinish: () => void }) {
             },
             coach: coach === 'play' || coach === 'pause' ? 'play' : coach === 'skip' ? 'skip' : undefined,
           }}
+          next={<UpNextLine title={upNext.title} subtitle={upNext.artist} />}
           onSwipe={(d) => {
             if (d === 'next') practice.next()
             else practice.previous()

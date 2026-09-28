@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { refreshDevices, transferTo } from '../spotify/playbackService'
 import { usePlayback } from '../store/playback'
 import { closeDevices, useUi } from '../store/ui'
-import { EmptyState } from '../ui/Feedback'
+import { EmptyState, ErrorState } from '../ui/Feedback'
 import { Icon, type IconName } from '../ui/Icon'
 import { Sheet } from '../ui/Sheet'
 
@@ -30,11 +30,7 @@ function DeviceList() {
     )
   if (error && !data) {
     return (
-      <EmptyState tone="error" title={error.title} detail={error.detail}>
-        <button className="btn" onClick={refreshDevices}>
-          Try again
-        </button>
-      </EmptyState>
+      <ErrorState error={error} onRetry={() => void refreshDevices()} />
     )
   }
   if (!data?.length) {

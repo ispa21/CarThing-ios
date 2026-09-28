@@ -651,3 +651,7 @@
   box-shadow: 0 0 18px rgb(255 117 102 / 0.35);
   color: #1c0906;
 }
+
+form[role='search'] {
+  margin-bottom: var(--s-5);
+}

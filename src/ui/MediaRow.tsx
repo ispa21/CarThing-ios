@@ -21,9 +21,11 @@ interface Props {
   onQueue?: (item: MediaItem) => Promise<boolean>
   lead?: ReactNode
   showKind?: boolean
+  /** This is what's playing: a lamp in the gutter (doesn't shift the row). */
+  live?: boolean
 }
 
-export function MediaRow({ item, onPlay, onQueue, lead, showKind = false }: Props) {
+export function MediaRow({ item, onPlay, onQueue, lead, showKind = false, live = false }: Props) {
   const [added, setAdded] = useState(false)
   useEffect(() => {
     if (!added) return
@@ -45,9 +47,9 @@ export function MediaRow({ item, onPlay, onQueue, lead, showKind = false }: Prop
     </>
   )
   return (
-    <li className="row">
+    <li className="row" data-live={live || undefined}>
       {onPlay ? (
-        <button className="row-main" onClick={() => onPlay(item)} aria-label={`Play ${item.title}${item.subtitle && item.kind !== 'artist' ? `, ${item.subtitle}` : ''}`}>
+        <button className="row-main" onClick={() => onPlay(item)} aria-label={`Play ${item.title}${item.subtitle && item.kind !== 'artist' ? `, ${item.subtitle}` : ''}${live ? ', playing now' : ''}`}>
           {body}
         </button>
       ) : (

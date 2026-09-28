@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import { formatTime, interpolateProgress, minuteMarks } from '../lib/progress'
+import { feedback } from '../sensory/feedback'
 import { useClockPainter, type Clock } from './clock'
 
 interface Props {
   clock: Clock
   durationMs: number
-  onSeek: (ms: number) => void
+  /** `silent`: the key press already played the cue (keyboard seeks settle after a debounce). */
+  onSeek: (ms: number, opts?: { silent?: boolean }) => void
   disabled?: boolean
   label?: string
 }
@@ -99,13 +101,15 @@ export function Scrubber({ clock, durationMs, onSeek, disabled = false, label = 
     if (target === null) return
     e.preventDefault()
     e.stopPropagation() // don't also trigger the global ←/→ shortcut
+    // The cue belongs to the key press (in the gesture), once per burst; the seek below is silent.
+    if (dragRef.current === null) feedback.play('seek')
     // Preview immediately, send one seek when the keys stop (holding a key must not flood Spotify).
     setDrag(Math.min(Math.max(0, target), durationMs))
     clearTimeout(keyTimer.current)
     keyTimer.current = setTimeout(() => {
       const ms = dragRef.current
       setDrag(null)
-      if (ms !== null) onSeek(ms)
+      if (ms !== null) onSeek(ms, { silent: true })
     }, 350)
   }
 

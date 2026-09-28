@@ -3,7 +3,7 @@ import type { FriendlyError } from '../spotify/errors'
 import type { MediaItem } from '../spotify/normalize'
 import { explainError, fetchPlaylists, playItem } from '../spotify/playbackService'
 import { Artwork } from '../ui/Artwork'
-import { EmptyState } from '../ui/Feedback'
+import { EmptyState, ErrorState } from '../ui/Feedback'
 import { Icon } from '../ui/Icon'
 
 type State = { status: 'loading' } | { status: 'ready'; items: MediaItem[] } | { status: 'error'; error: FriendlyError }
@@ -51,11 +51,7 @@ export function PlaylistShelf() {
         </ul>
       )}
       {state.status === 'error' && (
-        <EmptyState tone="error" title={state.error.title} detail={state.error.detail}>
-          <button className="btn" onClick={retry}>
-            Try again
-          </button>
-        </EmptyState>
+        <ErrorState error={state.error} onRetry={retry} />
       )}
       {state.status === 'ready' && !state.items.length && (
         <EmptyState title="No playlists yet" detail="Playlists you make or save in Spotify show up here." />

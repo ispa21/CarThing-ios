@@ -292,7 +292,7 @@ button.row-main:active {
 /* ── Skeletons ── */
 
 .skel {
-  background: var(--surface-1);
+  background: var(--surface-2);
   animation: skel 1.1s ease-in-out infinite alternate;
 }
 
@@ -320,6 +320,18 @@ button.row-main:active {
 .skel-dial {
   height: 14px;
   width: 100%;
+}
+
+.skel-keys {
+  display: flex;
+  gap: var(--s-4);
+  margin-top: var(--s-4);
+}
+
+.skel-key {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--r-key);
 }
 
 .row-skel .row-text {
@@ -566,4 +578,22 @@ button.row-main:active {
   .page {
     padding-top: calc(var(--safe-t) + var(--s-4));
   }
+}
+
+/* What's playing, marked in the gutter so the tracklist stays aligned. */
+.row[data-live]::before {
+  content: '';
+  position: absolute;
+  left: -15px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  border-radius: 50%;
+  background: var(--signal);
+  box-shadow: var(--glow);
+}
+
+.row[data-live] .row-title {
+  color: var(--signal);
 }

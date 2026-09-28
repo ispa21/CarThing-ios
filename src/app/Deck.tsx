@@ -1,8 +1,9 @@
 import { AnimatePresence, m, type Variants } from 'motion/react'
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type MouseEventHandler, type ReactNode } from 'react'
 import { swipeDirection, SWIPE_COMMIT_PX, type SwipeDirection } from '../lib/gesture'
 import { feedback } from '../sensory/feedback'
 import { Artwork } from '../ui/Artwork'
+import { Icon } from '../ui/Icon'
 import type { Clock } from '../ui/clock'
 import { EASE_EXPO, EASE_OUT } from '../ui/motion'
 import { Scrubber } from '../ui/Scrubber'
@@ -37,7 +38,7 @@ export interface DeckProps {
   album?: string | null
   clock: Clock
   durationMs: number
-  onSeek: (ms: number) => void
+  onSeek: (ms: number, opts?: { silent?: boolean }) => void
   seekDisabled?: boolean
   transport: TransportKeysProps
   onSwipe?: (direction: SwipeDirection) => void
@@ -155,6 +156,28 @@ export function Deck(p: DeckProps) {
         </div>
       </div>
     </>
+  )
+}
+
+/**
+ * The next track, beside the next key. A link to the queue on the real deck; plain text
+ * in the tutorial. Shown only where the panel has height to spare (CSS).
+ */
+export function UpNextLine({ title, subtitle, href, onClick }: { title: string; subtitle: string; href?: string; onClick?: MouseEventHandler<HTMLAnchorElement> }) {
+  const body = (
+    <>
+      <span className="label">Up next</span>
+      <span className="np-next-title">{title}</span>
+      <span className="np-next-sub">{subtitle}</span>
+      {href && <Icon name="forward" size={16} />}
+    </>
+  )
+  return href ? (
+    <a className="np-next" href={href} onClick={onClick}>
+      {body}
+    </a>
+  ) : (
+    <p className="np-next">{body}</p>
   )
 }
 

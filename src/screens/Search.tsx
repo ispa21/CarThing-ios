@@ -5,7 +5,7 @@ import { isSearchEmpty, type SearchView } from '../spotify/normalize'
 import { explainError, playItem, queueItem, searchCatalog } from '../spotify/playbackService'
 import { feedback } from '../sensory/feedback'
 import { usePlayback } from '../store/playback'
-import { EmptyState, SkeletonRows } from '../ui/Feedback'
+import { EmptyState, ErrorState, SkeletonRows } from '../ui/Feedback'
 import { Icon } from '../ui/Icon'
 import { MediaRow } from '../ui/MediaRow'
 import { PlaylistShelf } from './PlaylistShelf'
@@ -111,11 +111,7 @@ export function Search() {
         </EmptyState>
       )}
       {state.status === 'error' && (
-        <EmptyState tone="error" title={state.error.title} detail={state.error.detail}>
-          <button className="btn" onClick={() => onChange(query)}>
-            Try again
-          </button>
-        </EmptyState>
+        <ErrorState error={state.error} onRetry={() => onChange(query)} />
       )}
 
       {results && (
@@ -131,7 +127,7 @@ export function Search() {
                       item={item}
                       onPlay={playItem}
                       onQueue={item.kind === 'track' ? queueItem : undefined}
-                      lead={item.uri === playingUri ? <span className="led row-led" aria-label="Playing now" /> : undefined}
+                      live={item.uri === playingUri}
                     />
                   ))}
                 </ul>

@@ -215,9 +215,10 @@ export function skipPrevious() {
   return command(api.skipToPrevious, { progressMs: 0 }) // previous restarts or goes back: either way, 0
 }
 
-export function seekTo(ms: number) {
+/** `silent`: the gesture already played its cue (keyboard seeks settle after a debounce). */
+export function seekTo(ms: number, { silent = false }: { silent?: boolean } = {}) {
   if (!can('seeking')) return Promise.resolve(false)
-  feedback.play('seek')
+  if (!silent) feedback.play('seek')
   const { durationMs } = get().playback
   const target = Math.max(0, Math.min(ms, durationMs || ms))
   return command(() => api.seekToPosition(target), { progressMs: target })

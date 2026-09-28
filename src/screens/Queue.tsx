@@ -6,7 +6,7 @@ import type { MediaItem } from '../spotify/normalize'
 import { refreshQueue } from '../spotify/playbackService'
 import { usePlayback } from '../store/playback'
 import { Artwork } from '../ui/Artwork'
-import { EmptyState, SkeletonRows } from '../ui/Feedback'
+import { EmptyState, ErrorState, SkeletonRows } from '../ui/Feedback'
 import { Icon } from '../ui/Icon'
 import { MediaRow } from '../ui/MediaRow'
 
@@ -50,11 +50,7 @@ export function Queue() {
 
       {!data && loading && <SkeletonRows count={6} />}
       {!data && error && (
-        <EmptyState tone="error" title={error.title} detail={error.detail}>
-          <button className="btn" onClick={refreshQueue}>
-            Try again
-          </button>
-        </EmptyState>
+        <ErrorState error={error} onRetry={() => void refreshQueue()} />
       )}
       {data && !data.current && (
         <EmptyState title="Nothing playing" detail="Your queue appears here once something is playing.">

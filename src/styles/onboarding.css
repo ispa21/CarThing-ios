@@ -143,17 +143,25 @@
 /* ── The power key ── */
 
 .power {
+  --power: 156px; /* the housing; the key is ~3/4 of it */
   display: grid;
   justify-items: center;
   gap: var(--s-4);
+}
+
+/* Big canvases get a key that holds its own against the wordmark. */
+@media (min-width: 1200px) and (min-height: 760px) {
+  .power {
+    --power: 212px;
+  }
 }
 
 .power-housing {
   position: relative;
   display: grid;
   place-items: center;
-  width: 156px;
-  height: 156px;
+  width: var(--power);
+  height: var(--power);
   border-radius: 50%;
   background: radial-gradient(closest-side, rgb(0 0 0 / 0.4), transparent);
 }
@@ -197,8 +205,8 @@
 .power-key {
   display: grid;
   place-items: center;
-  width: 116px;
-  height: 116px;
+  width: calc(var(--power) * 0.744);
+  height: calc(var(--power) * 0.744);
   border-radius: 50%;
   background: radial-gradient(120% 120% at 30% 20%, #fff, var(--key) 40%, var(--key-shade));
   color: var(--key-ink);
@@ -609,4 +617,9 @@
   .power-key:active {
     translate: none;
   }
+}
+
+.power-glyph {
+  width: 30%;
+  height: 30%;
 }

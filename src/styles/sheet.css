@@ -126,6 +126,60 @@
   }
 }
 
+/* The header stays put while a long list scrolls under it. */
+.sheet {
+  overscroll-behavior: contain;
+}
+
+.sheet-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface-2);
+  box-shadow: 0 10px 12px -10px var(--surface-2);
+}
+
+/* Landscape phones (the primary canvas): a full-height side sheet from the right edge,
+   so every device and Refresh fit. It leaves the way it came. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .sheet {
+    width: min(440px, 62vw);
+    max-width: none;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0 0 0 auto;
+    border-radius: var(--r-l) 0 0 var(--r-l);
+    box-shadow:
+      inset 1px 0 0 rgb(255 255 255 / 0.06),
+      -18px 0 60px rgb(0 0 0 / 0.5);
+    transition:
+      transform var(--dur-slow) var(--ease-drawer),
+      display var(--dur-slow) allow-discrete,
+      overlay var(--dur-slow) allow-discrete;
+  }
+
+  .sheet:not([open]) {
+    transform: translateX(100%);
+    opacity: 1;
+    transition-duration: var(--dur-base);
+  }
+
+  @starting-style {
+    .sheet[open] {
+      transform: translateX(100%);
+      opacity: 1;
+    }
+  }
+
+  .sheet-body {
+    padding: var(--s-2) calc(var(--pad-r) + var(--safe-r)) calc(var(--safe-b) + var(--s-4)) var(--s-5);
+  }
+
+  .sheet-grip {
+    display: none;
+  }
+}
+
 /* ── Options menu ── */
 
 .menu li + li {
@@ -233,29 +287,20 @@
   color: var(--ink-3);
 }
 
-/* ── Toast: a capsule with a lamp that says what kind of news it is ── */
+/* ── Toast: a capsule with a lamp that says what kind of news it is ──
+   It drops from the top edge: every layout keeps its keys in the lower half, and news
+   must never land on the control you just pressed. */
 
 .toast-region {
   position: fixed;
   z-index: var(--z-toast);
   left: 0;
   right: 0;
-  bottom: calc(var(--safe-b) + 148px);
+  top: calc(var(--safe-t) + var(--s-3));
   display: flex;
   justify-content: center;
   padding: 0 var(--pad-r) 0 var(--pad-l);
   pointer-events: none;
-}
-
-@media (orientation: landscape) and (min-width: 480px) {
-  .toast-region {
-    bottom: calc(var(--safe-b) + var(--rail-h) + var(--s-4));
-  }
-}
-
-.shell[data-immersive] ~ .toast-region,
-.onboard ~ .toast-region {
-  bottom: calc(var(--safe-b) + 112px);
 }
 
 .toast {
@@ -278,7 +323,7 @@
 @starting-style {
   .toast {
     opacity: 0;
-    translate: 0 12px;
+    translate: 0 -12px;
     scale: 0.97;
   }
 }

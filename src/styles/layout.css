@@ -260,25 +260,34 @@
   }
 }
 
-/* Small landscape phones (e.g. 667×375): four labelled tabs and tools, no mini deck —
-   Home is one tap away. */
-@media (orientation: landscape) and (min-width: 480px) and (max-width: 759px) {
-  .rail {
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas: 'tabs tools';
-  }
-
-  .rail-deck,
-  .rail-deck:empty {
+/* Landscape phones: the mini deck becomes a puck — cover and play key. A title cut to
+   "M…" says nothing; the cover says what's playing, a tap on it goes to the deck. */
+@media (orientation: landscape) and (min-width: 480px) and (max-width: 1000px) {
+  .rail .mini-text,
+  .rail .mini-idle-text {
     display: none;
   }
 
-  .rail-tabs {
-    justify-content: space-around;
+  .rail .mini {
+    justify-self: start;
+    padding-right: 4px;
+  }
+
+  .rail .mini-idle {
+    padding-left: 5px;
+  }
+}
+
+/* Small landscape phones (e.g. 667×375): tighter tabs so the puck still fits. */
+@media (orientation: landscape) and (min-width: 480px) and (max-width: 759px) {
+  .rail {
+    column-gap: 0;
   }
 
   .rail-tab {
-    padding: 0 var(--s-3);
+    padding: 0 var(--s-2);
+    gap: 6px;
+    letter-spacing: 0.08em;
   }
 }
 
