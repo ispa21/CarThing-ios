@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { refreshDevices, transferTo } from '../spotify/playbackService'
 import { usePlayback } from '../store/playback'
 import { closeDevices, useUi } from '../store/ui'
-import { EmptyState } from '../ui/Feedback'
+import { EmptyState, ErrorState } from '../ui/Feedback'
 import { Icon, type IconName } from '../ui/Icon'
 import { Sheet } from '../ui/Sheet'
 
@@ -21,14 +21,16 @@ function DeviceList() {
     void refreshDevices()
   }, [])
 
-  if (!data && loading) return <p className="sheet-note">Looking for devices…</p>
+  if (!data && loading)
+    return (
+      <p className="sheet-note">
+        <span className="led led-pulse" aria-hidden="true" />
+        Looking for devices…
+      </p>
+    )
   if (error && !data) {
     return (
-      <EmptyState title={error.title} detail={error.detail}>
-        <button className="btn" onClick={refreshDevices}>
-          Try again
-        </button>
-      </EmptyState>
+      <ErrorState error={error} onRetry={() => void refreshDevices()} />
     )
   }
   if (!data?.length) {
@@ -51,7 +53,9 @@ function DeviceList() {
               aria-current={d.isActive || undefined}
               onClick={() => d.id && transferTo(d.id, d.name)}
             >
-              <Icon name={deviceIcon(d.type)} />
+              <span className="device-port">
+                <Icon name={deviceIcon(d.type)} size={20} />
+              </span>
               <span className="device-text">
                 <span className="device-name">{d.name}</span>
                 <span className="device-meta">{d.isActive ? 'Playing here' : d.isRestricted ? "Can't be controlled from here" : d.type}</span>

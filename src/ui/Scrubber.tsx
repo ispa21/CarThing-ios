@@ -1,24 +1,30 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
-import { formatTime, interpolateProgress } from '../lib/progress'
+import { formatTime, interpolateProgress, minuteMarks } from '../lib/progress'
+import { feedback } from '../sensory/feedback'
 import { useClockPainter, type Clock } from './clock'
 
 interface Props {
   clock: Clock
   durationMs: number
-  onSeek: (ms: number) => void
+  /** `silent`: the key press already played the cue (keyboard seeks settle after a debounce). */
+  onSeek: (ms: number, opts?: { silent?: boolean }) => void
   disabled?: boolean
   label?: string
 }
 
 /**
- * Seek bar. Progress is painted straight to the DOM each frame (no React
- * renders). Dragging tracks the finger 1:1 and seeks once, on release.
+ * The dial: a tuning scale for the song. Fine ticks are the song, minute ticks
+ * stand taller, lit ticks are what's played, the needle is now. Progress is
+ * painted straight to the DOM each frame (no React renders), by transform only.
+ * Dragging tracks the finger 1:1 and seeks once, on release.
  */
 export function Scrubber({ clock, durationMs, onSeek, disabled = false, label = 'Seek' }: Props) {
   const trackRef = useRef<HTMLDivElement>(null)
-  const fillRef = useRef<HTMLDivElement>(null)
-  const thumbRef = useRef<HTMLDivElement>(null)
+  const litRef = useRef<HTMLDivElement>(null)
+  const litTicksRef = useRef<HTMLDivElement>(null)
+  const needleRef = useRef<HTMLDivElement>(null)
   const elapsedRef = useRef<HTMLSpanElement>(null)
+  const remainingRef = useRef<HTMLSpanElement>(null)
   const lastSecond = useRef(-1)
   // The drag/keyboard preview position. A ref for handlers (never stale), state to pause the painter.
   const dragRef = useRef<number | null>(null)
@@ -33,13 +39,15 @@ export function Scrubber({ clock, durationMs, onSeek, disabled = false, label = 
   const paint = useCallback(
     (ms: number) => {
       const p = durationMs > 0 ? Math.min(1, Math.max(0, ms / durationMs)) : 0
-      if (fillRef.current) fillRef.current.style.transform = `scaleX(${p})`
-      if (thumbRef.current) thumbRef.current.style.left = `${p * 100}%`
+      if (litRef.current) litRef.current.style.transform = `translateX(${(p - 1) * 100}%)`
+      if (litTicksRef.current) litTicksRef.current.style.transform = `translateX(${(1 - p) * 100}%)`
+      if (needleRef.current) needleRef.current.style.transform = `translateX(calc(${p} * 100cqw))`
       const second = Math.floor(ms / 1000)
       if (second === lastSecond.current) return
       lastSecond.current = second
       const elapsed = formatTime(ms)
       if (elapsedRef.current) elapsedRef.current.textContent = elapsed
+      if (remainingRef.current) remainingRef.current.textContent = `−${formatTime(Math.max(0, durationMs - second * 1000))}`
       trackRef.current?.setAttribute('aria-valuenow', String(second))
       trackRef.current?.setAttribute('aria-valuetext', `${elapsed} of ${formatTime(durationMs)}`)
     },
@@ -93,13 +101,15 @@ export function Scrubber({ clock, durationMs, onSeek, disabled = false, label = 
     if (target === null) return
     e.preventDefault()
     e.stopPropagation() // don't also trigger the global ←/→ shortcut
+    // The cue belongs to the key press (in the gesture), once per burst; the seek below is silent.
+    if (dragRef.current === null) feedback.play('seek')
     // Preview immediately, send one seek when the keys stop (holding a key must not flood Spotify).
     setDrag(Math.min(Math.max(0, target), durationMs))
     clearTimeout(keyTimer.current)
     keyTimer.current = setTimeout(() => {
       const ms = dragRef.current
       setDrag(null)
-      if (ms !== null) onSeek(ms)
+      if (ms !== null) onSeek(ms, { silent: true })
     }, 350)
   }
 
@@ -120,14 +130,22 @@ export function Scrubber({ clock, durationMs, onSeek, disabled = false, label = 
         onPointerCancel={() => setDrag(null)}
         onKeyDown={onKeyDown}
       >
-        <div className="scrub-track">
-          <div ref={fillRef} className="scrub-fill" />
+        <div className="scrub-dial">
+          <div className="scrub-ticks" />
+          {minuteMarks(durationMs).map((pct) => (
+            <span key={pct} className="scrub-minute" style={{ left: `${pct}%` }} />
+          ))}
+          <div ref={litRef} className="scrub-lit">
+            <div ref={litTicksRef} className="scrub-lit-ticks" />
+          </div>
         </div>
-        <div ref={thumbRef} className="scrub-thumb" />
+        <div ref={needleRef} className="scrub-needle" />
       </div>
-      <div className="scrub-times" aria-hidden="true">
-        <span ref={elapsedRef}>0:00</span>
-        <span>{formatTime(durationMs)}</span>
+      <div className="scrub-times readout" aria-hidden="true">
+        <span ref={elapsedRef} className="scrub-elapsed">
+          0:00
+        </span>
+        <span ref={remainingRef}>−{formatTime(durationMs)}</span>
       </div>
     </div>
   )

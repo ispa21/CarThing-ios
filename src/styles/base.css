@@ -1,0 +1,154 @@
+/* ── Base: reset, the display glass, type defaults, focus ─────────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* The display glass: a faint top-left sheen and static grain, so the dark
+   reads as a material rather than an empty page. Nothing here animates. */
+body {
+  margin: 0;
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(110% 70% at 18% -10%, rgb(255 236 214 / 0.045), transparent 62%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .045 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--t-body);
+  font-stretch: var(--w-normal);
+  line-height: 1.45;
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+  transition: background-color var(--dur-slow) ease;
+}
+
+/* OLED black stays black: no sheen, no grain lighting up pixels. */
+:root[data-theme='black'] body {
+  background-image: none;
+}
+
+h1,
+h2,
+h3,
+p,
+ul,
+ol {
+  margin: 0;
+  font-weight: inherit;
+  font-size: inherit;
+}
+
+ul,
+ol {
+  padding: 0;
+  list-style: none;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input {
+  font: inherit;
+  font-stretch: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: 0;
+  background: none;
+  padding: 0;
+  touch-action: manipulation;
+}
+
+button:disabled {
+  cursor: default;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+code,
+pre {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+}
+
+::selection {
+  background: var(--signal);
+  color: var(--signal-ink);
+}
+
+/* Focus is live state, so it's amber. The outline follows each control's own radius. */
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 3px;
+}
+
+main:focus,
+[tabindex='-1']:focus {
+  outline: none;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ── Type roles (used across screens) ── */
+
+/* Faceplate label: expanded caps. Encodes what a zone is, never decoration. */
+.label {
+  font-stretch: var(--w-expanded);
+  font-size: var(--t-label);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* Instrument readout: mono, tabular, never reflows as digits change. */
+.readout {
+  font-family: var(--font-mono);
+  font-size: var(--t-readout);
+  font-weight: 450;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-2);
+}
+
+.headline {
+  font-stretch: var(--w-condensed);
+  font-size: var(--t-headline);
+  font-weight: 760;
+  line-height: 0.92;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}

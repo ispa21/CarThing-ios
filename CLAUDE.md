@@ -24,7 +24,8 @@ Car Thing–inspired Spotify controller PWA: Now Playing deck, search, queue, gi
 
 ## Sensory rules
 
-- UI speaks semantic events: `feedback.play('queue-add')` (`src/sensory`). Never import `web-haptics` or `cuelume` anywhere else.
+- UI speaks semantic events: `feedback.play('queue-add')` (`src/sensory`). Never import `cuelume` or call `navigator.vibrate` anywhere else.
+- iPhone haptics exist only for controls carrying `<HapticSwitch>` (every `PressKey` does), and only when `feedback.play` runs synchronously in that control's `onClick`. iOS 26.5+ ignores scripted haptics. Never put `HapticSwitch` in links, submit buttons or drag surfaces. See `docs/redesign/haptics/report.md`.
 - Add new meanings to `sensory/interactionMap.ts` by reusing an existing cue. Don't invent a new sound per event.
 - Only user commands and UI handlers call `feedback.play`, synchronously in the gesture (iOS haptics need it). Never from polling, store or media-query subscriptions, or timers.
 - Confirmations that follow a network round trip (`queue-add`, `device-connected`, `playback-error`) are outside the gesture. Their sound plays, but their haptic is best-effort (Android only). The press itself always gets an in-gesture cue.
@@ -35,8 +36,10 @@ Car Thing–inspired Spotify controller PWA: Now Playing deck, search, queue, gi
 ## Conventions
 
 - Pure logic lives in plain `.ts` modules with colocated `*.test.ts`. The Vitest environment is node, with no DOM.
-- Styling: plain CSS in `src/styles/`, with tokens in `tokens.css`.
-  - Signal amber (`--signal`) is only for live state: progress, active, focus.
+- Styling: plain CSS in `src/styles/`, one file per area (`base`, `controls`, `layout`, `lists`, `deck`, `sheet`, `lyrics`, `onboarding`, `settings`), tokens in `tokens.css`, motion tokens mirrored for Motion in `ui/motion.ts`. Design system: `docs/redesign/` (direction, tokens, components, motion).
+  - Signal amber (`--signal`) is only for live state: progress, playing, the active tab, focus.
+  - Type: Archivo's width axis is the voice (condensed `.np-title`/`.page-title`, expanded `.label`), Martian Mono `.readout` for anything measurable. Self-hosted via `@fontsource-variable` (CSP).
+  - Artwork is never cropped, filtered or overlaid. The ambient glow is a colour sampled into a separate layer behind it (`ui/useArtColor.ts`).
   - Move things with `transform` and `opacity` only. Brief colour or shadow transitions on small controls are fine. No looping animation of anything else (the coach halo loops opacity on a pseudo-element). The power ring's one-off `stroke-dashoffset` sweep is the single sanctioned exception.
   - Gate hover styles behind `(hover: hover) and (pointer: fine)`.
   - Respect `prefers-reduced-motion`.

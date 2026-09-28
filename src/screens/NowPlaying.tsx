@@ -1,14 +1,15 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
-import { Deck } from '../app/Deck'
+import { Deck, UpNextLine } from '../app/Deck'
 import { tickLink } from '../app/router'
 import { usePhonePortrait } from '../lib/orientation'
 import { feedback } from '../sensory/feedback'
-import { seekTo, skipNext, skipPrevious, syncNow, togglePlay } from '../spotify/playbackService'
+import { refreshQueue, seekTo, skipNext, skipPrevious, syncNow, togglePlay } from '../spotify/playbackService'
 import { selectCanToggle, usePlayback } from '../store/playback'
-import { openDevices, useUi } from '../store/ui'
+import { useSettings } from '../store/settings'
+import { openDevices } from '../store/ui'
 import { spotifyClock } from '../ui/clock'
-import { EmptyState } from '../ui/Feedback'
+import { ErrorState } from '../ui/Feedback'
 import { Icon } from '../ui/Icon'
 import { Sheet } from '../ui/Sheet'
 import { PlaylistShelf } from './PlaylistShelf'
@@ -22,6 +23,7 @@ export function NowPlaying() {
       has: s.hasPlayback,
       error: s.syncError,
       trackId: s.playback.trackId,
+      uri: s.playback.uri,
       title: s.playback.title,
       artist: s.playback.artist,
       album: s.playback.album,
@@ -40,24 +42,29 @@ export function NowPlaying() {
     openDevices()
   }
 
+  const more = (
+    <button
+      className="icon-btn np-more"
+      onClick={() => {
+        feedback.play('select')
+        setMenuOpen(true)
+      }}
+      aria-label="More options"
+    >
+      <Icon name="more" />
+    </button>
+  )
+  const onDeck = s.loaded && s.has
+
   return (
     <div className="np">
       <h1 className="sr-only">Now Playing</h1>
-      <button
-        className="icon-btn np-more"
-        onClick={() => {
-          feedback.play('select')
-          setMenuOpen(true)
-        }}
-        aria-label="More options"
-      >
-        <Icon name="more" />
-      </button>
+      {!onDeck && more}
 
       <RotateHint />
 
       {s.error && s.has && (
-        <p className="np-status" role="status">
+        <p className="np-sync readout" role="status">
           {s.error.title}. Showing the last known state.
         </p>
       )}
@@ -66,28 +73,39 @@ export function NowPlaying() {
         <div className="np-body" aria-busy="true">
           <div className="np-art skel" />
           <div className="np-panel">
-            <span className="skel skel-line skel-title" />
-            <span className="skel skel-line skel-short" />
+            <div className="np-meta">
+              <span className="skel skel-line skel-label" />
+              <span className="skel skel-line skel-title" />
+              <span className="skel skel-line skel-short" />
+            </div>
+            <div className="np-controls">
+              <span className="skel skel-line skel-dial" />
+              <span className="skel-keys">
+                <span className="skel skel-key" />
+                <span className="skel skel-key" />
+                <span className="skel skel-key" />
+              </span>
+            </div>
           </div>
         </div>
       ) : !s.has ? (
         <div className="np-empty">
           {s.error ? (
-            <EmptyState title={s.error.title} detail={s.error.detail}>
-              <button className="btn" onClick={() => void syncNow()}>
-                Try again
-              </button>
-            </EmptyState>
+            <ErrorState error={s.error} onRetry={() => void syncNow()} />
           ) : (
             // Nothing playing: the deck is never a dead end — your playlists are right here.
             <div className="np-idle">
               <div className="np-idle-head">
-                <div>
-                  <p className="np-idle-title">Nothing playing</p>
-                  <p className="np-idle-sub">Pick a playlist, or choose where to play.</p>
-                </div>
-                <button className="btn btn-small" onClick={chooseDevice}>
-                  Choose device
+                <p className="label np-idle-status">
+                  <span className="led" data-off aria-hidden="true" />
+                  Standby
+                </p>
+                <p className="np-idle-title">Nothing playing.</p>
+                <p className="np-idle-sub">Pick a playlist to start, or choose where to play.</p>
+                <button className="chip np-device" onClick={chooseDevice}>
+                  <Icon name="speaker" size={18} />
+                  <span>Choose device</span>
+                  <Icon name="down" size={16} />
                 </button>
               </div>
               <PlaylistShelf />
@@ -116,20 +134,23 @@ export function NowPlaying() {
             onNext: skipNext,
           }}
           onSwipe={(dir) => void (dir === 'next' ? skipNext() : skipPrevious())}
+          status={{ text: s.isPlaying ? 'Now playing' : 'Paused', live: s.isPlaying }}
+          menu={more}
+          next={<UpNext uri={s.uri} />}
           attribution={
             s.url && (
               <a className="np-attr" href={s.url} target="_blank" rel="noopener noreferrer">
                 Open in Spotify
+                <Icon name="external" size={14} />
               </a>
             )
           }
           footer={
-            <div className="np-foot">
-              <button className="chip chip-device" onClick={chooseDevice} aria-label={`Playing on ${s.deviceName ?? 'unknown device'}. Change device`}>
-                <span className="led" aria-hidden="true" />
-                <span>{s.deviceName ?? 'Choose device'}</span>
-              </button>
-            </div>
+            <button className="chip np-device" onClick={chooseDevice} aria-label={`Playing on ${s.deviceName ?? 'unknown device'}. Change device`}>
+              <Icon name="speaker" size={18} />
+              <span>{s.deviceName ?? 'Choose device'}</span>
+              <Icon name="down" size={16} />
+            </button>
           }
         />
       )}
@@ -155,7 +176,7 @@ export function NowPlaying() {
           </li>
           <li>
             <a href="/settings" onClick={tickLink}>
-              <Icon name="settings" /> Settings
+              <Icon name="gear" /> Settings
             </a>
           </li>
         </ul>
@@ -164,10 +185,23 @@ export function NowPlaying() {
   )
 }
 
+/**
+ * The next track, beside the next key. Fetched once per song (one request, silent on
+ * failure); hidden when the queue isn't about the current song yet, or there's no room.
+ */
+function UpNext({ uri }: { uri: string | null }) {
+  const next = usePlayback((st) => (st.queue.data?.current?.uri === uri ? (st.queue.data?.upNext[0] ?? null) : null))
+  useEffect(() => {
+    if (uri) void refreshQueue()
+  }, [uri])
+  if (!next) return null
+  return <UpNextLine title={next.title} subtitle={next.subtitle} href="/queue" onClick={tickLink} />
+}
+
 /** Phones held upright get a compact deck and a gentle nudge — never a wall. */
 function RotateHint() {
   const portrait = usePhonePortrait()
-  const dismissed = useUi((s) => s.rotateHintDismissed)
+  const dismissed = useSettings((s) => s.rotateHintDismissed)
   if (!portrait || dismissed) return null
   return (
     <div className="rotate-hint" role="note">
@@ -180,7 +214,7 @@ function RotateHint() {
         aria-label="Dismiss"
         onClick={() => {
           feedback.play('back')
-          useUi.setState({ rotateHintDismissed: true })
+          useSettings.setState({ rotateHintDismissed: true })
         }}
       >
         <Icon name="close" size={18} />

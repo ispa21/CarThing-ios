@@ -1,0 +1,673 @@
+/* ── Controls: buttons, keys, lamps, fields, switches, the dial ────────── */
+
+/* Presses use the individual `scale`/`translate` properties so they compose with
+   Motion's inline `transform` on PressKey instead of fighting it. */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  min-height: 48px;
+  padding: 0 var(--s-5);
+  border-radius: var(--r-m);
+  background: var(--surface-2);
+  box-shadow:
+    var(--edge-light),
+    inset 0 0 0 1px var(--hairline);
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  letter-spacing: 0.005em;
+  white-space: nowrap;
+  transition:
+    scale var(--dur-press) var(--ease-out),
+    background-color var(--dur-fast) ease,
+    box-shadow var(--dur-fast) ease,
+    opacity var(--dur-fast) ease;
+}
+
+.btn:active:not(:disabled) {
+  scale: 0.97;
+}
+
+.btn:disabled {
+  opacity: 0.42;
+}
+
+/* Primary = the key material. One per screen. */
+.btn-primary {
+  background: linear-gradient(180deg, var(--key), var(--key-shade));
+  box-shadow:
+    inset 0 -2px 0 rgb(0 0 0 / 0.12),
+    inset 0 1px 0 rgb(255 255 255 / 0.6),
+    0 10px 24px -14px rgb(0 0 0 / 0.9);
+  color: var(--key-ink);
+}
+
+.btn-primary:active:not(:disabled) {
+  box-shadow:
+    inset 0 -1px 0 rgb(0 0 0 / 0.12),
+    inset 0 1px 0 rgb(255 255 255 / 0.5);
+}
+
+.btn-quiet {
+  background: transparent;
+  box-shadow: none;
+  color: var(--ink-2);
+}
+
+.btn-danger {
+  background: var(--error-dim);
+  box-shadow: inset 0 0 0 1px rgb(255 117 102 / 0.22);
+  color: var(--error);
+}
+
+.btn-small {
+  min-height: var(--tap);
+  padding: 0 var(--s-4);
+  font-size: 0.875rem;
+  border-radius: 11px;
+}
+
+.btn-block {
+  width: 100%;
+  margin-top: var(--s-2);
+}
+
+/* ── Icon buttons ── */
+
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: var(--tap);
+  height: var(--tap);
+  border-radius: var(--r-m);
+  color: var(--ink-2);
+  transition:
+    scale var(--dur-press) var(--ease-out),
+    background-color var(--dur-fast) ease,
+    color var(--dur-fast) ease;
+}
+
+.icon-btn:active:not(:disabled) {
+  scale: 0.9;
+  background: var(--surface-1);
+  color: var(--ink);
+}
+
+.icon-btn:disabled {
+  opacity: 0.38;
+}
+
+.icon-btn[aria-pressed='true'],
+.icon-btn[aria-current] {
+  color: var(--ink);
+}
+
+.icon-btn-strong {
+  color: var(--ink);
+}
+
+.icon-btn-quiet {
+  color: var(--ink-3);
+}
+
+/* Queue-add confirmed: the glyph becomes a check and turns phosphor green. */
+.icon-btn[data-added] {
+  color: var(--success);
+}
+
+.icon-btn[data-added] svg {
+  animation: pop var(--dur-slow) var(--ease-expo);
+}
+
+@keyframes pop {
+  from {
+    scale: 0.6;
+    opacity: 0;
+  }
+}
+
+.icon-btn-spacer {
+  width: var(--tap);
+  flex: none;
+}
+
+.icon-btn[data-spin] svg {
+  animation: spin 800ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+/* ── Lamps ── */
+
+.led {
+  display: inline-block;
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--signal);
+  box-shadow: var(--glow);
+}
+
+.led[data-off] {
+  background: var(--ink-4);
+  box-shadow: none;
+}
+
+.led-pulse {
+  animation: led-pulse 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes led-pulse {
+  from {
+    opacity: 0.3;
+  }
+}
+
+/* ── Chips ── */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-height: var(--tap);
+  min-width: 0;
+  padding: 0 var(--s-3);
+  border-radius: var(--r-pill);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+  color: var(--ink-2);
+  transition:
+    scale var(--dur-press) var(--ease-out),
+    background-color var(--dur-fast) ease,
+    color var(--dur-fast) ease,
+    box-shadow var(--dur-fast) ease;
+}
+
+.chip:active {
+  scale: 0.96;
+  background: var(--surface-1);
+}
+
+.chip > span:not(.led) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chip svg {
+  flex: none;
+  color: var(--ink-3);
+}
+
+/* ── Search field: an input window in the glass ── */
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: 56px;
+  padding: 0 var(--s-4);
+  border-radius: var(--r-m);
+  background: var(--surface-1);
+  color: var(--ink-3);
+  box-shadow:
+    inset 0 0 0 1px var(--hairline),
+    inset 0 2px 6px rgb(0 0 0 / 0.35);
+  transition:
+    box-shadow var(--dur-fast) ease,
+    color var(--dur-fast) ease;
+}
+
+.field:focus-within {
+  color: var(--signal);
+  box-shadow:
+    inset 0 0 0 1.5px var(--signal),
+    0 0 0 4px var(--signal-dim);
+}
+
+.field[data-busy] svg {
+  animation: led-pulse 500ms ease-in-out infinite alternate;
+}
+
+.field input {
+  flex: 1;
+  min-width: 0;
+  height: 56px;
+  border: 0;
+  outline: 0;
+  background: none;
+  color: var(--ink);
+  font-size: 1.125rem; /* ≥16px: iOS doesn't zoom on focus */
+  font-weight: 500;
+}
+
+.field input::placeholder {
+  color: var(--ink-3);
+  font-weight: 400;
+}
+
+.field input::-webkit-search-cancel-button {
+  filter: invert(0.7);
+}
+
+/* ── Switch: a hardware toggle ── */
+
+.switch {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  flex: none;
+  width: 52px;
+  height: 32px;
+  margin: 0;
+  border-radius: var(--r-pill);
+  background: var(--surface-3);
+  box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.5);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-base) ease,
+    box-shadow var(--dur-base) ease;
+}
+
+.switch::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, var(--key), var(--key-shade));
+  box-shadow:
+    inset 0 -1px 0 rgb(0 0 0 / 0.15),
+    0 2px 5px rgb(0 0 0 / 0.45);
+  transition: translate var(--dur-base) var(--ease-out);
+}
+
+.switch:checked {
+  background: var(--signal);
+  box-shadow:
+    inset 0 1px 3px rgb(0 0 0 / 0.25),
+    0 0 14px var(--signal-dim);
+}
+
+.switch:checked::before {
+  translate: 20px 0;
+}
+
+.switch:active::before {
+  scale: 1.08 0.94;
+}
+
+.switch:focus-visible {
+  outline-offset: 3px;
+}
+
+/* ── Segmented control: one lamp-lit thumb that travels ──
+   Segments are equal width; the thumb is placed by --i / --n (set inline). */
+
+.seg {
+  position: relative;
+  display: grid;
+  grid-auto-columns: 1fr;
+  grid-auto-flow: column;
+  flex: none;
+  padding: 3px;
+  border-radius: 14px;
+  background: var(--bg);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+}
+
+.seg::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc((100% - 6px) / var(--n, 2));
+  border-radius: 11px;
+  background: var(--surface-3);
+  box-shadow: var(--edge-light);
+  translate: calc(var(--i, 0) * 100%) 0;
+  transition: translate var(--dur-base) var(--ease-out);
+}
+
+.seg label {
+  position: relative;
+}
+
+.seg input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.seg span {
+  display: grid;
+  place-items: center;
+  min-height: var(--tap);
+  padding: 0 var(--s-3);
+  color: var(--ink-3);
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: color var(--dur-fast) ease;
+}
+
+.seg input:checked + span {
+  color: var(--ink);
+}
+
+.seg input:focus-visible + span {
+  outline: 2px solid var(--signal);
+  outline-offset: -2px;
+  border-radius: 11px;
+}
+
+/* ── Transport keys ──
+   Scale is sprung by Motion (PressKey). CSS owns what the key is made of and how it bottoms out. */
+
+.transport {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+}
+
+.key {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  transition:
+    translate var(--dur-press) var(--ease-out),
+    box-shadow var(--dur-press) ease,
+    opacity var(--dur-fast) ease;
+}
+
+.key:active:not(:disabled) {
+  translate: 0 1px;
+}
+
+.key:disabled {
+  opacity: 0.3;
+}
+
+/* Dark keycaps: top-lit, sitting proud of the faceplate. */
+.key-skip {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--r-key);
+  background: linear-gradient(180deg, var(--surface-3), var(--surface-2));
+  color: var(--ink);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.07),
+    inset 0 -2px 0 rgb(0 0 0 / 0.35),
+    0 1px 0 rgb(0 0 0 / 0.6),
+    0 10px 22px -12px rgb(0 0 0 / 0.9);
+}
+
+.key-skip:active:not(:disabled) {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.04),
+    inset 0 -1px 0 rgb(0 0 0 / 0.35),
+    0 0 0 rgb(0 0 0 / 0.6);
+}
+
+/* The lit key: the one light object on the glass. Its lamp shows playback is live. */
+.key-play {
+  width: 84px;
+  height: 84px;
+  border-radius: 28px;
+  background: linear-gradient(180deg, var(--key), var(--key-shade));
+  color: var(--key-ink);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.7),
+    inset 0 -3px 0 rgb(0 0 0 / 0.14),
+    0 2px 0 rgb(0 0 0 / 0.35),
+    0 18px 36px -16px rgb(0 0 0 / 0.95);
+}
+
+.key-play:active:not(:disabled) {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.5),
+    inset 0 -1px 0 rgb(0 0 0 / 0.14),
+    0 1px 0 rgb(0 0 0 / 0.35),
+    0 8px 18px -12px rgb(0 0 0 / 0.9);
+}
+
+.key-lamp {
+  position: absolute;
+  top: 11px;
+  right: 11px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgb(0 0 0 / 0.16);
+  transition:
+    background-color var(--dur-fast) ease,
+    box-shadow var(--dur-fast) ease;
+}
+
+.key-play[data-playing] .key-lamp {
+  background: var(--signal);
+  box-shadow: 0 0 8px var(--signal), 0 0 2px var(--signal);
+}
+
+.key-play-sm {
+  width: 56px;
+  height: 56px;
+  border-radius: 19px;
+}
+
+.key-play-sm .key-lamp {
+  top: 8px;
+  right: 8px;
+  width: 5px;
+  height: 5px;
+}
+
+/* ── The dial: a tuning scale for time ──
+   Fine ticks are the song; minute ticks stand taller; lit ticks are what's played.
+   Everything moves by transform (painted per frame in ui/Scrubber.tsx). */
+
+.scrub {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.scrub-hit {
+  position: relative;
+  height: var(--tap);
+  container-type: inline-size; /* the needle travels in cqw: compositor-only, no overflow */
+  cursor: pointer;
+  touch-action: pan-y;
+  border-radius: var(--r-xs);
+}
+
+.scrub[data-disabled] .scrub-hit {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.scrub-dial {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 14px;
+  translate: 0 -50%;
+  overflow: hidden;
+}
+
+.scrub-ticks,
+.scrub-lit-ticks {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(to right, var(--tick, var(--ink-4)) 0 1.5px, transparent 1.5px 6px);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 25%, #000 25%, #000 75%, transparent 75%);
+  mask-image: linear-gradient(to bottom, transparent 25%, #000 25%, #000 75%, transparent 75%);
+}
+
+.scrub-lit,
+.scrub-lit-ticks {
+  will-change: transform;
+}
+
+.scrub-lit {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  transform: translateX(-100%);
+}
+
+.scrub-lit-ticks {
+  --tick: var(--signal);
+  transform: translateX(100%);
+}
+
+.scrub-minute {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1.5px;
+  background: var(--ink-3);
+}
+
+.scrub-needle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.scrub-needle::before {
+  content: '';
+  position: absolute;
+  left: -1.5px;
+  top: 50%;
+  width: 3px;
+  height: 24px;
+  margin-top: -12px;
+  border-radius: 2px;
+  background: var(--signal);
+  box-shadow: var(--glow);
+  transition: scale var(--dur-fast) var(--ease-out);
+}
+
+.scrub[data-dragging] .scrub-needle::before,
+.scrub-hit:focus-visible .scrub-needle::before {
+  scale: 1.5 1.35;
+}
+
+.scrub-hit:focus-visible {
+  outline-offset: 2px;
+}
+
+.scrub-times {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2px;
+}
+
+.scrub[data-dragging] .scrub-elapsed {
+  color: var(--signal);
+}
+
+/* ── Pointer hover (never on touch) ── */
+
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover:not(:disabled) {
+    background-color: var(--surface-3);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: linear-gradient(180deg, #fff, var(--key));
+  }
+
+  .btn-quiet:hover:not(:disabled) {
+    background: var(--surface-1);
+    color: var(--ink);
+  }
+
+  .btn-danger:hover:not(:disabled) {
+    background: rgb(255 117 102 / 0.22);
+  }
+
+  .icon-btn:hover:not(:disabled) {
+    background: var(--surface-1);
+    color: var(--ink);
+  }
+
+  .chip:hover {
+    background: var(--surface-1);
+    color: var(--ink);
+    box-shadow: inset 0 0 0 1px var(--hairline-strong);
+  }
+
+  .key-skip:hover:not(:disabled) {
+    background: linear-gradient(180deg, #37323d, var(--surface-3));
+  }
+
+  .key-play:hover:not(:disabled) {
+    background: linear-gradient(180deg, #fff, var(--key));
+  }
+
+  .scrub-hit:hover .scrub-needle::before {
+    scale: 1.3 1.2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn:active:not(:disabled),
+  .icon-btn:active:not(:disabled),
+  .chip:active {
+    scale: none;
+  }
+
+  .icon-btn[data-added] svg,
+  .icon-btn[data-spin] svg,
+  .field[data-busy] svg,
+  .led-pulse {
+    animation: none;
+  }
+
+  /* State still changes; it just doesn't travel. */
+  .seg::before,
+  .switch::before {
+    transition: none;
+  }
+
+  .key:active:not(:disabled),
+  .switch:active::before {
+    translate: none;
+    scale: none;
+  }
+
+  .switch:checked::before {
+    translate: 20px 0;
+  }
+}
+
+/* Armed for a destructive second press. */
+.btn-danger[data-armed] {
+  background: var(--error);
+  box-shadow: 0 0 18px rgb(255 117 102 / 0.35);
+  color: #1c0906;
+}
+
+form[role='search'] {
+  margin-bottom: var(--s-5);
+}

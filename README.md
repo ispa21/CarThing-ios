@@ -8,8 +8,8 @@ PartyDeck is an independent project. It isn't made by or affiliated with Spotify
 
 PartyDeck is **landscape-first**. The phone held sideways is the primary canvas, then tablets, then desktop. Phones held upright get a compact fallback.
 
-- **The deck** (home, `/`): artwork on the left, the instrument panel on the right, a control rail along the bottom. The panel holds title, artist, a drag-or-tap progress bar, three physical keys, and the device. **Swipe the artwork** sideways to skip. With nothing playing, the deck shows your playlists. Upright phones get a compact deck and a dismissible "Turn your phone sideways" hint.
-- **Rail**: a mini deck (on other screens), then Home · Search · Queue · Lyrics, then full screen and Settings. Upright phones show the mini deck above the tabs.
+- **The deck** (home, `/`): artwork on the left, the instrument panel on the right at exactly the artwork's height, a control rail along the bottom. The panel holds the status ("Now playing"/"Paused"), the title at marquee scale, artist, **the dial** (a tuning-scale seek bar: minute ticks, lit ticks for what's played, an amber needle for now), three physical keys and the output device. Tablets and desktops also show what's up next. The cover's own colour glows behind it (never on it) and dims when paused. **Swipe the artwork** sideways to skip; the next cover arrives from the side you skipped toward. With nothing playing, the deck shows your playlists. Upright phones get a compact deck and a dismissible "Turn your phone sideways" hint.
+- **Rail**: a mini deck (on other screens; a cover + play puck on phones), then Deck · Search · Queue · Lyrics with a lamp that travels to the active tab, then full screen and Settings. Upright phones show the mini deck above the tabs.
 - **Search**: songs, artists, albums and playlists, debounced as you type. When the field is empty it shows **your playlists** as a shelf, which scrolls sideways on landscape phones. Tap a row to play it, **+** adds a song to the queue, **↗** opens it in Spotify.
 - **Queue**: what's playing now and what's up next, straight from Spotify's queue. Adding from Search confirms on the row. Spotify's Web API has no way to remove or reorder queue items, so PartyDeck doesn't pretend to.
 - **Lyrics reader**: huge, high-contrast type sized for phones through TVs. Controls fade out while you read, and manual scrolling is never overridden. A demo at `/lyrics/demo` shows timed follow and "Jump to current". See [Lyrics](#lyrics-architecture) for why Spotify tracks get a static reader.
@@ -60,7 +60,7 @@ screens/* + ui/* ─ subscribe with selectors; progress painted per frame via re
 ```
 src/
   app/         shell, router, rail + mini deck, deck, transport keys, device sheet, shortcuts, sources
-  sensory/     feedback.play(event) over WebHaptics + Cuelume; the interaction vocabulary
+  sensory/     feedback.play(event) over haptics.ts (vibrate / iPhone switch) + Cuelume; HapticSwitch; the vocabulary
   onboarding/  welcome, power key, power-on, orientation, tutorial + practice deck, flow machine
   spotify/     pkce, auth, api, normalize, playbackService, errors, types
   store/       zustand stores
@@ -69,7 +69,7 @@ src/
   ui/          icons, artwork, scrubber, press key, sheet, rows, feedback, clock hooks
   lib/         progress, debounce, latest-request runner, gesture, orientation, fullscreen
   rooms/       RoomService interface (future)
-  styles/      tokens.css, app.css
+  styles/      tokens.css + one sheet per area (base, controls, layout, lists, deck, sheet, lyrics, onboarding, settings)
 ```
 
 ## Sensory system
@@ -77,11 +77,11 @@ src/
 ```
 UI handler / user command ──► feedback.play('next-track')
                                   │  Sound + Haptics settings · 60ms dedupe · capability checks
-                                  ├─► sensory/haptics.ts ─► WebHaptics (touch devices only)
+                                  ├─► sensory/haptics.ts ─► navigator.vibrate (Android) · HapticSwitch tick (iPhone)
                                   └─► sensory/sounds.ts  ─► Cuelume (synthesized, no audio files)
 ```
 
-- **Semantic events, not effects.** Components call `feedback.play('queue-add')` and never touch WebHaptics or Cuelume. `sensory/interactionMap.ts` maps about 35 events onto 7 haptic presets and 9 cues. Consistency beats variety, and response is proportional: navigation gets a selection tick, the primary key a medium tap and a "pulse", confirmations a success pattern.
+- **Semantic events, not effects.** Components call `feedback.play('queue-add')` and never touch the haptics adapter or Cuelume. `sensory/interactionMap.ts` maps about 35 events onto 7 haptic levels (selection, light, medium, heavy, success, warning, error) and 9 cues. Consistency beats variety, and response is proportional: navigation gets a selection tick, the primary key a medium tap and a "pulse", confirmations a success pattern.
 - **User actions only.** Feedback fires from the command functions in `playbackService` and from UI handlers. It never fires from polling; a test runs a minute of polls and asserts silence. Calls run synchronously inside the gesture, because iOS only gives haptics that way.
 - **Always optional.** No haptics (desktop), no Web Audio, muted in Settings, or reduced motion: everything still works, and every state is also shown on screen.
 - **Plays nicely with music.**
@@ -90,7 +90,9 @@ UI handler / user command ──► feedback.play('next-track')
   - There's one lazily created `AudioContext`, and no sound before the first user gesture.
 - **Future-ready.** Room events (`room-joined`, `reaction`, `listener-arrival`…) are already in the vocabulary. The layer doesn't depend on Spotify.
 
-Libraries: [WebHaptics](https://haptics.lochie.me/) `0.0.6` and [Cuelume](https://cuelume.dev/) `0.2.2`, both pinned exactly because they're 0.x.
+- **Haptics that can actually be felt.** Android gets plain millisecond patterns (12–40 ms taps; distinct rhythms for success, warning and error). iOS 26.5+ ignores scripted haptics, so on iPhone the one mechanism left is a real finger toggling a hidden switch: every `PressKey` carries an invisible `HapticSwitch`, and `feedback.play` decides whether that tap ticks. Desktop, iPad, Firefox and iOS 17 and earlier have no web haptics; Settings hides the switch there. Details: [docs/redesign/haptics/report.md](docs/redesign/haptics/report.md).
+
+Library: [Cuelume](https://cuelume.dev/) `0.2.2`, pinned exactly because it's 0.x. Haptics have no dependency.
 
 ## Onboarding
 
@@ -110,7 +112,7 @@ back from Spotify:  connected ─Power on─► [turn sideways] ─► [tutorial
   2. Pause
   3. Skip, by pressing or swiping
   4. Queue
-  5. Home, which teaches the rail
+  5. Deck, which teaches the rail
   6. Lyrics
   7. Full screen
 
@@ -200,7 +202,8 @@ The tests cover:
 - Error-to-message mapping
 - The latest-request-wins search runner (abort, stale responses)
 - Sensory:
-  - the map uses only real WebHaptics and Cuelume names
+  - the map uses only real haptic levels and Cuelume names; every Android pattern is long enough to feel
+  - haptic capability detection (Android, iPhone, iPad, desktop, Firefox, iOS 17)
   - proportionality
   - Sound and Haptics settings
   - dedupe

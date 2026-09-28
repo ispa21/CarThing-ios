@@ -10,7 +10,7 @@ import { demoClock, spotifyClock, type Clock } from '../ui/clock'
 export interface SourceControls {
   clock: Clock
   toggle: () => void
-  seek: (ms: number) => void
+  seek: (ms: number, opts?: { silent?: boolean }) => void
   seekBy: (deltaMs: number) => void
   /** Where Back / Esc go when there's no history to return to. */
   backTo: string
@@ -20,7 +20,7 @@ export const SOURCES: Record<PlaybackSource, SourceControls> = {
   spotify: {
     clock: spotifyClock,
     toggle: () => void togglePlay(),
-    seek: (ms) => void seekTo(ms),
+    seek: (ms, opts) => void seekTo(ms, opts),
     seekBy: (d) => void seekBy(d),
     backTo: '/',
   },
@@ -31,8 +31,8 @@ export const SOURCES: Record<PlaybackSource, SourceControls> = {
       feedback.play(useDemoClock.getState().isPlaying ? 'pause' : 'play')
       toggleDemo()
     },
-    seek: (ms) => {
-      feedback.play('seek')
+    seek: (ms, opts) => {
+      if (!opts?.silent) feedback.play('seek')
       seekDemo(ms)
     },
     seekBy: (d) => {

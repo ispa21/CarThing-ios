@@ -1,0 +1,202 @@
+/* ── Lyrics reader ─────────────────────────────────────────────────────── */
+
+.lyrics {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+}
+
+.lyrics-scroll {
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 15%, #000 80%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 15%, #000 80%, transparent 100%);
+}
+
+.lyrics-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.lyrics-scroll:focus-visible {
+  outline: none;
+}
+
+.lyrics-lines {
+  --lyrics-scale: 1;
+  /* Phone 32–44px · tablet 44–64px · desktop 56–96px · TV up to 128px. Capped by
+     height so landscape phones stay readable; rem-based so it follows browser text size. */
+  font-size: calc(min(clamp(2rem, 0.9rem + 4.4vw, 8rem), 12vh) * var(--lyrics-scale));
+  font-stretch: var(--w-semi);
+  font-weight: 720;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  max-width: 22ch;
+  margin: 0 auto;
+  padding: 36vh var(--pad-r) 44vh var(--pad-l);
+  overflow-wrap: break-word;
+  hyphens: manual;
+  text-wrap: balance;
+}
+
+.lyrics-lines li {
+  margin-bottom: 0.4em;
+  color: var(--ink);
+  opacity: 0.34;
+  transform-origin: 0 50%;
+  transition:
+    opacity 480ms var(--ease-out),
+    scale 480ms var(--ease-expo);
+}
+
+/* Focus is now: the current line is fully lit; what's sung recedes. */
+.lyrics-lines li[data-state='current'] {
+  opacity: 1;
+}
+
+.lyrics-lines li[data-state='past'] {
+  opacity: 0.16;
+  scale: 0.94;
+}
+
+/* Static reader (untimed — all Spotify playback): everything readable, nothing highlighted. */
+.lyrics-lines:not([data-timed]) {
+  padding-top: calc(var(--safe-t) + 104px);
+  font-size: calc(min(clamp(2rem, 1rem + 3.4vw, 6.5rem), 10vh) * var(--lyrics-scale));
+}
+
+.lyrics-lines:not([data-timed]) li {
+  opacity: 0.94;
+}
+
+.lyrics-lines li.gap {
+  height: 0.6em;
+  margin: 0;
+}
+
+.lyrics-credit {
+  max-width: 22ch;
+  margin: -36vh auto 44vh;
+  padding: 0 var(--pad-r) 0 var(--pad-l);
+}
+
+/* ── Controls: they fade away while you read ── */
+
+.lyrics-top,
+.lyrics-bottom {
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding-left: calc(var(--pad-l) - 10px);
+  padding-right: calc(var(--pad-r) - 10px);
+}
+
+.lyrics-top {
+  top: 0;
+  padding-top: calc(var(--safe-t) + var(--s-2));
+  padding-bottom: var(--s-6);
+  background: linear-gradient(to bottom, var(--bg) 55%, transparent);
+}
+
+.lyrics-bottom {
+  bottom: 0;
+  justify-content: center;
+  padding-top: var(--s-6);
+  padding-bottom: calc(var(--safe-b) + var(--s-3));
+  background: linear-gradient(to top, var(--bg) 55%, transparent);
+}
+
+.lyrics-console {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  width: 100%;
+  max-width: 880px;
+}
+
+.lyrics-track {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+}
+
+.lyrics-track-title,
+.lyrics-track-artist {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lyrics-track-title {
+  font-weight: 600;
+}
+
+.lyrics-scrub {
+  flex: 1;
+  min-width: 0;
+}
+
+.lyrics-empty {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 0 var(--pad-r) 0 var(--pad-l);
+}
+
+.jump {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  bottom: calc(var(--safe-b) + 112px);
+  translate: -50% 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-height: var(--tap);
+  padding: 0 var(--s-5) 0 var(--s-4);
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  box-shadow: var(--shadow-overlay);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  white-space: nowrap;
+  transition: scale var(--dur-press) var(--ease-out);
+}
+
+.jump svg {
+  color: var(--signal);
+}
+
+.jump:active {
+  scale: 0.96;
+}
+
+.lyrics:not([data-controls]) .jump {
+  bottom: calc(var(--safe-b) + var(--s-6));
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .jump:hover {
+    background: var(--surface-3);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lyrics-lines li[data-state='past'] {
+    scale: none;
+  }
+
+  .jump:active {
+    scale: none;
+  }
+}

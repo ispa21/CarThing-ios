@@ -77,8 +77,8 @@ export const practice = {
     if (position() > 3000) set({ progressMs: 0, syncedAt: Date.now(), isPlaying: true })
     else set(start(wrap(get().index - 1), true))
   },
-  seek: (ms: number) => {
-    feedback.play('seek')
+  seek: (ms: number, opts?: { silent?: boolean }) => {
+    if (!opts?.silent) feedback.play('seek')
     set({ progressMs: Math.max(0, Math.min(ms, get().durationMs)), syncedAt: Date.now() })
   },
 }

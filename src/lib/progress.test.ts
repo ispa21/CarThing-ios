@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatTime, interpolateProgress } from './progress'
+import { formatTime, interpolateProgress, minuteMarks } from './progress'
 
 describe('interpolateProgress', () => {
   const snap = { progressMs: 120_000, durationMs: 222_000, isPlaying: true }
@@ -30,4 +30,21 @@ describe('formatTime', () => {
     [3_723_000, '1:02:03'],
     [-100, '0:00'],
   ])('%i → %s', (ms, out) => expect(formatTime(ms)).toBe(out))
+})
+
+describe('minuteMarks', () => {
+  it('marks each full minute inside the song', () => {
+    expect(minuteMarks(150_000)).toEqual([40, 80])
+  })
+  it('puts no mark on the end of a song that is a whole number of minutes', () => {
+    expect(minuteMarks(180_000)).toHaveLength(2)
+  })
+  it('has nothing to mark for short or unknown durations', () => {
+    expect(minuteMarks(45_000)).toEqual([])
+    expect(minuteMarks(0)).toEqual([])
+  })
+  it('steps by 5 and 10 minutes for long episodes', () => {
+    expect(minuteMarks(60 * 60_000)).toHaveLength(11)
+    expect(minuteMarks(180 * 60_000)).toHaveLength(17)
+  })
 })

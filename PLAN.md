@@ -1,5 +1,7 @@
 # PartyDeck — Build Plan
 
+> **Note (2026-09):** the visual design, typography and haptics described in this plan were superseded by the redesign in [`docs/redesign/`](docs/redesign/) (design direction, design system, haptics report). The architecture, Spotify and policy sections still apply.
+
 > A Car Thing‑inspired, software‑first music appliance: Spotify controller, Now Playing screen, and a giant lyrics reader. PWA on Vercel.
 
 ## 1. Existing architecture

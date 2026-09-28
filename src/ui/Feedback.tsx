@@ -1,5 +1,7 @@
 import { useEffect, type ReactNode } from 'react'
-import { useUi } from '../store/ui'
+import { feedback } from '../sensory/feedback'
+import type { FriendlyError } from '../spotify/errors'
+import { openDevices, useUi } from '../store/ui'
 
 export function Toaster() {
   const toast = useUi((s) => s.toast)
@@ -12,6 +14,7 @@ export function Toaster() {
     <div className="toast-region" role="status" aria-live="polite">
       {toast && (
         <div key={toast.id} className="toast" data-tone={toast.tone}>
+          <span className="led" aria-hidden="true" />
           {toast.text}
         </div>
       )}
@@ -19,13 +22,49 @@ export function Toaster() {
   )
 }
 
-export function EmptyState({ title, detail, children }: { title: string; detail?: string; children?: ReactNode }) {
+/** A lamp, a line, a way forward. `tone="error"` lights the lamp red; otherwise it's off (idle). */
+export function EmptyState({ title, detail, tone, children }: { title: string; detail?: string; tone?: 'error'; children?: ReactNode }) {
   return (
-    <div className="empty">
+    <div className="empty" data-tone={tone}>
+      <span className="led" data-off={tone ? undefined : true} aria-hidden="true" />
       <p className="empty-title">{title}</p>
       {detail && <p className="empty-detail">{detail}</p>}
       {children && <div className="empty-actions">{children}</div>}
     </div>
+  )
+}
+
+/**
+ * An error with the one way forward it actually has: "Try again" only when retrying can
+ * work, "Choose device" when there's no active device, nothing while Spotify has asked
+ * us to wait (a button that's guaranteed to fail is worse than none).
+ */
+export function ErrorState({ error, onRetry }: { error: FriendlyError; onRetry: () => void }) {
+  return (
+    <EmptyState tone="error" title={error.title} detail={error.detail}>
+      {error.action === 'retry' && (
+        <button
+          className="btn"
+          onClick={() => {
+            feedback.play('select')
+            onRetry()
+          }}
+        >
+          Try again
+        </button>
+      )}
+      {error.action === 'devices' && (
+        <button
+          className="btn"
+          onClick={() => {
+            feedback.play('select')
+            openDevices()
+          }}
+        >
+          Choose device
+        </button>
+      )}
+    </EmptyState>
   )
 }
 

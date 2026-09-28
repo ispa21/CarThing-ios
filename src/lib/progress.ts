@@ -21,3 +21,15 @@ export function formatTime(ms: number): string {
   const s = String(total % 60).padStart(2, '0')
   return h ? `${h}:${String(m).padStart(2, '0')}:${s}` : `${m}:${s}`
 }
+
+/**
+ * Where the dial's taller ticks go, as percentages of the song. One per minute;
+ * long episodes step by 5 or 10 minutes so the dial never turns into a comb.
+ */
+export function minuteMarks(durationMs: number): number[] {
+  const minutes = durationMs / 60_000
+  const step = minutes <= 20 ? 1 : minutes <= 100 ? 5 : 10
+  const marks: number[] = []
+  for (let m = step; m < minutes; m += step) marks.push((m / minutes) * 100)
+  return marks
+}

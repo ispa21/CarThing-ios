@@ -1,11 +1,12 @@
 import { useReducedMotion } from 'motion/react'
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
 import { feedback } from '../sensory/feedback'
 import { beginLogin } from '../spotify/auth'
 import { isSpotifyConfigured, redirectOrigin, SPOTIFY_REDIRECT_URI } from '../spotify/config'
 import { useSession } from '../store/session'
 import { useSettings } from '../store/settings'
 import { tickLink } from '../app/router'
+import { Icon } from '../ui/Icon'
 import { PressKey } from '../ui/PressKey'
 import { nextStep } from './flow'
 import { PowerKey } from './PowerKey'
@@ -31,17 +32,16 @@ export function Welcome({ startAt }: { startAt: 'welcome' | 'connect' }) {
 
   return (
     <main className="onboard" data-step={step} data-lit={lit || undefined}>
-      <div className="onboard-mark">
-        <h1 className="wordmark">
-          <span className="led" aria-hidden="true" />
-          PartyDeck
-        </h1>
-        <p className="onboard-tagline">
-          Your music.
-          <br />
-          Your deck.
+      <header className="onboard-top">
+        <p className="onboard-state label">
+          <span className="led" data-off={!lit || undefined} aria-hidden="true" />
+          {lit ? 'On' : 'Standby'}
         </p>
-      </div>
+        <a className="onboard-demo label" href="/lyrics/demo" onClick={tickLink}>
+          Try the lyrics reader
+          <Icon name="forward" size={14} />
+        </a>
+      </header>
 
       <div className="onboard-action" key={step}>
         {step === 'welcome' ? (
@@ -51,10 +51,24 @@ export function Welcome({ startAt }: { startAt: 'welcome' | 'connect' }) {
         )}
       </div>
 
-      <a className="onboard-demo" href="/lyrics/demo" onClick={tickLink}>
-        Try the lyrics reader
-      </a>
+      <div className="onboard-mark">
+        <Wordmark />
+        <p className="onboard-tagline">Your music. Your deck. Any screen.</p>
+      </div>
     </main>
+  )
+}
+
+/** The wordmark as a display: each letter is a segment that warms up when power arrives. */
+function Wordmark() {
+  return (
+    <h1 className="wordmark" aria-label="PartyDeck">
+      {[...'PartyDeck'].map((ch, i) => (
+        <span key={i} aria-hidden="true" style={{ '--i': i } as CSSProperties}>
+          {ch}
+        </span>
+      ))}
+    </h1>
   )
 }
 

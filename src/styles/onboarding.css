@@ -1,0 +1,625 @@
+/* ── Onboarding: powering on the device ────────────────────────────────── */
+
+/* Corner-anchored: status top-left, the way out top-right, the wordmark bottom-left,
+   the one control on the right. Portrait stacks it: status, control, wordmark. */
+.onboard {
+  min-height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    'top'
+    'action'
+    'mark';
+  gap: var(--s-5);
+  padding: calc(var(--safe-t) + var(--s-4)) var(--pad-r) calc(var(--safe-b) + var(--s-5)) var(--pad-l);
+}
+
+.onboard-top {
+  grid-area: top;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  min-height: var(--tap);
+  animation: arrive var(--dur-deliberate) var(--ease-expo) both;
+}
+
+.onboard-state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.onboard-state .led {
+  transition:
+    background-color var(--dur-slow) ease 200ms,
+    box-shadow var(--dur-slow) ease 200ms;
+}
+
+.onboard-demo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--tap);
+  margin-right: -8px;
+  padding: 0 8px;
+  border-radius: var(--r-s);
+  transition: color var(--dur-fast) ease;
+}
+
+.onboard-action {
+  grid-area: action;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  animation: arrive var(--dur-deliberate) var(--ease-expo) 360ms both;
+}
+
+.onboard-mark {
+  grid-area: mark;
+  display: grid;
+  gap: var(--s-3);
+  min-width: 0;
+  container-type: inline-size; /* the wordmark sizes itself to its column, never into the key */
+}
+
+/* The wordmark as a display: unlit segments are faintly visible until power arrives,
+   then each letter warms up in turn. Opaque mixes, not opacity: overlapping letters
+   would otherwise double up where they touch. */
+.wordmark {
+  display: flex;
+  font-stretch: var(--w-expanded);
+  font-size: min(15cqi, 22vh);
+  font-weight: 820;
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+  white-space: nowrap;
+}
+
+.wordmark > span {
+  display: inline-block;
+  color: color-mix(in oklab, var(--ink) 17%, var(--bg));
+  animation: letter-rise var(--dur-deliberate) var(--ease-expo) both;
+  animation-delay: calc(80ms + var(--i) * 32ms);
+  transition: color var(--dur-slow) ease;
+  transition-delay: calc(var(--i) * 36ms);
+}
+
+.onboard[data-lit] .wordmark > span {
+  color: var(--ink);
+}
+
+@keyframes letter-rise {
+  from {
+    translate: 0 0.35em;
+  }
+}
+
+.onboard-tagline {
+  color: var(--ink-2);
+  font-size: var(--t-lead);
+  font-weight: 500;
+  animation: arrive var(--dur-deliberate) var(--ease-expo) 260ms both;
+}
+
+.onboard-title {
+  font-stretch: var(--w-condensed);
+  font-size: min(var(--t-headline), 16vh);
+  font-weight: 760;
+  line-height: 0.92;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+.onboard-sub {
+  color: var(--ink-2);
+  font-size: var(--t-lead);
+}
+
+@keyframes arrive {
+  from {
+    opacity: 0;
+    translate: 0 14px;
+  }
+}
+
+@media (orientation: landscape) and (min-width: 480px) {
+  .onboard {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas:
+      'top top'
+      '. action'
+      'mark action';
+    column-gap: var(--s-6);
+  }
+
+  .onboard-action {
+    align-self: center;
+  }
+}
+
+/* ── The power key ── */
+
+.power {
+  --power: 156px; /* the housing; the key is ~3/4 of it */
+  display: grid;
+  justify-items: center;
+  gap: var(--s-4);
+}
+
+/* Big canvases get a key that holds its own against the wordmark. */
+@media (min-width: 1200px) and (min-height: 760px) {
+  .power {
+    --power: 212px;
+  }
+}
+
+.power-housing {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--power);
+  height: var(--power);
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(0 0 0 / 0.4), transparent);
+}
+
+.power-ring {
+  position: absolute;
+  inset: 0;
+  rotate: -90deg;
+  pointer-events: none; /* the key under it takes the press */
+}
+
+.power-ring-track,
+.power-ring-light {
+  fill: none;
+  stroke-width: 2;
+}
+
+.power-ring-track {
+  stroke: var(--hairline-strong);
+  stroke-dasharray: 1 3.2;
+}
+
+.power-ring-light {
+  stroke: var(--signal);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  opacity: 0; /* a round cap would leave a dot at rest */
+  filter: drop-shadow(0 0 4px var(--signal-glow));
+  transition:
+    stroke-dashoffset var(--dur-deliberate) var(--ease-out),
+    opacity 80ms ease;
+}
+
+.power[data-lit] .power-ring-light {
+  stroke-dashoffset: 0;
+  opacity: 1;
+}
+
+.power-key {
+  display: grid;
+  place-items: center;
+  width: calc(var(--power) * 0.744);
+  height: calc(var(--power) * 0.744);
+  border-radius: 50%;
+  background: radial-gradient(120% 120% at 30% 20%, #fff, var(--key) 40%, var(--key-shade));
+  color: var(--key-ink);
+  box-shadow:
+    inset 0 -4px 0 rgb(0 0 0 / 0.14),
+    inset 0 2px 0 rgb(255 255 255 / 0.7),
+    0 3px 0 rgb(0 0 0 / 0.4),
+    0 24px 48px -18px rgb(0 0 0 / 0.95);
+  transition:
+    box-shadow var(--dur-press) ease,
+    translate var(--dur-press) var(--ease-out);
+}
+
+.power-key:active {
+  translate: 0 2px;
+  box-shadow:
+    inset 0 -1px 0 rgb(0 0 0 / 0.14),
+    inset 0 2px 0 rgb(255 255 255 / 0.5),
+    0 1px 0 rgb(0 0 0 / 0.4),
+    0 10px 24px -14px rgb(0 0 0 / 0.95);
+}
+
+.power-label {
+  font-stretch: var(--w-expanded);
+  font-size: var(--t-label);
+  font-weight: 650;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+/* ── Connect ── */
+
+.connect {
+  display: grid;
+  gap: var(--s-4);
+  width: min(100%, 380px);
+}
+
+.btn-connect {
+  min-height: 60px;
+  font-size: 1.0625rem;
+  border-radius: 18px;
+}
+
+.fine {
+  color: var(--ink-3);
+  font-size: var(--t-small);
+  text-wrap: pretty;
+}
+
+.notice {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 16px;
+  border-radius: var(--r-m);
+  background: var(--error-dim);
+  box-shadow: inset 0 0 0 1px rgb(255 117 102 / 0.25);
+}
+
+.notice span {
+  color: var(--ink-2);
+  font-size: 0.9375rem;
+}
+
+.dev-setup {
+  padding: 4px 14px 12px;
+  border-radius: var(--r-m);
+  background: var(--surface-1);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+  color: var(--ink-2);
+  font-size: var(--t-small);
+}
+
+.dev-setup summary {
+  display: flex;
+  align-items: center;
+  min-height: var(--tap);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dev-setup p + p,
+.dev-setup pre {
+  margin-top: var(--s-2);
+}
+
+.dev-setup pre {
+  padding: 10px;
+  border-radius: var(--r-s);
+  background: var(--bg);
+  color: var(--ink);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.dev-setup a {
+  color: var(--signal);
+  text-decoration: underline;
+}
+
+/* ── Connecting (callback) ── */
+
+.standby {
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  padding: var(--safe-t) var(--pad-r) var(--safe-b) var(--pad-l);
+}
+
+.standby-line {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+/* ── Orientation ── */
+
+.onboard-rotate {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: none;
+  grid-template-areas: none;
+  place-content: center;
+  justify-items: center;
+  text-align: center;
+  gap: var(--s-5);
+}
+
+.rotate-demo {
+  display: grid;
+  place-items: center;
+  width: 120px;
+  height: 120px;
+}
+
+.rotate-phone {
+  position: relative;
+  width: 44px;
+  height: 80px;
+  border: 3px solid var(--ink);
+  border-radius: 11px;
+  animation: rotate-phone 2.8s var(--ease-in-out) infinite;
+}
+
+.rotate-phone::before {
+  content: '';
+  position: absolute;
+  top: 7px;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  margin-left: -2.5px;
+  border-radius: 50%;
+  background: var(--signal);
+  box-shadow: var(--glow);
+}
+
+@keyframes rotate-phone {
+  0%,
+  30% {
+    rotate: 0deg;
+  }
+  55%,
+  85% {
+    rotate: -90deg;
+  }
+  100% {
+    rotate: 0deg;
+  }
+}
+
+/* ── Tutorial ── */
+
+.tutorial {
+  position: relative;
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+}
+
+.tutorial-top {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  min-height: var(--tap);
+  padding: calc(var(--safe-t) + 4px) calc(var(--pad-r) - 8px) 0 var(--pad-l);
+}
+
+.tutorial-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+/* Seven segments, like a level meter: lit = done, ink = now. */
+.tutorial-steps {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.tutorial-steps li {
+  width: 16px;
+  height: 4px;
+  border-radius: 1px;
+  background: var(--hairline-strong);
+  transition:
+    background-color var(--dur-base) ease,
+    box-shadow var(--dur-base) ease;
+}
+
+.tutorial-steps li[data-state='current'] {
+  background: var(--ink);
+}
+
+.tutorial-steps li[data-state='done'] {
+  background: var(--signal);
+  box-shadow: 0 0 6px var(--signal-glow);
+}
+
+.coach {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-1) var(--pad-r) 0 var(--pad-l);
+  font-size: clamp(1.0625rem, 0.9rem + 0.9vw, 1.5rem);
+  line-height: 1.25;
+}
+
+.coach strong {
+  font-stretch: var(--w-condensed);
+  font-size: 1.2em;
+  font-weight: 760;
+  letter-spacing: -0.015em;
+}
+
+.coach p {
+  flex: 1;
+  outline: none;
+}
+
+.coach span {
+  color: var(--ink-2);
+}
+
+.coach .btn {
+  flex: none;
+}
+
+.tutorial-deck {
+  height: auto;
+  min-height: 0;
+  padding-top: var(--s-2);
+}
+
+/* The control being taught glows like a lit key. The ring is static; only its halo breathes (opacity). */
+[data-coach] {
+  position: relative;
+  outline: 2px solid var(--signal);
+  outline-offset: 3px;
+}
+
+[data-coach]::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: inherit;
+  box-shadow: 0 0 26px var(--signal-glow);
+  pointer-events: none;
+  animation: coach-glow 1.3s ease-in-out infinite alternate;
+}
+
+@keyframes coach-glow {
+  from {
+    opacity: 0;
+  }
+}
+
+.practice-panel {
+  position: absolute;
+  z-index: 4;
+  right: var(--pad-r);
+  bottom: calc(var(--rail-h) + var(--safe-b) + var(--s-3));
+  width: min(420px, calc(100% - var(--pad-l) - var(--pad-r)));
+  max-height: 72%;
+  overflow: auto;
+  padding: var(--s-2) var(--s-4) var(--s-4);
+  border-radius: var(--r-l);
+  background: var(--surface-2);
+  box-shadow: var(--shadow-overlay);
+}
+
+.practice-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 48px;
+}
+
+.practice-panel-head h2 {
+  font-stretch: var(--w-condensed);
+  font-size: 1.5rem;
+  font-weight: 740;
+  letter-spacing: -0.015em;
+}
+
+.practice-panel-head .icon-btn {
+  margin-right: -10px;
+}
+
+.practice-lyrics {
+  left: var(--pad-l);
+  width: auto;
+}
+
+.practice-lyrics-lines {
+  display: grid;
+  gap: 0.3em;
+  padding-bottom: 6px;
+  font-stretch: var(--w-semi);
+  font-weight: 720;
+  font-size: clamp(1.5rem, 1rem + 2.4vw, 2.75rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.practice-lyrics-lines li {
+  opacity: 0.34;
+  transition: opacity 480ms var(--ease-out);
+}
+
+.practice-lyrics-lines li[data-state='current'] {
+  opacity: 1;
+}
+
+.coach-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--s-3);
+  width: min(460px, calc(100% - 32px));
+  padding: var(--s-6) var(--s-5) var(--s-5);
+  border-radius: var(--r-l);
+  background: var(--surface-2);
+  box-shadow: var(--shadow-overlay);
+  text-align: center;
+}
+
+.coach-card p {
+  color: var(--ink-2);
+}
+
+.coach-card .coach-done-title {
+  font-stretch: var(--w-condensed);
+  font-size: 2.5rem;
+  font-weight: 760;
+  line-height: 0.95;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+}
+
+.coach-card .btn {
+  margin-top: var(--s-3);
+}
+
+/* The finish is its own moment: the practice deck dims, one card, one key. */
+.tutorial-done {
+  position: absolute;
+  z-index: 6;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--safe-t) var(--pad-r) var(--safe-b) var(--pad-l);
+  background: var(--scrim);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .onboard-demo:hover {
+    color: var(--ink);
+  }
+
+  .power-key:hover {
+    background: radial-gradient(120% 120% at 30% 20%, #fff, #f7f2ea 45%, var(--key));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onboard-top,
+  .onboard-action,
+  .onboard-tagline {
+    animation-name: fade-in;
+  }
+
+  .wordmark > span {
+    animation: none;
+  }
+
+  .rotate-phone,
+  [data-coach]::after {
+    animation: none;
+  }
+
+  .power-ring-light {
+    transition-duration: 0ms;
+  }
+
+  .power-key:active {
+    translate: none;
+  }
+}
+
+.power-glyph {
+  width: 30%;
+  height: 30%;
+}

@@ -15,7 +15,7 @@ export function PowerKey({ label, icon, lit, onPress }: { label: string; icon: I
           <circle className="power-ring-light" cx="66" cy="66" r="62" pathLength={100} />
         </svg>
         <PressKey className="power-key" depth={0.92} onClick={onPress} aria-label={label}>
-          <Icon name={icon} size={34} />
+          <Icon name={icon} size={34} className="power-glyph" />
         </PressKey>
       </div>
       <span className="power-label" aria-hidden="true">

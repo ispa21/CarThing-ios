@@ -163,7 +163,8 @@ export function LyricsScreen({ source }: { source: PlaybackSource }) {
     scrollToCurrent(true)
   }
 
-  const { visible: controls, handlers } = useAutoHide(track.isPlaying)
+  // Only hide the controls when there's something to read ("Lyrics unavailable" keeps its way out visible).
+  const { visible: controls, handlers } = useAutoHide(track.isPlaying && lines.length > 0)
 
   // The demo clock runs by itself; start it when the demo opens, pause on leave.
   useEffect(() => {
@@ -202,7 +203,7 @@ export function LyricsScreen({ source }: { source: PlaybackSource }) {
             <div className="lyrics-track">
               <span className="lyrics-track-title">{track.title ?? 'Lyrics'}</span>
               {/* The demo clock is silent — say so rather than imply playback. */}
-              {(demo || track.artist) && <span className="lyrics-track-artist">{demo ? 'Demo, no audio' : track.artist}</span>}
+              {(demo || track.artist) && <span className="lyrics-track-artist label">{demo ? 'Demo · no audio' : track.artist}</span>}
             </div>
             <FullscreenButton />
             <button className="icon-btn" onClick={cycleSize} aria-label={`Text size: ${size.label}. Change`}>
@@ -258,7 +259,7 @@ export function LyricsScreen({ source }: { source: PlaybackSource }) {
               </li>
             ))}
           </ol>
-          {state.status === 'ready' && <p className="lyrics-credit">Lyrics: {state.lyrics.providerName}</p>}
+          {state.status === 'ready' && <p className="lyrics-credit readout">Lyrics: {state.lyrics.providerName}</p>}
         </div>
       )}
 
@@ -282,20 +283,17 @@ export function LyricsScreen({ source }: { source: PlaybackSource }) {
       <AnimatePresence>
         {controls && (demo || spotify.has) && (
           <m.footer key="bottom" className="lyrics-bottom" {...fade}>
-            <PlayKey
-              small
-              isPlaying={track.isPlaying}
-              onPress={src.toggle}
-              disabled={!demo && !spotify.canToggle}
-            />
-            <div className="lyrics-scrub">
-              <Scrubber
-                clock={src.clock}
-                durationMs={track.durationMs}
-                onSeek={src.seek}
-                disabled={!demo && spotify.cantSeek}
-                label="Song position"
-              />
+            <div className="lyrics-console">
+              <PlayKey small isPlaying={track.isPlaying} onPress={src.toggle} disabled={!demo && !spotify.canToggle} />
+              <div className="lyrics-scrub">
+                <Scrubber
+                  clock={src.clock}
+                  durationMs={track.durationMs}
+                  onSeek={src.seek}
+                  disabled={!demo && spotify.cantSeek}
+                  label="Song position"
+                />
+              </div>
             </div>
           </m.footer>
         )}

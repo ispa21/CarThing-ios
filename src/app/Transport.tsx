@@ -58,7 +58,9 @@ export function PlayKey({ isPlaying, onPress, disabled, small, coach }: { isPlay
       aria-label={isPlaying ? 'Pause' : 'Play'}
       depth={0.95}
       data-coach={coach || undefined}
+      data-playing={isPlaying || undefined}
     >
+      <span className="key-lamp" aria-hidden="true" />
       <Icon name={isPlaying ? 'pause' : 'play'} size={small ? 24 : 34} />
     </PressKey>
   )

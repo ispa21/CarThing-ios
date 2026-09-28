@@ -86,6 +86,16 @@ describe('playbackService and sensory feedback', () => {
     expect(feedback.play).toHaveBeenCalledTimes(3)
   })
 
+  it('a silent seek (the key press already cued it) sends the seek without a second cue', async () => {
+    service.startPlaybackSync()
+    await vi.advanceTimersByTimeAsync(10)
+    void service.seekTo(10_000, { silent: true })
+    expect(feedback.play).not.toHaveBeenCalled()
+    expect(api.seekToPosition).toHaveBeenCalledWith(10_000)
+    void service.seekTo(12_000)
+    expect(feedback.play).toHaveBeenLastCalledWith('seek')
+  })
+
   it('queue add: press now, confirmation after Spotify accepts', async () => {
     service.startPlaybackSync()
     await vi.advanceTimersByTimeAsync(10)
