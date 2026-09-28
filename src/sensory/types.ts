@@ -44,8 +44,8 @@ export type FeedbackEvent =
   | 'device-connected'
   | 'device-lost'
 
-/** WebHaptics built-in presets PartyDeck uses (see web-haptics defaultPatterns). */
-export type HapticName = 'selection' | 'light' | 'medium' | 'heavy' | 'rigid' | 'success' | 'warning' | 'error'
+/** Semantic haptic levels. haptics.ts renders each one with whatever the device has. */
+export type HapticName = 'selection' | 'light' | 'medium' | 'heavy' | 'success' | 'warning' | 'error'
 
 /** Cuelume cues PartyDeck uses — a deliberately small subset of its palette. */
 export type CueSound = 'tick' | 'toggle' | 'droplet' | 'pulse' | 'press' | 'page' | 'release' | 'success' | 'ready' | 'arrival' | 'error'
