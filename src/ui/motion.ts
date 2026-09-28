@@ -8,5 +8,3 @@ export const EASE_EXPO = [0.16, 1, 0.3, 1] as const
 export const SPRING = { type: 'spring', bounce: 0, duration: 0.32 } as const
 /** Keys: compress fast, return without wobble. */
 export const SPRING_KEY = { type: 'spring', bounce: 0, duration: 0.26 } as const
-/** Something that travels to a new place (the rail's lamp). A touch of life, still no wobble. */
-export const SPRING_TRAVEL = { type: 'spring', bounce: 0.12, duration: 0.42 } as const

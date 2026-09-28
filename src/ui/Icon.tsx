@@ -40,6 +40,23 @@ const paths = {
       <circle cx="12" cy="12" r="0.6" fill="currentColor" />
     </>
   ),
+  shuffle: (
+    <>
+      <path d="m18 14 4 4-4 4" />
+      <path d="m18 2 4 4-4 4" />
+      <path d="M2 18h1.97a4 4 0 0 0 3.3-1.7l5.46-8.6a4 4 0 0 1 3.3-1.7H22" />
+      <path d="M2 6h1.97a4 4 0 0 1 3.6 2.2" />
+      <path d="M22 18h-6.04a4 4 0 0 1-3.3-1.8l-.36-.45" />
+    </>
+  ),
+  repeat: (
+    <>
+      <path d="m17 2 4 4-4 4" />
+      <path d="M3 11v-1a4 4 0 0 1 4-4h14" />
+      <path d="m7 22-4-4 4-4" />
+      <path d="M21 13v1a4 4 0 0 1-4 4H3" />
+    </>
+  ),
   deck: (
     <>
       <rect x="2.5" y="5" width="19" height="14" rx="3" />

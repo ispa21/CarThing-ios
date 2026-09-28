@@ -20,11 +20,11 @@ export interface TransportKeysProps {
 export function TransportKeys(p: TransportKeysProps) {
   return (
     <div className="transport">
-      <PressKey className="key key-skip" onClick={p.onPrevious} disabled={!p.canPrevious} aria-label="Previous" data-coach={p.coach === 'skip' || undefined}>
+      <PressKey className="key key-skip" depth={1} onClick={p.onPrevious} disabled={!p.canPrevious} aria-label="Previous" data-coach={p.coach === 'skip' || undefined}>
         <Icon name="previous" size={30} />
       </PressKey>
       <PlayKey isPlaying={p.isPlaying} onPress={p.onToggle} disabled={!p.canToggle} coach={p.coach === 'play'} />
-      <PressKey className="key key-skip" onClick={p.onNext} disabled={!p.canNext} aria-label="Next" data-coach={p.coach === 'skip' || undefined}>
+      <PressKey className="key key-skip" depth={1} onClick={p.onNext} disabled={!p.canNext} aria-label="Next" data-coach={p.coach === 'skip' || undefined}>
         <Icon name="next" size={30} />
       </PressKey>
     </div>
@@ -56,7 +56,7 @@ export function PlayKey({ isPlaying, onPress, disabled, small, coach }: { isPlay
       onClick={onPress}
       disabled={disabled}
       aria-label={isPlaying ? 'Pause' : 'Play'}
-      depth={0.95}
+      depth={1}
       data-coach={coach || undefined}
       data-playing={isPlaying || undefined}
     >

@@ -156,14 +156,22 @@
   }
 }
 
+/* The key sits in a machined guard plate: a square of metal with a recessed well. */
 .power-housing {
   position: relative;
   display: grid;
   place-items: center;
   width: var(--power);
   height: var(--power);
-  border-radius: 50%;
-  background: radial-gradient(closest-side, rgb(0 0 0 / 0.4), transparent);
+  border: 1px solid var(--outline);
+  border-radius: 14px;
+  background:
+    radial-gradient(closest-side, #07080a 80%, transparent 81%),
+    var(--metal);
+  box-shadow:
+    var(--bevel),
+    0 6px 0 var(--outline),
+    0 30px 60px -24px rgb(0 0 0 / 0.9);
 }
 
 .power-ring {
@@ -180,13 +188,14 @@
 }
 
 .power-ring-track {
-  stroke: var(--hairline-strong);
-  stroke-dasharray: 1 3.2;
+  stroke: var(--ink-4);
+  stroke-width: 3;
+  stroke-dasharray: 2 2.2; /* a ring of LED segments, dark until powered */
 }
 
 .power-ring-light {
   stroke: var(--signal);
-  stroke-width: 2.5;
+  stroke-width: 3;
   stroke-linecap: round;
   stroke-dasharray: 100;
   stroke-dashoffset: 100;
@@ -205,28 +214,27 @@
 .power-key {
   display: grid;
   place-items: center;
-  width: calc(var(--power) * 0.744);
-  height: calc(var(--power) * 0.744);
+  width: calc(var(--power) * 0.66);
+  height: calc(var(--power) * 0.66);
+  border: 1px solid var(--outline);
   border-radius: 50%;
   background: radial-gradient(120% 120% at 30% 20%, #fff, var(--key) 40%, var(--key-shade));
   color: var(--key-ink);
   box-shadow:
     inset 0 -4px 0 rgb(0 0 0 / 0.14),
     inset 0 2px 0 rgb(255 255 255 / 0.7),
-    0 3px 0 rgb(0 0 0 / 0.4),
-    0 24px 48px -18px rgb(0 0 0 / 0.95);
+    0 6px 0 var(--outline);
   transition:
     box-shadow var(--dur-press) ease,
     translate var(--dur-press) var(--ease-out);
 }
 
 .power-key:active {
-  translate: 0 2px;
+  translate: 0 5px;
   box-shadow:
     inset 0 -1px 0 rgb(0 0 0 / 0.14),
     inset 0 2px 0 rgb(255 255 255 / 0.5),
-    0 1px 0 rgb(0 0 0 / 0.4),
-    0 10px 24px -14px rgb(0 0 0 / 0.95);
+    0 1px 0 var(--outline);
 }
 
 .power-label {
@@ -249,7 +257,6 @@
 .btn-connect {
   min-height: 60px;
   font-size: 1.0625rem;
-  border-radius: 18px;
 }
 
 .fine {
@@ -264,8 +271,10 @@
   gap: 2px;
   padding: 14px 16px;
   border-radius: var(--r-m);
-  background: var(--error-dim);
-  box-shadow: inset 0 0 0 1px rgb(255 117 102 / 0.25);
+  background: var(--bay);
+  box-shadow:
+    var(--recess),
+    inset 3px 0 0 var(--error);
 }
 
 .notice span {
@@ -305,7 +314,7 @@
 }
 
 .dev-setup a {
-  color: var(--signal);
+  color: var(--ink); /* amber is for live state only */
   text-decoration: underline;
 }
 
@@ -495,9 +504,13 @@
   max-height: 72%;
   overflow: auto;
   padding: var(--s-2) var(--s-4) var(--s-4);
+  border: 1px solid var(--outline);
   border-radius: var(--r-l);
-  background: var(--surface-2);
-  box-shadow: var(--shadow-overlay);
+  background: var(--metal);
+  box-shadow:
+    var(--bevel),
+    0 4px 0 var(--outline),
+    0 30px 60px -20px rgb(0 0 0 / 0.9);
 }
 
 .practice-panel-head {
@@ -535,7 +548,7 @@
 }
 
 .practice-lyrics-lines li {
-  opacity: 0.34;
+  opacity: 0.42;
   transition: opacity 480ms var(--ease-out);
 }
 
@@ -550,9 +563,13 @@
   gap: var(--s-3);
   width: min(460px, calc(100% - 32px));
   padding: var(--s-6) var(--s-5) var(--s-5);
+  border: 1px solid var(--outline);
   border-radius: var(--r-l);
-  background: var(--surface-2);
-  box-shadow: var(--shadow-overlay);
+  background: var(--metal);
+  box-shadow:
+    var(--bevel),
+    0 5px 0 var(--outline),
+    0 30px 60px -20px rgb(0 0 0 / 0.9);
   text-align: center;
 }
 

@@ -9,7 +9,8 @@ PartyDeck is an independent project. It isn't made by or affiliated with Spotify
 PartyDeck is **landscape-first**. The phone held sideways is the primary canvas, then tablets, then desktop. Phones held upright get a compact fallback.
 
 - **The deck** (home, `/`): artwork on the left, the instrument panel on the right at exactly the artwork's height, a control rail along the bottom. The panel holds the status ("Now playing"/"Paused"), the title at marquee scale, artist, **the dial** (a tuning-scale seek bar: minute ticks, lit ticks for what's played, an amber needle for now), three physical keys and the output device. Tablets and desktops also show what's up next. The cover's own colour glows behind it (never on it) and dims when paused. **Swipe the artwork** sideways to skip; the next cover arrives from the side you skipped toward. With nothing playing, the deck shows your playlists. Upright phones get a compact deck and a dismissible "Turn your phone sideways" hint.
-- **Rail**: a mini deck (on other screens; a cover + play puck on phones), then Deck · Search · Queue · Lyrics with a lamp that travels to the active tab, then full screen and Settings. Upright phones show the mini deck above the tabs.
+- **The console** (v2 "Flight Deck"): a gunmetal DJ console with a recessed display, chunky keycaps on hard drops, and a **channel strip**: **shuffle** and **repeat** latch keys (repeat cycles off → all → one) and a **volume fader** with a level meter (one request per drag; shows "FIX" on devices that don't allow remote volume). Indicator lights mean one thing each: amber = live, cyan = mode, green = linked device, red = fault.
+- **Rail**: a mini deck (on other screens; a cover + play puck on phones), then Deck · Search · Queue · Lyrics as latching preset keys (the current one stays down, lens lit), then full screen and Settings. Upright phones show the mini deck above the tabs.
 - **Search**: songs, artists, albums and playlists, debounced as you type. When the field is empty it shows **your playlists** as a shelf, which scrolls sideways on landscape phones. Tap a row or playlist to **open it in the Spotify app** (straight to that song, album, artist or playlist), **▶** plays it on your device right away, and **+** adds a song to the queue.
 - **Queue**: what's playing now and what's up next, straight from Spotify's queue. Adding from Search confirms on the row. Spotify's Web API has no way to remove or reorder queue items, so PartyDeck doesn't pretend to.
 - **Lyrics reader**: huge, high-contrast type sized for phones through TVs. Controls fade out while you read, and manual scrolling is never overridden. A demo at `/lyrics/demo` shows timed follow and "Jump to current". See [Lyrics](#lyrics-architecture) for why Spotify tracks get a static reader.
@@ -152,7 +153,7 @@ Each scope was checked against the OpenAPI schema.
 | Scope | Why |
 |---|---|
 | `user-read-playback-state` | `GET /me/player`, `GET /me/player/devices` |
-| `user-modify-playback-state` | play, pause, next, previous, seek, add to queue, transfer device |
+| `user-modify-playback-state` | play, pause, next, previous, seek, add to queue, transfer device, shuffle, repeat, volume |
 | `user-read-currently-playing` | required by `GET /me/player/queue` |
 | `playlist-read-private` | Home → Your playlists (`GET /me/playlists`) |
 

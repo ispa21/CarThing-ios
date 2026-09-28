@@ -95,6 +95,13 @@ export const skipToPrevious = () => spotify('/me/player/previous', { method: 'PO
 export const seekToPosition = (positionMs: number) =>
   spotify('/me/player/seek', { method: 'PUT', query: { position_ms: Math.round(positionMs) } })
 
+export const setShuffle = (state: boolean) => spotify('/me/player/shuffle', { method: 'PUT', query: { state: String(state) } })
+/** `state`: track, context or off. */
+export const setRepeat = (state: 'off' | 'context' | 'track') => spotify('/me/player/repeat', { method: 'PUT', query: { state } })
+/** 0–100 inclusive. */
+export const setVolume = (volumePercent: number) =>
+  spotify('/me/player/volume', { method: 'PUT', query: { volume_percent: Math.max(0, Math.min(100, Math.round(volumePercent))) } })
+
 export const getQueue = () => spotify<RawQueue>('/me/player/queue')
 export const addToQueue = (uri: string) => spotify('/me/player/queue', { method: 'POST', query: { uri } })
 

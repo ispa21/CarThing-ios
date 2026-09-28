@@ -19,9 +19,24 @@ export interface PlaybackState {
   /** https://open.spotify.com/… link-back (required by Spotify's attribution rules). */
   url: string | null
   kind: 'track' | 'episode' | null
+  shuffle: boolean
+  repeat: RepeatMode
+  /** Device volume 0–100, or null when the device can't be set from here (e.g. many phones). */
+  volume: number | null
   /** Actions Spotify says it will reject right now — buttons are disabled, not faked. */
-  disallows: { pausing: boolean; resuming: boolean; seeking: boolean; skippingNext: boolean; skippingPrev: boolean }
+  disallows: {
+    pausing: boolean
+    resuming: boolean
+    seeking: boolean
+    skippingNext: boolean
+    skippingPrev: boolean
+    shuffling: boolean
+    repeatingContext: boolean
+    repeatingTrack: boolean
+  }
 }
+
+export type RepeatMode = 'off' | 'context' | 'track'
 
 export const EMPTY_PLAYBACK: PlaybackState = {
   trackId: null,
@@ -37,7 +52,19 @@ export const EMPTY_PLAYBACK: PlaybackState = {
   uri: null,
   url: null,
   kind: null,
-  disallows: { pausing: false, resuming: false, seeking: false, skippingNext: false, skippingPrev: false },
+  shuffle: false,
+  repeat: 'off',
+  volume: null,
+  disallows: {
+    pausing: false,
+    resuming: false,
+    seeking: false,
+    skippingNext: false,
+    skippingPrev: false,
+    shuffling: false,
+    repeatingContext: false,
+    repeatingTrack: false,
+  },
 }
 
 export type MediaKind = 'track' | 'episode' | 'album' | 'artist' | 'playlist'
@@ -102,6 +129,12 @@ export function pickImage(images: RawImage[] | null | undefined, minWidth = 300)
 const joinArtists = (artists: { name: string }[] | undefined) =>
   (artists ?? []).map((a) => a.name).filter(Boolean).join(', ')
 
+/** Settable volume only: devices that report `supports_volume: false` (many phones) get null. */
+function normalizeVolume(device: RawDevice | null | undefined): number | null {
+  if (!device || device.supports_volume === false || typeof device.volume_percent !== 'number') return null
+  return Math.max(0, Math.min(100, Math.round(device.volume_percent)))
+}
+
 export function normalizePlayback(raw: RawPlayback | null, artWidth = 600): PlaybackState {
   if (!raw) return EMPTY_PLAYBACK
   const item = raw.item
@@ -112,12 +145,18 @@ export function normalizePlayback(raw: RawPlayback | null, artWidth = 600): Play
     progressMs: Math.max(0, raw.progress_ms ?? 0),
     deviceId: raw.device?.id ?? null,
     deviceName: raw.device?.name ?? null,
+    shuffle: Boolean(raw.shuffle_state),
+    repeat: raw.repeat_state === 'context' || raw.repeat_state === 'track' ? raw.repeat_state : 'off',
+    volume: normalizeVolume(raw.device),
     disallows: {
       pausing: Boolean(d.pausing),
       resuming: Boolean(d.resuming),
       seeking: Boolean(d.seeking),
       skippingNext: Boolean(d.skipping_next),
       skippingPrev: Boolean(d.skipping_prev),
+      shuffling: Boolean(d.toggling_shuffle),
+      repeatingContext: Boolean(d.toggling_repeat_context),
+      repeatingTrack: Boolean(d.toggling_repeat_track),
     },
   }
   if (!item) return base

@@ -37,7 +37,8 @@ Car Thing–inspired Spotify controller PWA: Now Playing deck, search, queue, gi
 
 - Pure logic lives in plain `.ts` modules with colocated `*.test.ts`. The Vitest environment is node, with no DOM.
 - Styling: plain CSS in `src/styles/`, one file per area (`base`, `controls`, `layout`, `lists`, `deck`, `sheet`, `lyrics`, `onboarding`, `settings`), tokens in `tokens.css`, motion tokens mirrored for Motion in `ui/motion.ts`. Design system: `docs/redesign/` (direction, tokens, components, motion).
-  - Signal amber (`--signal`) is only for live state: progress, playing, the active tab, focus.
+  - Indicator lights have one meaning each: amber `--signal` = live (progress, playing, the active preset, focus), cyan `--mode` = an engaged mode, green `--success` = linked, red `--error` = fault.
+  - Materials: metal (`--metal` + `--bevel`) for anything you touch or that holds controls, recessed glass (`--bay` + `--recess`) for anything you read. Keys sit on hard drops (`--drop`) and press by travelling onto them. Every knob, fader, latch or lamp must control or report something real — no decorative hardware.
   - Type: Archivo's width axis is the voice (condensed `.np-title`/`.page-title`, expanded `.label`), Martian Mono `.readout` for anything measurable. Self-hosted via `@fontsource-variable` (CSP).
   - Artwork is never cropped, filtered or overlaid. The ambient glow is a colour sampled into a separate layer behind it (`ui/useArtColor.ts`).
   - Move things with `transform` and `opacity` only. Brief colour or shadow transitions on small controls are fine. No looping animation of anything else (the coach halo loops opacity on a pseudo-element). The power ring's one-off `stroke-dashoffset` sweep is the single sanctioned exception.

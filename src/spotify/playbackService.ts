@@ -26,6 +26,7 @@ import {
   normalizeSearch,
   type MediaItem,
   type PlaybackState,
+  type RepeatMode,
 } from './normalize'
 import type { RawPlaylist } from './types'
 
@@ -213,6 +214,41 @@ export function skipPrevious() {
   if (!can('skippingPrev')) return Promise.resolve(false)
   feedback.play('previous-track')
   return command(api.skipToPrevious, { progressMs: 0 }) // previous restarts or goes back: either way, 0
+}
+
+export function toggleShuffle() {
+  if (!can('shuffling')) return Promise.resolve(false)
+  feedback.play('toggle')
+  const next = !get().playback.shuffle
+  return command(() => api.setShuffle(next), { shuffle: next })
+}
+
+/** Off → repeat all (context) → repeat one (track) → off, like Spotify; skips a mode Spotify disallows. */
+export function nextRepeatMode(current: RepeatMode, d: Pick<PlaybackState['disallows'], 'repeatingContext' | 'repeatingTrack'>): RepeatMode | null {
+  const order: RepeatMode[] = ['off', 'context', 'track']
+  for (let step = 1; step <= 2; step++) {
+    const next = order[(order.indexOf(current) + step) % 3]
+    if ((next === 'context' && d.repeatingContext) || (next === 'track' && d.repeatingTrack)) continue
+    return next
+  }
+  return null
+}
+
+export function cycleRepeat() {
+  const { playback, hasPlayback } = get()
+  const next = hasPlayback ? nextRepeatMode(playback.repeat, playback.disallows) : null
+  if (!next) return Promise.resolve(false)
+  feedback.play('toggle')
+  return command(() => api.setRepeat(next), { repeat: next })
+}
+
+/** `silent`: the gesture already played its cue (keyboard changes settle after a debounce). */
+export function setVolume(percent: number, { silent = false }: { silent?: boolean } = {}) {
+  const { playback, hasPlayback } = get()
+  if (!hasPlayback || playback.volume === null) return Promise.resolve(false)
+  const target = Math.max(0, Math.min(100, Math.round(percent)))
+  if (!silent) feedback.play('tick')
+  return command(() => api.setVolume(target), { volume: target })
 }
 
 /** `silent`: the gesture already played its cue (keyboard seeks settle after a debounce). */

@@ -12,6 +12,9 @@ vi.mock('./api', () => ({
   skipToNext: vi.fn(async () => null),
   skipToPrevious: vi.fn(async () => null),
   seekToPosition: vi.fn(async () => null),
+  setShuffle: vi.fn(async () => null),
+  setRepeat: vi.fn(async () => null),
+  setVolume: vi.fn(async () => null),
   addToQueue: vi.fn(async () => null),
   transferPlayback: vi.fn(async () => null),
 }))
@@ -84,6 +87,43 @@ describe('playbackService and sensory feedback', () => {
     void service.togglePlay()
     expect(feedback.play).toHaveBeenLastCalledWith('pause') // poll 1 was playing
     expect(feedback.play).toHaveBeenCalledTimes(3)
+  })
+
+  it('shuffle and repeat cue in the gesture and flip optimistically', async () => {
+    service.startPlaybackSync()
+    await vi.advanceTimersByTimeAsync(10)
+    void service.toggleShuffle()
+    expect(feedback.play).toHaveBeenLastCalledWith('toggle')
+    expect(api.setShuffle).toHaveBeenCalledWith(true)
+    void service.cycleRepeat()
+    expect(api.setRepeat).toHaveBeenCalledWith('context')
+  })
+
+  it('repeat cycles off → all → one → off, skipping what Spotify disallows', () => {
+    const none = { repeatingContext: false, repeatingTrack: false }
+    expect(service.nextRepeatMode('off', none)).toBe('context')
+    expect(service.nextRepeatMode('context', none)).toBe('track')
+    expect(service.nextRepeatMode('track', none)).toBe('off')
+    expect(service.nextRepeatMode('off', { repeatingContext: true, repeatingTrack: false })).toBe('track')
+    expect(service.nextRepeatMode('off', { repeatingContext: true, repeatingTrack: true })).toBeNull() // nothing to switch to
+  })
+
+  it('volume cues in the gesture, clamps, and sends one request', async () => {
+    service.startPlaybackSync()
+    await vi.advanceTimersByTimeAsync(10)
+    void service.setVolume(140)
+    expect(feedback.play).toHaveBeenLastCalledWith('tick')
+    expect(api.setVolume).toHaveBeenLastCalledWith(100)
+  })
+
+  it('volume is a silent no-op on devices that can\'t set it', async () => {
+    vi.mocked(api.getPlayback).mockImplementation(async () => ({ ...playback(), device: { id: 'p', name: 'Phone', type: 'Smartphone', is_active: true, is_restricted: false, volume_percent: 100, supports_volume: false } }))
+    vi.mocked(api.setVolume).mockClear()
+    service.startPlaybackSync()
+    await vi.advanceTimersByTimeAsync(10)
+    expect(await service.setVolume(40)).toBe(false)
+    expect(api.setVolume).not.toHaveBeenCalled()
+    expect(feedback.play).not.toHaveBeenCalled()
   })
 
   it('a silent seek (the key press already cued it) sends the seek without a second cue', async () => {
