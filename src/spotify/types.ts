@@ -106,6 +106,8 @@ export interface RawPlaylist {
   uri: string
   images: RawImage[] | null
   owner?: { display_name?: string | null }
+  /** Changes whenever the playlist does: lets a library read skip unchanged playlists. */
+  snapshot_id?: string
   /** Feb 2026 rename of `tracks`; we read either. */
   items?: { total: number }
   tracks?: { total: number }

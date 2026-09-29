@@ -16,6 +16,11 @@ export interface LibraryPlaylist {
   id: string
   name: string
   count: number
+  /** Spotify's snapshot when it was last read: unchanged snapshot, no need to read again. */
+  snapshot?: string
+  /** False when Spotify won't open it for this app (someone else's playlist). */
+  readable?: boolean
+  checkedAt?: number
 }
 
 export interface LibraryIndex {

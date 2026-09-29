@@ -380,10 +380,12 @@ const normalizeUrl = (url: string | undefined) => (url && url.startsWith('https:
 // ── Library scan (Stories, Builder, Transmission) ────────────────────────────
 
 /**
- * Caps keep a scan to a few hundred requests. The gap is generous because Development
- * Mode apps get a small rate limit, shared with the playback poll that keeps running.
+ * The first read takes everything: every liked song, every playlist, every page. Later
+ * reads are small — liked songs newest-first until one we already know, and only the
+ * playlists whose snapshot changed. Requests are spaced because Development Mode apps
+ * get a small rate limit, shared with the playback poll.
  */
-const SCAN = { likedPages: 60, playlists: 150, pagesPerPlaylist: 20, gapMs: 250, maxWaits: 8 }
+const SCAN = { gapMs: 250, maxWaits: 12, maxPlaylists: 2000, checkpointEvery: 8, retryUnreadableDays: 7 }
 const pause = (ms: number, signal?: AbortSignal) =>
   new Promise<void>((resolve) => {
     const t = setTimeout(resolve, ms)
@@ -394,6 +396,10 @@ export interface ScanProgress {
   phase: 'liked' | 'playlists' | 'waiting'
   done: number
   total: number
+  /** The playlist being read, and how far into it. */
+  name?: string
+  page?: number
+  pages?: number
   /** While waiting: seconds until the scan carries on. */
   waitS?: number
 }
@@ -403,24 +409,35 @@ export interface ScanResult extends LibraryIndex {
   skipped: number
   /** What went wrong along the way, in Spotify's words. The scan kept what it could. */
   problems: string[]
+  /** How much this read actually had to do. */
+  delta: { newLiked: number; changed: number; unchanged: number; fullLiked: boolean }
 }
 
 const said = (e: unknown) => (e instanceof SpotifyError ? `${e.status || 'network'} ${e.message}`.trim() : String(e))
+const DAY_MS = 86_400_000
 
 /**
- * Reads your liked songs and your playlists' contents into one index. Slow on purpose.
- * When Spotify asks it to slow down it waits and carries on; a part that fails (liked
- * songs, one playlist) is noted and skipped, and whatever was read is kept.
- * Null when this session lacks the scope (reconnect to fix) or the scan was abandoned.
+ * Reads (or refreshes) your library into one index. Pass the last index to make it
+ * incremental. `onCheckpoint` receives the index-so-far every few playlists, so a long
+ * first read survives leaving the screen or losing the connection. Null when this
+ * session lacks the scope (reconnect to fix) or the scan was abandoned.
  */
-export async function scanLibrary(onProgress: (p: ScanProgress) => void, signal?: AbortSignal): Promise<ScanResult | null> {
+export async function scanLibrary(
+  prev: LibraryIndex | null,
+  onProgress: (p: ScanProgress) => void,
+  signal?: AbortSignal,
+  onCheckpoint?: (index: LibraryIndex) => void,
+): Promise<ScanResult | null> {
   if (!hasScope('user-library-read')) return null
   const alive = stillCurrent()
-  const map = new Map<string, LibraryTrack>()
-  const playlists: LibraryPlaylist[] = []
-  const problems: string[] = []
-  let skipped = 0
   const stop = () => Boolean(signal?.aborted) || !alive()
+  const map = new Map<string, LibraryTrack>((prev?.tracks ?? []).map((t) => [t.uri, { ...t, playlists: [...t.playlists] }]))
+  const lists = new Map<string, LibraryPlaylist>()
+  const problems: string[] = []
+  const delta = { newLiked: 0, changed: 0, unchanged: 0, fullLiked: !prev }
+  let skipped = 0
+
+  const index = (): LibraryIndex => ({ tracks: [...map.values()], playlists: [...lists.values()], followed: prev?.followed, scannedAt: Date.now() })
 
   /** One request, waiting out rate limits. Other errors are the caller's. */
   async function call<T>(fn: () => Promise<T>, resume: ScanProgress): Promise<T> {
@@ -432,77 +449,129 @@ export async function scanLibrary(onProgress: (p: ScanProgress) => void, signal?
       } catch (e) {
         if (!(e instanceof SpotifyError) || e.status !== 429 || waits >= SCAN.maxWaits) throw e
         const ms = Math.min(Math.max(e.retryAfterMs ?? 5000, 2000), 60_000)
-        onProgress({ phase: 'waiting', done: resume.done, total: resume.total, waitS: Math.ceil(ms / 1000) })
+        onProgress({ ...resume, phase: 'waiting', waitS: Math.ceil(ms / 1000) })
         await pause(ms + 250, signal)
         if (stop()) throw new DOMException('Scan abandoned', 'AbortError')
         onProgress(resume)
       }
     }
   }
+  const fatal = (e: unknown) => (e instanceof SpotifyError && e.status === 401) || e instanceof DOMException
 
   try {
-    try {
-      for (let page = 0, total = 1; page < Math.min(total, SCAN.likedPages); page++) {
-        if (stop()) return null
-        const at = { phase: 'liked' as const, done: page, total: Math.max(1, Math.min(total, SCAN.likedPages)) }
-        const raw = await call(() => api.getSavedTracks(page * 50), at)
+    // ── Liked songs: newest first. Incremental reads stop at the first one we know. ──
+    const readLiked = async (full: boolean) => {
+      for (let page = 0, total = 1; page < total; page++) {
+        if (stop()) throw new DOMException('Scan abandoned', 'AbortError')
+        const raw = await call(() => api.getSavedTracks(page * 50), { phase: 'liked', done: page, total })
         total = Math.ceil((raw?.total ?? 0) / 50)
-        for (const t of normalizeSavedTracks(raw)) addToIndex(map, t, { liked: true, addedAt: t.addedAt })
-        onProgress({ phase: 'liked', done: page + 1, total: Math.max(1, Math.min(total, SCAN.likedPages)) })
+        let known = false
+        for (const t of normalizeSavedTracks(raw)) {
+          if (map.get(t.uri)?.liked) known = true
+          else delta.newLiked++
+          addToIndex(map, t, { liked: true, addedAt: t.addedAt })
+        }
+        onProgress({ phase: 'liked', done: page + 1, total })
+        if (!full && known) return raw?.total ?? 0
+      }
+      return -1
+    }
+    try {
+      const total = await readLiked(!prev)
+      const liked = [...map.values()].filter((t) => t.liked).length
+      if (prev && total >= 0 && liked !== total) {
+        // Songs were unliked (or the count drifted): re-read liked songs from scratch.
+        for (const t of map.values()) t.liked = false
+        delta.fullLiked = true
+        await readLiked(true)
       }
     } catch (e) {
-      if (e instanceof SpotifyError && e.status === 401) throw e
-      if (e instanceof DOMException) throw e
+      if (fatal(e)) throw e
       problems.push(`liked songs: ${said(e)}`)
     }
 
-    const lists: RawPlaylist[] = []
+    // ── Every playlist you own or follow. ──
+    const all: RawPlaylist[] = []
     try {
-      for (let offset = 0, total = 1; offset < Math.min(total, SCAN.playlists); offset += 50) {
-        if (stop()) return null
+      for (let offset = 0, total = 1; offset < Math.min(total, SCAN.maxPlaylists); offset += 50) {
+        if (stop()) throw new DOMException('Scan abandoned', 'AbortError')
         const raw = await call(() => api.getMyPlaylists(offset, 50), { phase: 'playlists', done: 0, total: 1 })
         total = raw?.total ?? 0
-        lists.push(...(raw?.items ?? []).filter((p): p is RawPlaylist => p != null))
+        all.push(...(raw?.items ?? []).filter((p): p is RawPlaylist => p != null))
       }
     } catch (e) {
-      if (e instanceof SpotifyError && e.status === 401) throw e
-      if (e instanceof DOMException) throw e
+      if (fatal(e)) throw e
       problems.push(`your playlists: ${said(e)}`)
+      // Without the list we can't tell what changed: keep every playlist as it was.
+      for (const p of prev?.playlists ?? []) lists.set(p.id, p)
     }
 
-    const picked = lists.slice(0, SCAN.playlists)
-    for (const [i, p] of picked.entries()) {
+    const strip = (id: string) => {
+      for (const t of map.values()) if (t.playlists.includes(id)) t.playlists = t.playlists.filter((x) => x !== id)
+    }
+    let sinceCheckpoint = 0
+    for (const [i, p] of all.entries()) {
+      if (stop()) throw new DOMException('Scan abandoned', 'AbortError')
+      const old = prev?.playlists.find((x) => x.id === p.id)
+      const snapshot = p.snapshot_id ?? null
+      const same = Boolean(old && snapshot && old.snapshot === snapshot)
+      if (same && old!.readable !== false) {
+        lists.set(p.id, { ...old!, name: p.name })
+        delta.unchanged++
+        onProgress({ phase: 'playlists', done: i + 1, total: all.length, name: p.name })
+        continue
+      }
+      if (same && old!.readable === false && Date.now() - (old!.checkedAt ?? 0) < SCAN.retryUnreadableDays * DAY_MS) {
+        lists.set(p.id, { ...old!, name: p.name })
+        skipped++
+        continue
+      }
+      if (old) strip(p.id)
       let count = 0
       try {
-        for (let page = 0, total = 1; page < Math.min(total, SCAN.pagesPerPlaylist); page++) {
-          if (stop()) return null
-          const raw = await call(() => api.getPlaylistItems(p.id, page * 50), { phase: 'playlists', done: i, total: picked.length })
+        for (let page = 0, total = 1; page < total; page++) {
+          if (stop()) throw new DOMException('Scan abandoned', 'AbortError')
+          const at = { phase: 'playlists' as const, done: i, total: all.length, name: p.name, page: page + 1, pages: total }
+          onProgress(at)
+          const raw = await call(() => api.getPlaylistItems(p.id, page * 50), at)
           total = Math.ceil((raw?.total ?? 0) / 50)
           for (const t of normalizePlaylistItems(raw)) {
             addToIndex(map, t, { playlist: p.id, addedAt: t.addedAt })
             count++
           }
         }
-        playlists.push({ id: p.id, name: p.name, count })
+        lists.set(p.id, { id: p.id, name: p.name, count, snapshot: snapshot ?? undefined, readable: true, checkedAt: Date.now() })
+        delta.changed++
       } catch (e) {
-        if (e instanceof SpotifyError && e.status === 401) throw e
-        if (e instanceof DOMException) throw e
+        if (fatal(e)) throw e
         skipped++ // usually 403: Spotify only opens playlists you own or collaborate on to Development Mode apps
-        if (count) playlists.push({ id: p.id, name: p.name, count })
+        strip(p.id)
+        lists.set(p.id, { id: p.id, name: p.name, count: 0, snapshot: snapshot ?? undefined, readable: false, checkedAt: Date.now() })
         if (!(e instanceof SpotifyError && (e.status === 403 || e.status === 404))) problems.push(`${p.name}: ${said(e)}`)
       }
-      onProgress({ phase: 'playlists', done: i + 1, total: picked.length })
+      onProgress({ phase: 'playlists', done: i + 1, total: all.length, name: p.name })
+      if (++sinceCheckpoint >= SCAN.checkpointEvery) {
+        sinceCheckpoint = 0
+        onCheckpoint?.(index())
+      }
     }
+    // Playlists that are gone (deleted, unfollowed) take their memberships with them.
+    if (all.length) for (const p of prev?.playlists ?? []) if (!lists.has(p.id)) strip(p.id)
   } catch (e) {
-    if (e instanceof DOMException && e.name === 'AbortError') return null
+    if (e instanceof DOMException && e.name === 'AbortError') {
+      // Keep what was read so the next read picks up from here.
+      if (map.size) onCheckpoint?.(index())
+      return null
+    }
     // Signed out, or out of patience with the rate limit: keep what was read.
     problems.push(said(e))
   }
+
   const followed: string[] = []
   if (hasScope('user-follow-read') && !stop()) {
     try {
       let after: string | undefined
-      for (let page = 0; page < 20; page++) {
+      for (let page = 0; page < 40; page++) {
         const raw = await call(() => api.getFollowedArtists(after), { phase: 'playlists', done: 0, total: 1 })
         for (const a of raw?.artists.items ?? []) if (a?.name) followed.push(a.name)
         after = raw?.artists.cursors?.after ?? undefined
@@ -512,5 +581,7 @@ export async function scanLibrary(onProgress: (p: ScanProgress) => void, signal?
       if (!(e instanceof DOMException)) problems.push(`followed artists: ${said(e)}`)
     }
   }
-  return { tracks: [...map.values()], playlists, followed, scannedAt: Date.now(), skipped, problems }
+  // A track that's neither liked nor in any playlist has left your library.
+  for (const [uri, t] of map) if (!t.liked && !t.playlists.length) map.delete(uri)
+  return { ...index(), followed: followed.length ? followed : prev?.followed, skipped, problems, delta }
 }

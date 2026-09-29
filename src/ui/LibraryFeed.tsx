@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { parseStreamingHistory } from '../history/importer'
-import { addPlays, saveLibrary } from '../history/service'
+import { addPlays } from '../history/service'
 import type { Play } from '../history/types'
 import { feedback } from '../sensory/feedback'
 import { hasScope } from '../spotify/auth'
-import { explainError, scanLibrary, type ScanProgress } from '../spotify/playbackService'
 import { useHistory } from '../store/history'
+import { startScan, useScan } from './libraryScan'
 import { PressKey } from './PressKey'
 import { ReconnectButton } from './ReconnectButton'
 
@@ -21,40 +21,9 @@ const ago = (ts: number, now: number) => {
 export function LibraryFeed() {
   const library = useHistory((s) => s.library)
   const plays = useHistory((s) => s.plays.length)
-  const [scan, setScan] = useState<ScanProgress | null>(null)
+  const { running, progress: scan, status: scanStatus } = useScan()
   const [status, setStatus] = useState('')
   const [now] = useState(() => Date.now())
-  const abort = useRef<AbortController | null>(null)
-  useEffect(() => () => abort.current?.abort(), [])
-
-  async function runScan() {
-    abort.current = new AbortController()
-    setScan({ phase: 'liked', done: 0, total: 1 })
-    setStatus('Reading your library…')
-    try {
-      const r = await scanLibrary(setScan, abort.current.signal)
-      if (!r) return
-      const { skipped, problems, ...index } = r
-      const trouble = problems.length ? ` Spotify said: ${problems.slice(0, 3).join(' · ')}.` : ''
-      if (!index.tracks.length) {
-        // Nothing read: keep the library you had, and say why.
-        setStatus(`Couldn't read your library.${trouble || ' Spotify returned no tracks.'}`)
-        return
-      }
-      saveLibrary(index)
-      feedback.play('success')
-      setStatus(
-        `Read ${index.tracks.length.toLocaleString()} tracks from your liked songs and ${index.playlists.length} playlists${index.followed?.length ? `, and ${index.followed.length} artists you follow` : ''}.` +
-          (skipped ? ` Spotify wouldn't open ${skipped === 1 ? 'one playlist' : `${skipped} playlists`} for this app (it only opens playlists you own or collaborate on).` : '') +
-          trouble,
-      )
-    } catch (e) {
-      explainError(e)
-      setStatus(`The scan stopped: ${e instanceof Error ? e.message : String(e)}.`)
-    } finally {
-      setScan(null)
-    }
-  }
 
   async function importFiles(files: FileList | null) {
     if (!files?.length) return
@@ -99,19 +68,21 @@ export function LibraryFeed() {
           <PressKey
             className="btn"
             depth={1}
-            disabled={scan !== null}
+            disabled={running}
             onClick={() => {
               feedback.play('select')
-              void runScan()
+              void startScan()
             }}
           >
             {scan
               ? scan.phase === 'waiting'
                 ? `Spotify says slow down · ${scan.waitS}s`
-                : `Reading ${scan.phase === 'liked' ? 'liked songs' : 'playlists'} ${scan.done}/${scan.total}`
+                : scan.phase === 'liked'
+                  ? `Reading liked songs ${scan.done}/${scan.total}`
+                  : `Playlists ${scan.done}/${scan.total}${scan.pages && scan.pages > 1 ? ` · page ${scan.page}/${scan.pages}` : ''}`
               : library
-                ? 'Read my library again'
-                : 'Read my library'}
+                ? 'Check for changes'
+                : 'Read my whole library'}
           </PressKey>
         ) : (
           <ReconnectButton label="Reconnect to read your library" />
@@ -127,11 +98,12 @@ export function LibraryFeed() {
             }} />
         </label>
       </div>
+      {scan?.name && running && <p className="readout feed-status">now reading: {scan.name.toLowerCase()}</p>}
       <p className="readout feed-status" role="status">
-        {status}
+        {[scanStatus, status].filter(Boolean).join(' ')}
       </p>
       <p className="readout feed-note">
-        reads your saved tracks and playlists, what partydeck logs while it's open, and the streaming-history export you can request from spotify (account → privacy → extended streaming history) and drop in. it's worked out on this device and never uploaded.
+        the first read takes every liked song and every playlist; after that only what changed is read, by itself, when you open stories. all-time listening can't come from spotify's api (it only shares your last 50 plays): request your extended streaming history (spotify account → privacy → download your data) and drop the files in. everything is worked out on this device and never uploaded.
       </p>
     </section>
   )

@@ -5,6 +5,7 @@ import { capsuleDue } from '../stories/feed'
 import type { SessionOptions, SessionTrack } from '../stories/session'
 import { useHistory } from '../store/history'
 import { ask } from './brainClient'
+import { STALE_MS, startScan } from './libraryScan'
 import { useStoryInputs } from './useStoryInputs'
 
 const DISMISSED = 'partydeck.dismissed'
@@ -40,6 +41,11 @@ export function useFeed() {
       live = false
     }
   }, [loaded, inputs, library, capsules, dismissed, seed, now])
+
+  // A library read more than a few hours ago refreshes itself: small, since only what changed is read.
+  useEffect(() => {
+    if (loaded && library && now - library.scannedAt > STALE_MS) void startScan({ quiet: true })
+  }, [loaded, library, now])
 
   const dismiss = useCallback((id: string) => {
     setDismissed((d) => {
