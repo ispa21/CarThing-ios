@@ -54,8 +54,10 @@ export async function resolveLyrics(query: TrackQuery, providers: LyricsProvider
     try {
       const found = await p.find(query)
       if (found?.lines.some((l) => l.text)) return found
-    } catch {
-      // A failing provider shouldn't hide results from the next one.
+    } catch (err) {
+      // A failing provider shouldn't hide results from the next one. Said in the
+      // console, so "Lyrics unavailable" from a network failure can be told apart.
+      console.warn(`Lyrics: ${p.name} failed`, err)
     }
   }
   return null

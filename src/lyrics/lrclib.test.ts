@@ -63,6 +63,23 @@ describe('pickRecord', () => {
     expect(pickRecord([record({ artistName: 'Someone Else' })], query)).toBeNull()
   })
 
+  it('accepts any of the track’s artists', () => {
+    const q = { title: 'Gehra Hua', artist: 'Shashwat Sachdev, Arijit Singh', durationMs: 362_000 }
+    expect(pickRecord([record({ trackName: 'Gehra Hua', artistName: 'Arijit Singh', duration: 362 })], q)).not.toBeNull()
+  })
+
+  it('accepts a longer LRCLIB title only when the length agrees', () => {
+    const q = { title: 'Gehra Hua', artist: 'Arijit Singh', durationMs: 362_000 }
+    const long = (duration: number) => record({ trackName: 'Gehra Hua From Dhurandhar', artistName: 'Arijit Singh', duration })
+    expect(pickRecord([long(362)], q)).not.toBeNull()
+    expect(pickRecord([long(300)], q)).toBeNull()
+    expect(pickRecord([long(362)], { ...q, durationMs: undefined })).toBeNull()
+  })
+
+  it('treats a zero duration as unknown', () => {
+    expect(pickRecord([record()], { ...query, durationMs: 0 })).not.toBeNull()
+  })
+
   it('prefers a synced record over a plain one', () => {
     const plain = record({ syncedLyrics: null })
     const synced = record()
@@ -79,6 +96,21 @@ describe('pickRecord', () => {
 })
 
 describe('createLrclibProvider', () => {
+  it('falls back to a title-only search when the first artist finds nothing', async () => {
+    const gehra = record({ trackName: 'Gehra Hua', artistName: 'Arijit Singh, Armaan Khan', duration: 362 })
+    const f = vi.fn<typeof fetch>((url) => {
+      const hasArtist = new URL(String(url)).searchParams.has('artist_name')
+      return Promise.resolve(new Response(JSON.stringify(hasArtist ? [] : [gehra])))
+    })
+    const r = await createLrclibProvider(f).find({
+      title: 'Gehra Hua',
+      artist: 'Shashwat Sachdev, Arijit Singh, Irshad Kamil, Armaan Khan',
+      durationMs: 362_000,
+    })
+    expect(r).not.toBeNull()
+    expect(f).toHaveBeenCalledTimes(2)
+  })
+
   it('searches by cleaned title and first artist', async () => {
     const f = respond([record()])
     const r = await createLrclibProvider(f).find({ ...query, title: 'Night Drive - Remastered' })
@@ -98,7 +130,9 @@ describe('createLrclibProvider', () => {
   })
 
   it('returns null when nothing matches', async () => {
-    expect(await createLrclibProvider(respond([])).find(query)).toBeNull()
+    const empty = respond([])
+    expect(await createLrclibProvider(empty).find(query)).toBeNull()
+    expect(empty).toHaveBeenCalledTimes(2)
     expect(await createLrclibProvider(respond({ weird: true })).find(query)).toBeNull()
   })
 

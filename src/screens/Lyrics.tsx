@@ -205,7 +205,7 @@ export function LyricsScreen({ source }: { source: PlaybackSource }) {
         <div className="lyrics-empty">
           <EmptyState
             title="Lyrics unavailable"
-            detail="PartyDeck doesn't have a licensed lyrics source for this song yet. The demo shows how the reader works."
+            detail="LRCLIB doesn't have lyrics for this song yet. The demo shows how the reader works."
           >
             <a className="btn" href="/lyrics/demo" onClick={linkHandler}>
               See the demo

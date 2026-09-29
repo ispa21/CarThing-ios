@@ -25,6 +25,8 @@ export interface LrclibRecord {
 /** LRCLIB's own matching tolerance for duration. */
 const DURATION_SLACK_S = 2
 const TIMEOUT_MS = 8000
+/** What LRCLIB titles tack on after the song's name without brackets. */
+const TITLE_TAIL = /^(from|feat|ft|with|remaster|remastered|live|version|original|soundtrack|ost)\b/
 const NAME = 'LRCLIB, user-contributed'
 
 /** Plain lyrics → untimed lines. Blank lines between verses become gaps. */
@@ -54,24 +56,36 @@ export function toResolved(r: LrclibRecord): ResolvedLyrics | null {
 }
 
 /**
- * The best record for a track: same title, same first artist, and — when we know it —
- * a duration within LRCLIB's ±2s. A near miss shows nothing rather than the wrong song.
+ * The best record for a track: same title, one of the track's artists, and — when we
+ * know it — a duration within LRCLIB's ±2s. A near miss shows nothing rather than the
+ * wrong song. Any artist counts, because credits differ: Spotify often lists the
+ * composer first ("Shashwat Sachdev, Arijit Singh"), LRCLIB the singer.
  */
 export function pickRecord(records: LrclibRecord[], q: TrackQuery): LrclibRecord | null {
   const title = matchKey(q.title)
-  const artist = matchKey(firstArtist(q.artist))
-  const fits = records.filter(
-    (r) =>
-      !r.instrumental &&
-      (r.syncedLyrics || r.plainLyrics) &&
-      matchKey(r.trackName ?? '') === title &&
-      matchKey(r.artistName ?? '').includes(artist) &&
-      (q.durationMs === undefined || !r.duration || Math.abs(r.duration - q.durationMs / 1000) <= DURATION_SLACK_S),
-  )
+  const artists = artistKeys(q.artist)
+  const known = !!q.durationMs
+  const fits = records.filter((r) => {
+    if (r.instrumental || !(r.syncedLyrics || r.plainLyrics)) return false
+    const rTitle = matchKey(r.trackName ?? '')
+    const rArtist = matchKey(r.artistName ?? '')
+    const durationOk = !known || !r.duration || Math.abs(r.duration - q.durationMs! / 1000) <= DURATION_SLACK_S
+    // "Gehra Hua From Dhurandhar" is the same song when the length agrees too.
+    const titleOk =
+      rTitle === title || (known && !!r.duration && durationOk && rTitle.startsWith(`${title} `) && TITLE_TAIL.test(rTitle.slice(title.length + 1)))
+    const artistOk = artists.some((a) => rArtist.includes(a)) || (!!rArtist && artists.some((a) => a.includes(rArtist)))
+    return titleOk && artistOk && durationOk
+  })
   return fits.find((r) => r.syncedLyrics) ?? fits[0] ?? null
 }
 
-const firstArtist = (artist: string) => artist.split(',')[0] ?? ''
+const splitArtists = (artist: string) =>
+  artist
+    .split(',')
+    .map((a) => a.trim())
+    .filter(Boolean)
+const artistKeys = (artist: string) => splitArtists(artist).map(matchKey).filter(Boolean)
+const firstArtist = (artist: string) => splitArtists(artist)[0] ?? ''
 
 /** "Song - 2011 Remaster (feat. X)" → "Song": what LRCLIB's catalogue calls it. */
 export const searchTitle = (title: string) =>
@@ -81,14 +95,23 @@ export function createLrclibProvider(fetchImpl: typeof fetch = (...a) => fetch(.
   // One lookup per track per session: the Lyrics screen and the TV ask for the same song.
   const cache = new Map<string, Promise<ResolvedLyrics | null>>()
 
-  async function lookup(q: TrackQuery): Promise<ResolvedLyrics | null> {
-    const params = new URLSearchParams({ track_name: searchTitle(q.title), artist_name: firstArtist(q.artist) })
-    const res = await fetchImpl(`${LRCLIB_API}/search?${params}`, { signal: AbortSignal.timeout(TIMEOUT_MS) })
+  async function search(params: Record<string, string>): Promise<LrclibRecord[]> {
+    const res = await fetchImpl(`${LRCLIB_API}/search?${new URLSearchParams(params)}`, { signal: AbortSignal.timeout(TIMEOUT_MS) })
     if (!res.ok) throw new Error(`LRCLIB ${res.status}`)
     const body: unknown = await res.json()
-    if (!Array.isArray(body)) return null
-    const record = pickRecord(body as LrclibRecord[], q)
-    return record ? toResolved(record) : null
+    return Array.isArray(body) ? (body as LrclibRecord[]) : []
+  }
+
+  // Title and first artist first (precise); then the title alone, for songs LRCLIB
+  // credits to a different artist on the track (pickRecord still checks every artist).
+  async function lookup(q: TrackQuery): Promise<ResolvedLyrics | null> {
+    const track_name = searchTitle(q.title)
+    const searches: Array<Record<string, string>> = [{ track_name, artist_name: firstArtist(q.artist) }, { track_name }]
+    for (const params of searches) {
+      const record = pickRecord(await search(params), q)
+      if (record) return toResolved(record)
+    }
+    return null
   }
 
   return {
