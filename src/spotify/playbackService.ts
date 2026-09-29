@@ -374,9 +374,9 @@ export async function fetchRecentPlays() {
 }
 
 /** Plays a list of tracks from the top (a crate, a session, a story's set). */
-export async function playUris(uris: string[], label: string) {
+export async function playUris(uris: string[], label: string, { silent = false }: { silent?: boolean } = {}) {
   if (!uris.length) return false
-  feedback.play('primary-press')
+  if (!silent) feedback.play('primary-press') // silent: the caller already played it in the gesture
   const ok = await command(() => api.startPlayback({ uris: uris.slice(0, 100) }))
   if (ok) notify(`Playing ${label}`)
   return ok
@@ -525,5 +525,19 @@ export async function scanLibrary(onProgress: (p: ScanProgress) => void, signal?
     // Signed out, or out of patience with the rate limit: keep what was read.
     problems.push(said(e))
   }
-  return { tracks: [...map.values()], playlists, scannedAt: Date.now(), skipped, problems }
+  const followed: string[] = []
+  if (hasScope('user-follow-read') && !stop()) {
+    try {
+      let after: string | undefined
+      for (let page = 0; page < 20; page++) {
+        const raw = await call(() => api.getFollowedArtists(after), { phase: 'playlists', done: 0, total: 1 })
+        for (const a of raw?.artists.items ?? []) if (a?.name) followed.push(a.name)
+        after = raw?.artists.cursors?.after ?? undefined
+        if (!after || !raw?.artists.next) break
+      }
+    } catch (e) {
+      if (!(e instanceof DOMException)) problems.push(`followed artists: ${said(e)}`)
+    }
+  }
+  return { tracks: [...map.values()], playlists, followed, scannedAt: Date.now(), skipped, problems }
 }

@@ -2,13 +2,12 @@ import { useMemo, useState, type CSSProperties } from 'react'
 import { feedback } from '../sensory/feedback'
 import { playUris } from '../spotify/playbackService'
 import { rng, shuffle } from '../stories/stats'
-import { broadcast } from '../stories/stations'
 import { Artwork } from '../ui/Artwork'
 import { EmptyState } from '../ui/Feedback'
 import { LibraryFeed } from '../ui/LibraryFeed'
 import { PressKey } from '../ui/PressKey'
 import { useRecordColours } from '../ui/useRecordColours'
-import { useStoryInputs } from '../ui/useStoryInputs'
+import { useFeed } from '../ui/useFeed'
 
 const LO = 87.5
 const HI = 108
@@ -38,8 +37,8 @@ function signalPath(stations: Array<{ freq: number; size: number }>) {
  * the keys; put one on air to play it.
  */
 export function Transmission() {
-  const { loaded, inputs, library, seed } = useStoryInputs()
-  const stations = useMemo(() => broadcast(inputs, library?.playlists ?? [], seed), [inputs, library, seed])
+  const { loaded, view, inputs, seed } = useFeed()
+  const stations = useMemo(() => view?.stations ?? [], [view])
   const byUri = useMemo(() => new Map([...inputs.library, ...inputs.plays].map((t) => [t.uri, t])), [inputs])
   const [index, setIndex] = useState(0)
   const [onAir, setOnAir] = useState<string | null>(null)
@@ -51,7 +50,12 @@ export function Transmission() {
   const cover = cur ? cur.uris.map((u) => byUri.get(u)).find((t) => t?.art) : undefined
   const colours = useRecordColours(cover?.art ?? null)
 
-  if (!loaded) return null
+  if (!loaded || !view)
+    return (
+      <p className="readout tx-thinking" role="status">
+        ( tuning ) reading your library…
+      </p>
+    )
   if (!cur)
     return (
       <div className="tx tx-empty">

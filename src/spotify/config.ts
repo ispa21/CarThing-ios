@@ -18,6 +18,8 @@ export const SPOTIFY_SCOPES = [
   'user-read-recently-played',
   // Stories: your liked songs are the raw material ("the forgotten shelf", "deep cuts").
   'user-library-read',
+  // Stories: artists you follow but never really listened to ("discovery debt").
+  'user-follow-read',
 ] as const
 
 export const isSpotifyConfigured = SPOTIFY_CLIENT_ID.length > 0

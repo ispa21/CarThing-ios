@@ -21,6 +21,8 @@ export interface LibraryPlaylist {
 export interface LibraryIndex {
   tracks: LibraryTrack[]
   playlists: LibraryPlaylist[]
+  /** Names of artists you follow, when the session can read them. */
+  followed?: string[]
   scannedAt: number
 }
 
