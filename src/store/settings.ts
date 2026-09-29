@@ -40,11 +40,11 @@ export const useSettings = create<Settings>()(
     {
       name: 'partydeck.settings',
       storage: createJSONStorage(() => localStorage),
-      version: 2, // new fields merge in with their defaults
-      // v2: the Flight Deck themes became the plate and its night inversion.
+      version: 3, // new fields merge in with their defaults
+      // v3: everyone arrives on the plate, the instrument as designed. Night stays one tap away in Settings.
       migrate: (persisted, version) => {
         const s = { ...(persisted as object) } as Omit<Settings, 'theme'> & { theme?: string }
-        if (version < 2) s.theme = s.theme === 'black' ? 'night' : 'plate'
+        if (version < 3) s.theme = 'plate'
         return s as Settings
       },
     },

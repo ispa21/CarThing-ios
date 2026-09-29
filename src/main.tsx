@@ -37,6 +37,17 @@ useSettings.subscribe(applyFeedbackPrefs)
 if (window.location.hostname === 'localhost') {
   window.location.replace(window.location.href.replace('//localhost', '//127.0.0.1'))
 } else {
+  // A new deploy's service worker takes over at once (autoUpdate); reload onto it so an
+  // old copy never lingers. Not on first install, when there was no worker before.
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    let reloaded = false
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (reloaded) return
+      reloaded = true
+      window.location.reload()
+    })
+  }
+
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault()
     useUi.setState({ installPrompt: e as InstallPromptEvent })
