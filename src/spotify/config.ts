@@ -12,6 +12,12 @@ export const SPOTIFY_SCOPES = [
   'user-modify-playback-state',
   'user-read-currently-playing',
   'playlist-read-private',
+  // Crate and session → "save as playlist" (POST /me/playlists, POST /playlists/{id}/items).
+  'playlist-modify-private',
+  // Archive: Spotify's last 50 plays, to fill in before PartyDeck was open.
+  'user-read-recently-played',
+  // Stories: your liked songs are the raw material ("the forgotten shelf", "deep cuts").
+  'user-library-read',
 ] as const
 
 export const isSpotifyConfigured = SPOTIFY_CLIENT_ID.length > 0

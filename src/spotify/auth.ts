@@ -17,6 +17,8 @@ interface Tokens {
   accessToken: string
   refreshToken: string
   expiresAt: number
+  /** The scopes Spotify actually granted (space-separated). Absent on sessions from before it was stored. */
+  scope?: string
 }
 
 /**
@@ -101,6 +103,7 @@ interface TokenResponse {
   access_token: string
   refresh_token?: string
   expires_in: number
+  scope?: string
 }
 
 async function requestToken(body: Record<string, string>): Promise<TokenResponse> {
@@ -126,13 +129,22 @@ async function requestToken(body: Record<string, string>): Promise<TokenResponse
   }
 }
 
-function store(r: TokenResponse, previousRefresh?: string) {
+function store(r: TokenResponse, previousRefresh?: string, previousScope?: string) {
   writeTokens({
     accessToken: r.access_token,
     // Spotify may omit a new refresh token; keep using the old one.
     refreshToken: r.refresh_token ?? previousRefresh ?? '',
     expiresAt: Date.now() + r.expires_in * 1000,
+    scope: typeof r.scope === 'string' ? r.scope : previousScope,
   })
+}
+
+/**
+ * Whether this session was granted a scope. Sessions from before scopes were stored
+ * only have what PartyDeck asked for back then, so newer features ask to reconnect.
+ */
+export function hasScope(scope: string) {
+  return memory?.scope?.split(' ').includes(scope) ?? false
 }
 
 let callbackInFlight: Promise<string> | null = null
@@ -183,6 +195,7 @@ async function refresh(force: boolean): Promise<string> {
     store(
       await requestToken({ grant_type: 'refresh_token', refresh_token: current.refreshToken, client_id: SPOTIFY_CLIENT_ID }),
       current.refreshToken,
+      current.scope,
     )
     return memory!.accessToken
   } catch (e) {

@@ -130,3 +130,29 @@ export interface RawUser {
   display_name: string | null
   images?: RawImage[]
 }
+
+/** GET /me/player/recently-played: the last (up to) 50 plays, newest first. */
+export interface RawRecent {
+  items: Array<{ track: RawTrack | null; played_at: string }>
+  next: string | null
+}
+
+/** GET /me/tracks: saved ("liked") tracks. */
+export interface RawSavedTrack {
+  added_at: string
+  track: RawTrack | null
+}
+
+/** GET /playlists/{id}/items (Feb 2026: `track` became `item`). */
+export interface RawPlaylistItem {
+  added_at: string | null
+  item: RawItem | null
+}
+
+/** POST /me/playlists → the new playlist. */
+export interface RawCreatedPlaylist {
+  id: string
+  uri: string
+  name: string
+  external_urls?: RawExternalUrls
+}

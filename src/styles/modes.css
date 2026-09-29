@@ -656,3 +656,447 @@
     transition: none;
   }
 }
+
+/* ── ARCHIVE: the day as stacks of records ── */
+
+.arc {
+  padding: var(--s-5) var(--pad-r) calc(var(--safe-b) + var(--s-7)) var(--pad-l);
+  display: grid;
+  gap: var(--s-5);
+}
+
+.arc-head {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: var(--s-4) var(--s-5);
+}
+
+.arc-date {
+  font-size: clamp(4rem, 2rem + 8vw, 9.5rem);
+}
+
+.arc-dateline {
+  display: grid;
+  gap: 6px;
+  padding-bottom: 6px;
+}
+
+.arc-dateline .serif {
+  font-size: 1.75rem;
+}
+
+.arc-streak {
+  margin-left: auto;
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+}
+
+.arc-streak .display {
+  font-size: 4.5rem;
+}
+
+.arc-streak .label {
+  color: var(--ink-3);
+}
+
+/* The timeline: covers stack upward in 20-minute columns along 06:00 → 04:00. */
+.arc-day {
+  --rec: clamp(12px, 1.35vw, 20px);
+  position: relative;
+  height: calc(var(--rec) * 9 + 40px);
+  margin-top: var(--s-4);
+}
+
+.arc-rec {
+  position: absolute;
+  left: calc(var(--x) * 100%);
+  bottom: calc(40px + var(--y) * (var(--rec) + 2px));
+  width: var(--rec);
+  height: var(--rec);
+  background: var(--plate-lo);
+  transition: opacity var(--dur-base) ease;
+}
+
+.arc-rec img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.arc-rec[data-dim] {
+  opacity: 0.35;
+}
+
+.arc-axis {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 36px;
+  height: 2px;
+  background: var(--ink);
+}
+
+.arc-hour {
+  position: absolute;
+  left: calc(var(--x) * 100%);
+  bottom: 0;
+  translate: -50% 0;
+  font-size: 0.6875rem;
+  color: var(--ink-3);
+}
+
+.arc-hour::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 22px;
+  width: 1px;
+  height: 10px;
+  background: var(--ink);
+}
+
+.arc-sessions {
+  position: relative;
+  height: 52px;
+}
+
+.arc-session {
+  position: absolute;
+  left: min(calc(var(--x) * 100%), calc(100% - 150px));
+  display: grid;
+  gap: 2px;
+  min-height: var(--tap);
+  padding-top: 6px;
+  border-top: 3px solid var(--ink-4);
+  text-align: left;
+  font-size: 0.6875rem;
+}
+
+.arc-session[aria-checked='true'] {
+  border-color: var(--ink);
+}
+
+.arc-session-span {
+  color: var(--ink-3);
+}
+
+.arc-foot {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: var(--s-7);
+  align-items: start;
+}
+
+.arc-session-detail {
+  display: grid;
+  gap: var(--s-3);
+}
+
+.arc-session-title {
+  font-size: clamp(3rem, 2rem + 4vw, 6rem);
+}
+
+.arc-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--s-4);
+  margin: 0;
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--rule);
+}
+
+.arc-stats div {
+  display: grid;
+  gap: 4px;
+}
+
+.arc-stats dt {
+  color: var(--ink-3);
+  font-size: 0.5625rem;
+}
+
+.arc-stats dd {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--ink);
+}
+
+.arc-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+  margin-top: var(--s-3);
+}
+
+.arc-days {
+  display: grid;
+  gap: var(--s-3);
+}
+
+.arc-dayrow {
+  display: grid;
+  gap: 6px;
+  min-height: var(--tap);
+  text-align: left;
+  opacity: 0.7;
+}
+
+.arc-dayrow[aria-current] {
+  opacity: 1;
+}
+
+.arc-dayrow-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.arc-dayrow-head .display {
+  font-size: 2rem;
+}
+
+.arc-strip {
+  position: relative;
+  height: 18px;
+  border-bottom: 1px solid var(--ink);
+}
+
+.arc-strip span {
+  position: absolute;
+  left: calc(var(--x) * 100%);
+  bottom: 0;
+  width: 3px;
+  height: 100%;
+  background: var(--ink);
+}
+
+.arc-source {
+  font-size: 1.0625rem;
+  line-height: 1.25;
+  color: var(--ink-3);
+}
+
+@media (max-width: 699px) {
+  .arc-hour[data-minor] {
+    display: none;
+  }
+
+  /* No room to place sessions under their times: they become a row of stops. */
+  .arc-sessions {
+    height: auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-3) var(--s-4);
+  }
+
+  .arc-session {
+    position: static;
+  }
+}
+
+@media (max-width: 899px) {
+  .arc-foot {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .arc-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .arc-streak {
+    margin-left: 0;
+    justify-items: start;
+  }
+}
+
+/* ── CRATE: records standing in a crate ── */
+
+.crate {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.85fr) minmax(0, 1fr);
+  gap: var(--s-7);
+  padding: var(--s-5) var(--pad-r) calc(var(--safe-b) + var(--s-7)) var(--pad-l);
+  min-height: 100%;
+}
+
+.crate-object {
+  --w: min(34vw, 420px, 52dvh);
+  position: relative;
+  align-self: end;
+  width: calc(var(--w) * 1.1);
+  padding-top: 230px;
+}
+
+.crate-tabs {
+  position: absolute;
+  top: 0;
+  left: calc(var(--w) * 0.05);
+  width: var(--w);
+  height: 260px;
+}
+
+/* A divider tab: the record's colour and its name — the cover behind isn't cut. */
+.crate-tab {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--d) * 20px);
+  height: 34px;
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 12px;
+  border: 2px solid var(--ink);
+  border-bottom: 0;
+  border-radius: 3px 3px 0 0;
+  background: var(--c);
+  color: #f7f3ea;
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.crate-front {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: var(--w);
+  margin-left: calc(var(--w) * 0.05);
+  rotate: -1.2deg;
+  box-shadow: 0 -6px 0 rgb(21 21 19 / 0.2);
+}
+
+.crate-front .art {
+  width: 100%;
+}
+
+/* A record just dropped in falls into place. */
+.crate-front[data-fresh] {
+  animation: drop-in var(--dur-slow) var(--ease-house) both;
+}
+
+@keyframes drop-in {
+  from {
+    translate: 0 -60px;
+    rotate: 4deg;
+    opacity: 0;
+  }
+}
+
+.crate-body {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  gap: var(--s-2);
+  margin-top: -2px;
+  padding: 26px 24px 22px;
+  border-radius: 4px 4px 6px 6px;
+  background: var(--ink);
+  color: var(--on-ink);
+  box-shadow: 0 10px 0 rgb(21 21 19 / 0.25);
+}
+
+.crate-handle {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  width: 110px;
+  height: 26px;
+  margin-left: -55px;
+  border-radius: 13px;
+  background: var(--plate);
+}
+
+.crate-stencil {
+  margin-top: 30px;
+  font-size: clamp(2.5rem, 1.6rem + 2.4vw, 4rem);
+  letter-spacing: 0.02em;
+}
+
+.crate-body-meta {
+  color: var(--on-ink-2);
+}
+
+.crate-side {
+  display: grid;
+  align-content: start;
+  gap: var(--s-3);
+  min-width: 0;
+}
+
+.crate-name input {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  outline: 0;
+  background: none;
+  font-size: clamp(3rem, 2rem + 5vw, 7.5rem);
+  color: var(--ink);
+}
+
+.crate-name input:focus-visible {
+  border-bottom-color: var(--ink);
+}
+
+.crate-lede {
+  font-size: 1.375rem;
+  color: var(--ink-3);
+}
+
+.crate-rows .row[data-front] {
+  background: var(--ink);
+  color: var(--on-ink);
+  padding: 0 var(--s-2);
+  --ink-3: var(--on-ink-2);
+}
+
+.crate-rows .row[data-front] .icon-btn {
+  border-color: var(--on-ink);
+  background: transparent;
+  color: var(--on-ink);
+  box-shadow: none;
+}
+
+.crate-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+  margin-top: var(--s-4);
+}
+
+.crate-note {
+  color: var(--ink-3);
+}
+
+@media (max-width: 899px), (max-height: 520px) and (orientation: landscape) {
+  .crate {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .crate-object {
+    --w: min(60vw, 240px);
+    padding-top: 160px;
+  }
+
+  .crate-tabs {
+    height: 180px;
+  }
+
+  .crate-tab {
+    bottom: calc(var(--d) * 14px);
+  }
+
+  /* An empty crate on a small screen: the words first, no empty box. */
+  .crate[data-empty] .crate-object {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crate-front[data-fresh] {
+    animation: fade-in var(--dur-fast) ease both;
+  }
+}

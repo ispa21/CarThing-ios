@@ -1,7 +1,7 @@
 // Maps raw Spotify responses to the small, stable shapes the UI renders.
 // Nothing outside src/spotify should need to know Spotify's JSON.
 
-import type { RawDevice, RawImage, RawItem, RawPlayback, RawPlaylist, RawQueue, RawSearch } from './types'
+import type { RawDevice, RawImage, RawItem, RawPlayback, RawPlaylist, RawQueue, RawRecent, RawSearch } from './types'
 
 export interface PlaybackState {
   trackId: string | null
@@ -283,4 +283,34 @@ export const isSearchEmpty = (s: SearchView) =>
 
 export function normalizeDevice(d: RawDevice): Device {
   return { id: d.id, name: d.name, type: d.type, isActive: d.is_active, isRestricted: d.is_restricted }
+}
+
+/** A play from Spotify's recently-played list. `playedAt` is when Spotify logged it (the end of the play). */
+export interface RecentPlay {
+  uri: string
+  title: string
+  artist: string
+  album: string | null
+  art: string | null
+  durationMs: number
+  playedAt: number
+}
+
+export function normalizeRecent(raw: RawRecent | null): RecentPlay[] {
+  return (raw?.items ?? []).flatMap((i) => {
+    const t = i.track
+    const at = Date.parse(i.played_at)
+    if (!t?.uri || Number.isNaN(at)) return []
+    return [
+      {
+        uri: t.uri,
+        title: t.name,
+        artist: joinArtists(t.artists),
+        album: t.album?.name ?? null,
+        art: pickImage(t.album?.images, 300),
+        durationMs: t.duration_ms,
+        playedAt: at,
+      },
+    ]
+  })
 }

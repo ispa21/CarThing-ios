@@ -3,7 +3,19 @@
 
 import { getAccessToken } from './auth'
 import { createCooldown, parseRetryAfter, SpotifyError } from './errors'
-import type { RawDevice, RawPaging, RawPlayback, RawPlaylist, RawQueue, RawSearch, RawUser } from './types'
+import type {
+  RawCreatedPlaylist,
+  RawDevice,
+  RawPaging,
+  RawPlayback,
+  RawPlaylist,
+  RawPlaylistItem,
+  RawQueue,
+  RawRecent,
+  RawSavedTrack,
+  RawSearch,
+  RawUser,
+} from './types'
 
 const BASE = 'https://api.spotify.com/v1'
 const cooldown = createCooldown()
@@ -112,3 +124,21 @@ export const search = (q: string, signal?: AbortSignal) =>
 export const getMyPlaylists = () => spotify<RawPaging<RawPlaylist | null>>('/me/playlists', { query: { limit: 30 } })
 
 export const getMe = () => spotify<RawUser>('/me')
+
+/** Scope user-read-recently-played. Up to 50, newest first. */
+export const getRecentlyPlayed = () => spotify<RawRecent>('/me/player/recently-played', { query: { limit: 50 } })
+
+/** Scope user-library-read. Paged 50 at a time. */
+export const getSavedTracks = (offset = 0) => spotify<RawPaging<RawSavedTrack>>('/me/tracks', { query: { limit: 50, offset } })
+
+/** Scope playlist-read-private. Feb 2026: `/tracks` became `/items`, and each entry's `track` became `item`. */
+export const getPlaylistItems = (id: string, offset = 0) =>
+  spotify<RawPaging<RawPlaylistItem>>(`/playlists/${encodeURIComponent(id)}/items`, { query: { limit: 50, offset } })
+
+/** Scope playlist-modify-private. Feb 2026: replaces POST /users/{id}/playlists. Private by default. */
+export const createPlaylist = (name: string, description: string) =>
+  spotify<RawCreatedPlaylist>('/me/playlists', { method: 'POST', body: { name, description, public: false } })
+
+/** Scope playlist-modify-private. Feb 2026: replaces POST /playlists/{id}/tracks. At most 100 URIs per request. */
+export const addPlaylistItems = (id: string, uris: string[]) =>
+  spotify(`/playlists/${encodeURIComponent(id)}/items`, { method: 'POST', body: { uris: uris.slice(0, 100) } })

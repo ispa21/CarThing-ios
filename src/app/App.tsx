@@ -4,7 +4,9 @@ import { initialStep } from '../onboarding/flow'
 import { Onboarding } from '../onboarding/Onboarding'
 import { Tutorial } from '../onboarding/Tutorial'
 import { Welcome } from '../onboarding/Welcome'
+import { Archive } from '../screens/Archive'
 import { Callback } from '../screens/Callback'
+import { Crate } from '../screens/Crate'
 import { LyricsScreen } from '../screens/Lyrics'
 import { NowPlaying } from '../screens/NowPlaying'
 import { Queue } from '../screens/Queue'
@@ -13,6 +15,7 @@ import { Mix } from '../screens/Mix'
 import { Screen as ScreenMode } from '../screens/Screen'
 import { Settings } from '../screens/Settings'
 import { Visual } from '../screens/Visual'
+import { startRecorder, stopRecorder } from '../history/recorder'
 import { startPlaybackSync, stopPlaybackSync } from '../spotify/playbackService'
 import { useSession } from '../store/session'
 import { THEME_COLORS, useSettings } from '../store/settings'
@@ -37,6 +40,8 @@ const TITLES: Record<Route, string> = {
   mix: 'Mix · PartyDeck',
   visual: 'Visual · PartyDeck',
   screen: 'Screen · PartyDeck',
+  crate: 'Crate · PartyDeck',
+  archive: 'Archive · PartyDeck',
 }
 
 /** Full-screen routes without the rail. */
@@ -92,7 +97,11 @@ function ConnectedApp({ route, onboarding }: { route: Route; onboarding: boolean
   // Sync runs through onboarding too, so the deck wakes with your current track.
   useEffect(() => {
     startPlaybackSync()
-    return stopPlaybackSync
+    startRecorder()
+    return () => {
+      stopRecorder()
+      stopPlaybackSync()
+    }
   }, [])
 
   if (onboarding)
@@ -181,6 +190,8 @@ function Screen({ route, immersive = false }: { route: Route; immersive?: boolea
       {route === 'mix' && <Mix />}
       {route === 'visual' && <Visual />}
       {route === 'screen' && <ScreenMode />}
+      {route === 'crate' && <Crate />}
+      {route === 'archive' && <Archive />}
       {route === 'tutorial' && (
         <Tutorial
           onFinish={() => {

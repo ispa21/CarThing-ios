@@ -12,5 +12,7 @@ export const RAIL_TABS: Array<{ route: Route; label: string }> = [
 export const RAIL_MODES: Array<{ route: Route; label: string }> = [
   { route: 'mix', label: 'mix' },
   { route: 'visual', label: 'visual' },
+  { route: 'crate', label: 'crate' },
+  { route: 'archive', label: 'archive' },
   { route: 'screen', label: 'screen' },
 ]

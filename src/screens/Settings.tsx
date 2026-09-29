@@ -4,6 +4,7 @@ import { FullscreenButton } from '../ui/FullscreenButton'
 import { back, navigate } from '../app/router'
 import { canOfferFullscreen, isStandalone } from '../lib/fullscreen'
 import { feedback, hapticsAvailable } from '../sensory/feedback'
+import { wipeHistory } from '../history/service'
 import { logout } from '../spotify/auth'
 import { useSession } from '../store/session'
 import { LYRIC_SIZES, useSettings, type Theme } from '../store/settings'
@@ -189,6 +190,7 @@ function DisconnectButton() {
           return
         }
         feedback.play('spotify-disconnected')
+        void wipeHistory()
         logout()
       }}
     >

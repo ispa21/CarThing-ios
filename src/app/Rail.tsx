@@ -1,4 +1,4 @@
-import type { MouseEvent } from 'react'
+import { useEffect, useRef, type MouseEvent } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { feedback } from '../sensory/feedback'
 import { togglePlay } from '../spotify/playbackService'
@@ -22,6 +22,13 @@ const openLyrics = (e: MouseEvent<HTMLAnchorElement>) => {
  * Off the deck, a now-line keeps what's playing (and its play key) in reach.
  */
 export function Rail({ route }: { route: Route }) {
+  // On narrow plates the modes scroll: keep the one you're in visible.
+  const modesRef = useRef<HTMLUListElement>(null)
+  useEffect(() => {
+    const el = modesRef.current?.querySelector<HTMLElement>('[aria-current]')
+    const list = modesRef.current
+    if (el && list) list.scrollLeft = el.offsetLeft - list.clientWidth / 2 + el.clientWidth / 2
+  }, [route])
   return (
     <header className="rail" data-route={route}>
       <a className="wordmark-link" href="/" onClick={tickLink} aria-label="PartyDeck, go to the deck">
@@ -46,7 +53,7 @@ export function Rail({ route }: { route: Route }) {
           ))}
         </ul>
         {RAIL_MODES.length > 0 && (
-          <ul className="rail-modes" aria-label="Modes">
+          <ul ref={modesRef} className="rail-modes" aria-label="Modes">
             {RAIL_MODES.map((m) => (
               <li key={m.route}>
                 <a className="rail-mode" href={PATHS[m.route]} onClick={tickLink} aria-current={route === m.route ? 'page' : undefined}>

@@ -7,6 +7,7 @@ import { feedback } from '../sensory/feedback'
 import { usePlayback } from '../store/playback'
 import { EmptyState, ErrorState, SkeletonRows } from '../ui/Feedback'
 import { MediaRow } from '../ui/MediaRow'
+import { useCrate } from '../ui/useCrate'
 import { PlaylistShelf } from './PlaylistShelf'
 
 type State =
@@ -29,6 +30,7 @@ export function Search() {
   const [state, setState] = useState<State>({ status: 'idle' })
   const inputRef = useRef<HTMLInputElement>(null)
   const [kind, setKind] = useState<keyof SearchView>('tracks')
+  const crate = useCrate()
 
   // Newest query wins: older in-flight requests are aborted, late responses dropped.
   const [runner] = useState(() =>
@@ -156,6 +158,8 @@ export function Search() {
                     lead={<span className="row-num">{String(i + 1).padStart(2, '0')}</span>}
                     onPlay={playItem}
                     onQueue={item.kind === 'track' ? queueItem : undefined}
+                    onCrate={item.kind === 'track' ? crate.toggle : undefined}
+                    crated={crate.has(item.uri)}
                     live={item.uri === playingUri}
                   />
                 ))}

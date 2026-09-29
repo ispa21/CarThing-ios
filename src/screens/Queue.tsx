@@ -12,6 +12,7 @@ import { spotifyClock, useClockValue } from '../ui/clock'
 import { EmptyState, ErrorState, SkeletonRows } from '../ui/Feedback'
 import { Icon } from '../ui/Icon'
 import { MediaRow } from '../ui/MediaRow'
+import { useCrate } from '../ui/useCrate'
 import { Scrubber } from '../ui/Scrubber'
 
 /** "27 min 40" — how much music is ahead. */
@@ -28,6 +29,7 @@ function ahead(ms: number) {
  */
 export function Queue() {
   const { data, loading, error } = usePlayback((s) => s.queue)
+  const crate = useCrate()
   const deck = usePlayback(
     useShallow((s) => ({
       has: s.hasPlayback,
@@ -133,6 +135,8 @@ export function Queue() {
                 item={item}
                 lead={<span className="row-num">{String(i + 2).padStart(2, '0')}</span>}
                 trail={<span className="row-when readout">in {formatTime(startsIn[i + 1])}</span>}
+                onCrate={item.kind === 'track' ? crate.toggle : undefined}
+                crated={crate.has(item.uri)}
               />
             ))}
           </ol>

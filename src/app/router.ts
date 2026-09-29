@@ -16,6 +16,8 @@ export type Route =
   | 'mix'
   | 'visual'
   | 'screen'
+  | 'crate'
+  | 'archive'
 
 /** The deck (Now Playing) is home. */
 export const PATHS: Record<Route, string> = {
@@ -30,6 +32,8 @@ export const PATHS: Record<Route, string> = {
   mix: '/mix',
   visual: '/visual',
   screen: '/screen',
+  crate: '/crate',
+  archive: '/archive',
 }
 
 const ROUTES: Record<string, Route> = {

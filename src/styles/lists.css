@@ -150,7 +150,8 @@
   box-shadow: 0 1px 0 var(--ink);
 }
 
-/* Queued: the + key becomes an inverted plate with a check. No toast needed. */
+/* Latched (in the crate) and queued: the key goes down and inverts. No toast needed. */
+.row .icon-btn[aria-pressed='true'],
 .row .icon-btn[data-added] {
   background: var(--ink);
   color: var(--on-ink);

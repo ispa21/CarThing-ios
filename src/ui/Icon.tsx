@@ -93,6 +93,13 @@ const paths = {
   ),
   add: <path d="M12 5v14M5 12h14" />,
   minus: <path d="M5 12h14" />,
+  /** A crate with records standing in it. */
+  crate: (
+    <>
+      <path d="M3 12h18v8H3z" />
+      <path d="M6 12V5h4v7M11 12V3h4v9M16 12V6h3v6" />
+    </>
+  ),
   /** Trim: three faders — settings. */
   trim: (
     <>

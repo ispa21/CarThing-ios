@@ -15,11 +15,13 @@ import { ErrorState } from '../ui/Feedback'
 import { Icon } from '../ui/Icon'
 import { Sheet } from '../ui/Sheet'
 import { SpotifyLink } from '../ui/SpotifyLink'
+import { useCrate } from '../ui/useCrate'
 import { PlaylistShelf } from './PlaylistShelf'
 
 /** The deck — PartyDeck's home screen. */
 export function NowPlaying() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const crate = useCrate()
   const s = usePlayback(
     useShallow((s) => ({
       loaded: s.loaded,
@@ -162,6 +164,18 @@ export function NowPlaying() {
               <SpotifyLink uri={s.uri} url={s.url}>
                 <Icon name="external" /> Open in Spotify
               </SpotifyLink>
+            </li>
+          )}
+          {s.uri && s.title && (
+            <li>
+              <button
+                onClick={() => {
+                  crate.toggle({ uri: s.uri!, title: s.title!, subtitle: s.artist ?? '', art: s.art, durationMs: s.durationMs, album: s.album })
+                  setMenuOpen(false)
+                }}
+              >
+                <Icon name="crate" /> {crate.has(s.uri) ? 'Take it out of the crate' : 'Drop it into the crate'}
+              </button>
             </li>
           )}
           <li>

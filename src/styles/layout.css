@@ -402,7 +402,13 @@
 }
 
 @media (min-width: 600px) and (max-width: 1099px) and (min-height: 521px) {
-  .rail-serial,
+  .rail-serial {
+    display: none;
+  }
+}
+
+/* The now-line only when the modes have room too. */
+@media (max-width: 1679px) {
   .nowline {
     display: none;
   }

@@ -26,9 +26,12 @@ interface Props {
   showKind?: boolean
   /** This is what's playing: a lamp in the gutter (doesn't shift the row). */
   live?: boolean
+  /** The crate key: drops the record into the crate (or takes it out). */
+  onCrate?: (item: MediaItem) => void
+  crated?: boolean
 }
 
-export function MediaRow({ item, onPlay, onQueue, lead, trail, showKind = false, live = false }: Props) {
+export function MediaRow({ item, onPlay, onQueue, lead, trail, showKind = false, live = false, onCrate, crated = false }: Props) {
   const [added, setAdded] = useState(false)
   useEffect(() => {
     if (!added) return
@@ -83,6 +86,17 @@ export function MediaRow({ item, onPlay, onQueue, lead, trail, showKind = false,
           aria-label={added ? `${item.title} added to queue` : `Add ${item.title} to queue`}
         >
           <Icon name={added ? 'check' : 'add'} />
+        </PressKey>
+      )}
+      {onCrate && (
+        <PressKey
+          className="icon-btn row-crate"
+          depth={0.9}
+          aria-pressed={crated}
+          onClick={() => onCrate(item)}
+          aria-label={crated ? `${item.title} is in the crate. Take it out` : `Drop ${item.title} into the crate`}
+        >
+          <Icon name="crate" size={20} />
         </PressKey>
       )}
       {onPlay && linked && (
