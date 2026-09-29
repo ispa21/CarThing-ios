@@ -249,7 +249,8 @@
 }
 
 .empty-title {
-  font-stretch: var(--w-condensed);
+  font-family: var(--font-display);
+  font-synthesis: none;
   font-weight: 900;
   font-size: clamp(2rem, 1.4rem + 2.4vw, 3.5rem);
   line-height: 0.85;
@@ -562,7 +563,8 @@
   border: 0;
   outline: 0;
   background: none;
-  font-stretch: var(--w-condensed);
+  font-family: var(--font-display);
+  font-synthesis: none;
   font-weight: 900;
   font-size: clamp(4rem, 2rem + 9vw, 14.5rem);
   line-height: 0.82;

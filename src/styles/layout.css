@@ -90,7 +90,8 @@
 .page-title {
   flex: 1;
   min-width: 0;
-  font-stretch: var(--w-condensed);
+  font-family: var(--font-display);
+  font-synthesis: none;
   font-size: min(var(--t-headline), 16vh);
   font-weight: 900;
   line-height: 0.8;

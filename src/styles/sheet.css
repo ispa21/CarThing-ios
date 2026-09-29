@@ -70,7 +70,8 @@
 }
 
 .sheet-head h2 {
-  font-stretch: var(--w-condensed);
+  font-family: var(--font-display);
+  font-synthesis: none;
   font-size: 1.75rem;
   font-weight: 740;
   line-height: 1;

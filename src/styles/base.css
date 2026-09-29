@@ -165,7 +165,8 @@ main:focus,
 
 /* The song: condensed black caps. */
 .display {
-  font-stretch: var(--w-condensed);
+  font-family: var(--font-display);
+  font-synthesis: none;
   font-weight: 900;
   line-height: 0.8;
   letter-spacing: -0.03em;

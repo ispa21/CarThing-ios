@@ -99,7 +99,8 @@
   -webkit-line-clamp: 3;
   line-clamp: 3;
   overflow: hidden;
-  font-stretch: var(--w-condensed);
+  font-family: var(--font-display);
+  font-synthesis: none;
   font-weight: 900;
   font-size: calc(var(--title-max) * var(--fit, 1));
   line-height: 0.8;
@@ -365,7 +366,8 @@
 }
 
 .np-idle-title {
-  font-stretch: var(--w-condensed);
+  font-family: var(--font-display);
+  font-synthesis: none;
   font-weight: 900;
   font-size: min(var(--t-headline), 18vh);
   line-height: 0.8;
@@ -473,6 +475,11 @@
     bottom: auto;
     top: calc(var(--knob) * 0.1);
     align-items: flex-end;
+  }
+
+  /* The level readout sits left of the knob here: keep the record clear of it. */
+  .np-lockup {
+    padding-right: calc(var(--knob) * 0.74 - var(--pad-r) + 72px);
   }
 
   .np-status-row,

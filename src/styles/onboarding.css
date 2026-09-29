@@ -104,7 +104,8 @@
 }
 
 .onboard-title {
-  font-stretch: var(--w-condensed);
+  font-family: var(--font-display);
+  font-synthesis: none;
   font-size: min(var(--t-headline), 16vh);
   font-weight: 760;
   line-height: 0.92;
@@ -447,7 +448,8 @@
 }
 
 .coach strong {
-  font-stretch: var(--w-condensed);
+  font-family: var(--font-display);
+  font-synthesis: none;
   font-size: 1.2em;
   font-weight: 760;
   letter-spacing: -0.015em;
@@ -521,7 +523,8 @@
 }
 
 .practice-panel-head h2 {
-  font-stretch: var(--w-condensed);
+  font-family: var(--font-display);
+  font-synthesis: none;
   font-size: 1.5rem;
   font-weight: 740;
   letter-spacing: -0.015em;
@@ -578,7 +581,8 @@
 }
 
 .coach-card .coach-done-title {
-  font-stretch: var(--w-condensed);
+  font-family: var(--font-display);
+  font-synthesis: none;
   font-size: 2.5rem;
   font-weight: 760;
   line-height: 0.95;

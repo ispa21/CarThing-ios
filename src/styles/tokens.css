@@ -59,9 +59,10 @@
   --glow: 0 0 0 transparent;
 
   /* ── Type: three voices ── */
-  --font-ui: 'Archivo Variable', 'Archivo', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: 'Martian Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
-  --font-serif: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+  --font-ui: 'Stack Sans Text', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Geist Pixel', 'Stack Sans Text', ui-monospace, monospace;
+  --font-mono: 'Departure Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --font-serif: 'Junicode', 'Iowan Old Style', Georgia, serif;
   --w-condensed: 62%;
   --w-semi: 86%;
   --w-normal: 100%;
