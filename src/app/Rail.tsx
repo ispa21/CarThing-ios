@@ -1,22 +1,14 @@
-import { useRef, type MouseEvent } from 'react'
+import type { MouseEvent } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { feedback } from '../sensory/feedback'
 import { togglePlay } from '../spotify/playbackService'
 import { selectCanToggle, usePlayback } from '../store/playback'
 import { openDevices } from '../store/ui'
-import { Artwork } from '../ui/Artwork'
 import { FullscreenButton } from '../ui/FullscreenButton'
-import { spotifyClock, useClockPainter } from '../ui/clock'
-import { Icon, type IconName } from '../ui/Icon'
+import { Icon } from '../ui/Icon'
 import { PressKey } from '../ui/PressKey'
+import { RAIL_MODES, RAIL_TABS } from './nav'
 import { linkHandler, PATHS, tickLink, type Route } from './router'
-
-const TABS: Array<{ route: Route; label: string; icon: IconName }> = [
-  { route: 'now', label: 'Deck', icon: 'deck' },
-  { route: 'search', label: 'Search', icon: 'search' },
-  { route: 'queue', label: 'Queue', icon: 'queue' },
-  { route: 'lyrics', label: 'Lyrics', icon: 'lyrics' },
-]
 
 /** Opening the reader is its own (same-sounding) event, so it can diverge later. */
 const openLyrics = (e: MouseEvent<HTMLAnchorElement>) => {
@@ -25,97 +17,97 @@ const openLyrics = (e: MouseEvent<HTMLAnchorElement>) => {
 }
 
 /**
- * The appliance's control strip. Landscape: one row — the mini deck on the left,
- * tabs centred, tools on the right. Phones upright: mini deck above the tabs.
- * Same DOM; CSS grid areas rearrange it.
+ * The top of the plate: the wordmark, one fused black shape holding the four keys
+ * (brackets mark where you are), the modes as printed words, and the output route.
+ * Off the deck, a now-line keeps what's playing (and its play key) in reach.
  */
 export function Rail({ route }: { route: Route }) {
   return (
-    <nav className="rail" aria-label="Main" data-route={route}>
-      <div className="rail-deck">{route !== 'now' && <MiniDeck />}</div>
-      <ul className="rail-tabs">
-        {TABS.map((t) => (
-          <li key={t.route}>
-            <a
-              className="rail-tab"
-              href={PATHS[t.route]}
-              onClick={t.route === 'lyrics' ? openLyrics : tickLink}
-              aria-current={route === t.route ? 'page' : undefined}
-            >
-              <Icon name={t.icon} />
-              <span>{t.label}</span>
-            </a>
-          </li>
-        ))}
-      </ul>
+    <header className="rail" data-route={route}>
+      <a className="wordmark-link" href="/" onClick={tickLink} aria-label="PartyDeck, go to the deck">
+        <span className="rail-wordmark">partydeck</span>
+        <span className="rail-serial readout" aria-hidden="true">
+          pd—01
+        </span>
+      </a>
+      <nav className="rail-nav" aria-label="Main">
+        <ul className="rail-tabs">
+          {RAIL_TABS.map((t) => (
+            <li key={t.route}>
+              <a
+                className="rail-tab"
+                href={PATHS[t.route]}
+                onClick={t.route === 'lyrics' ? openLyrics : tickLink}
+                aria-current={route === t.route ? 'page' : undefined}
+              >
+                {t.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+        {RAIL_MODES.length > 0 && (
+          <ul className="rail-modes" aria-label="Modes">
+            {RAIL_MODES.map((m) => (
+              <li key={m.route}>
+                <a className="rail-mode" href={PATHS[m.route]} onClick={tickLink} aria-current={route === m.route ? 'page' : undefined}>
+                  {m.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </nav>
       <div className="rail-tools">
+        {route !== 'now' && <NowLine />}
+        <RouteButton />
         <FullscreenButton />
-        <a
-          className="icon-btn"
-          href={PATHS.settings}
-          onClick={tickLink}
-          aria-label="Settings"
-          aria-current={route === 'settings' ? 'page' : undefined}
-        >
-          <Icon name="gear" />
+        <a className="icon-btn" href={PATHS.settings} onClick={tickLink} aria-label="Settings" aria-current={route === 'settings' ? 'page' : undefined}>
+          <Icon name="trim" />
         </a>
       </div>
-    </nav>
+    </header>
   )
 }
 
-function MiniDeck() {
+/** Where the sound comes out. The lamp is the record's colour while it plays. */
+function RouteButton() {
+  const s = usePlayback(useShallow((s) => ({ has: s.hasPlayback, name: s.playback.deviceName, playing: s.playback.isPlaying })))
+  return (
+    <button
+      className="rail-route"
+      onClick={() => {
+        feedback.play('select')
+        openDevices()
+      }}
+      aria-label={s.name ? `Playing on ${s.name}. Change device` : 'Choose a device'}
+    >
+      <span className="lamp" data-live={(s.has && s.playing) || undefined} aria-hidden="true" />
+      <span className="rail-route-name readout">{s.name ? s.name.toLowerCase() : 'no device'}</span>
+    </button>
+  )
+}
+
+/** Off the deck: what's playing, as one printed line, with its play key. */
+function NowLine() {
   const s = usePlayback(
     useShallow((s) => ({
       loaded: s.loaded,
       has: s.hasPlayback,
       title: s.playback.title,
       artist: s.playback.artist,
-      art: s.playback.albumArt,
       isPlaying: s.playback.isPlaying,
       canToggle: selectCanToggle(s),
     })),
   )
-  const lineRef = useRef<HTMLSpanElement>(null)
-  useClockPainter(spotifyClock, (ms, snap) => {
-    if (lineRef.current) lineRef.current.style.transform = `scaleX(${snap.durationMs ? ms / snap.durationMs : 0})`
-  })
-
-  if (!s.loaded) return null
-  if (!s.has) {
-    return (
-      <div className="mini mini-idle">
-        <span className="mini-idle-text label">
-          <span className="led" data-off aria-hidden="true" />
-          Nothing playing
-        </span>
-        <button
-          className="btn btn-small"
-          onClick={() => {
-            feedback.play('select')
-            openDevices()
-          }}
-        >
-          Choose device
-        </button>
-      </div>
-    )
-  }
+  if (!s.loaded || !s.has) return null
   return (
-    <div className="mini">
-      <a className="mini-main" href="/" onClick={tickLink} aria-label={`Open the deck: ${s.title}${s.artist ? ` by ${s.artist}` : ''}`}>
-        <Artwork src={s.art} className="art-sm" />
-        <span className="mini-text">
-          <span className="mini-title">{s.title}</span>
-          <span className="mini-sub">{s.artist}</span>
-        </span>
+    <span className="nowline">
+      <a className="nowline-text readout" href="/" onClick={tickLink} aria-label={`Open the deck: ${s.title}${s.artist ? ` by ${s.artist}` : ''}`}>
+        {s.title?.toLowerCase()}
       </a>
-      <PressKey className="icon-btn icon-btn-strong" onClick={togglePlay} disabled={!s.canToggle} aria-label={s.isPlaying ? 'Pause' : 'Play'} depth={0.9}>
-        <Icon name={s.isPlaying ? 'pause' : 'play'} />
+      <PressKey className="icon-btn nowline-key" onClick={togglePlay} disabled={!s.canToggle} aria-label={s.isPlaying ? 'Pause' : 'Play'} depth={0.9}>
+        <Icon name={s.isPlaying ? 'pause' : 'play'} size={18} />
       </PressKey>
-      <span className="mini-line" aria-hidden="true">
-        <span ref={lineRef} />
-      </span>
-    </div>
+    </span>
   )
 }

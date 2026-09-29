@@ -8,7 +8,8 @@ export const LYRIC_SIZES = [
   { label: 'Extra large', scale: 1.45 },
 ] as const
 
-export type Theme = 'graphite' | 'black'
+/** plate: the ecru faceplate. night: the same machine, inverted, for dark rooms. */
+export type Theme = 'plate' | 'night'
 
 interface Settings {
   lyricSize: number // index into LYRIC_SIZES
@@ -29,7 +30,7 @@ export const useSettings = create<Settings>()(
     (): Settings => ({
       lyricSize: 1,
       autoScroll: true,
-      theme: 'graphite',
+      theme: 'plate',
       sound: true,
       haptics: true,
       welcomed: false,
@@ -37,11 +38,17 @@ export const useSettings = create<Settings>()(
       rotateHintDismissed: false,
     }),
     {
-    name: 'partydeck.settings',
+      name: 'partydeck.settings',
       storage: createJSONStorage(() => localStorage),
-      version: 1, // new fields merge in with their defaults
+      version: 2, // new fields merge in with their defaults
+      // v2: the Flight Deck themes became the plate and its night inversion.
+      migrate: (persisted, version) => {
+        const s = { ...(persisted as object) } as Omit<Settings, 'theme'> & { theme?: string }
+        if (version < 2) s.theme = s.theme === 'black' ? 'night' : 'plate'
+        return s as Settings
+      },
     },
   ),
 )
 
-export const THEME_COLORS: Record<Theme, string> = { graphite: '#17141B', black: '#000000' }
+export const THEME_COLORS: Record<Theme, string> = { plate: '#ECE6D8', night: '#151513' }

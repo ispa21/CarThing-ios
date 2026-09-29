@@ -1,4 +1,70 @@
-/* ── Lyrics reader ─────────────────────────────────────────────────────── */
+/* ── Lyrics: the record's colour floods the plate ─────────────────────────
+   The ground becomes the record, darkened until paper-coloured text passes
+   4.5:1 (--record-deep, lib/record.ts). Keys are the ground at 24% black. The
+   lines step inward like a printed poem; the record docks bottom-left. */
+
+.shell[data-route='lyrics'],
+.shell[data-route='lyrics-demo'] {
+  --ink: #f4eedf;
+  --ink-2: #f4eedf;
+  --ink-3: rgb(244 238 223 / 0.8);
+  --ink-4: rgb(244 238 223 / 0.35);
+  --rule: rgb(244 238 223 / 0.5);
+  --rule-soft: rgb(244 238 223 / 0.2);
+  --on-ink: var(--record-deep);
+  --plate-hi: rgb(0 0 0 / 0.24);
+  --plate-lo: rgb(0 0 0 / 0.3);
+  position: relative;
+  isolation: isolate;
+  background: var(--record-deep);
+  color: #f4eedf;
+}
+
+/* The colour pours up from the bottom edge: the plate drains away above a curved front. */
+.shell[data-route='lyrics']::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0 0 -12% 0;
+  border-radius: 0 0 50% 50% / 0 0 12% 12%;
+  background: var(--plate);
+  transform-origin: 50% 0;
+  animation: drain var(--dur-deliberate) var(--ease-house) forwards;
+  pointer-events: none;
+}
+
+@keyframes drain {
+  to {
+    scale: 1 0;
+  }
+}
+
+.shell[data-route='lyrics'] .rail-tab,
+.shell[data-route='lyrics-demo'] .rail-tab,
+.shell[data-route='lyrics'] .rail-tabs li + li::before {
+  background: rgb(0 0 0 / 0.24);
+  color: rgb(244 238 223 / 0.72);
+}
+
+.shell[data-route='lyrics'] .rail-tab[aria-current] {
+  background: rgb(0 0 0 / 0.42);
+  color: #f4eedf;
+}
+
+.shell[data-route='lyrics'] .key {
+  border-color: transparent;
+  box-shadow: 0 5px 0 rgb(0 0 0 / 0.4);
+}
+
+.shell[data-route='lyrics'] .key[aria-checked='true'],
+.shell[data-route='lyrics-demo'] .key[aria-checked='true'],
+.shell[data-route='lyrics'] .key-play[data-playing],
+.shell[data-route='lyrics-demo'] .key-play[data-playing] {
+  translate: 0 4px;
+  box-shadow: 0 1px 0 rgb(0 0 0 / 0.4);
+  background: #f4eedf;
+  color: var(--record-deep);
+}
 
 .lyrics {
   position: relative;
@@ -11,8 +77,6 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: none;
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 15%, #000 80%, transparent 100%);
-  mask-image: linear-gradient(to bottom, transparent 0, #000 15%, #000 80%, transparent 100%);
 }
 
 .lyrics-scroll::-webkit-scrollbar {
@@ -25,32 +89,41 @@
 
 .lyrics-lines {
   --lyrics-scale: 1;
-  /* Phone 32–44px · tablet 44–64px · desktop 56–96px · TV up to 128px. Capped by
-     height so landscape phones stay readable; rem-based so it follows browser text size. */
-  font-size: calc(min(clamp(2rem, 0.9rem + 4.4vw, 8rem), 12vh) * var(--lyrics-scale));
-  font-stretch: var(--w-semi);
-  font-weight: 720;
-  line-height: 1.08;
+  --step: 0.9em;
+  font-size: calc(min(clamp(2.5rem, 1rem + 5.4vw, 8rem), 13vh) * var(--lyrics-scale));
+  font-stretch: 70%;
+  font-weight: 800;
+  line-height: 0.92;
   letter-spacing: -0.02em;
-  max-width: 22ch;
-  margin: 0 auto;
-  padding: 36vh var(--pad-r) 44vh var(--pad-l);
+  padding: 6vh calc(var(--pad-r) + 150px) 44vh calc(var(--pad-l) + clamp(0px, 6vw, 110px));
   overflow-wrap: break-word;
   hyphens: manual;
-  text-wrap: balance;
 }
 
 .lyrics-lines li {
-  margin-bottom: 0.4em;
-  color: var(--ink);
-  opacity: 0.42; /* upcoming lines stay readable: 3.3:1 at display sizes */
+  margin-bottom: 0.08em;
+  max-width: 18ch;
   transform-origin: 0 50%;
   transition:
     opacity 480ms var(--ease-out),
     scale 480ms var(--ease-expo);
 }
 
-/* Focus is now: the current line is fully lit; what's sung recedes. */
+/* Stepped indents: the reading column walks inward, then starts again. */
+.lyrics-lines li:nth-child(3n + 2) {
+  padding-left: var(--step);
+}
+
+.lyrics-lines li:nth-child(3n) {
+  padding-left: calc(var(--step) * 2);
+}
+
+/* Timed (the demo only — timed lyrics are off for Spotify, lyrics/policy.ts):
+   focus is now — the current line is lit, what's sung recedes. */
+.lyrics-lines[data-timed] li {
+  opacity: 0.42;
+}
+
 .lyrics-lines li[data-state='current'] {
   opacity: 1;
 }
@@ -60,143 +133,253 @@
   scale: 0.94;
 }
 
-/* Static reader (untimed — all Spotify playback): everything readable, nothing highlighted. */
-.lyrics-lines:not([data-timed]) {
-  padding-top: calc(var(--safe-t) + 104px);
-  font-size: calc(min(clamp(2rem, 1rem + 3.4vw, 6.5rem), 10vh) * var(--lyrics-scale));
-}
-
-.lyrics-lines:not([data-timed]) li {
-  opacity: 0.94;
-}
-
 .lyrics-lines li.gap {
   height: 0.6em;
   margin: 0;
 }
 
 .lyrics-credit {
-  max-width: 22ch;
-  margin: -36vh auto 44vh;
-  padding: 0 var(--pad-r) 0 var(--pad-l);
+  padding: 0 var(--pad-r) 30vh calc(var(--pad-l) + clamp(0px, 6vw, 110px));
+  color: var(--ink-3);
 }
 
-/* ── Controls: they fade away while you read ── */
+/* ── The instrument column ── */
 
-.lyrics-top,
-.lyrics-bottom {
+.lyrics-aside {
   position: absolute;
-  z-index: 2;
-  left: 0;
-  right: 0;
-  display: flex;
-  align-items: center;
-  gap: var(--s-3);
-  padding-left: calc(var(--pad-l) - 10px);
-  padding-right: calc(var(--pad-r) - 10px);
-}
-
-.lyrics-top {
-  top: 0;
-  padding-top: calc(var(--safe-t) + var(--s-2));
-  padding-bottom: var(--s-6);
-  background: linear-gradient(to bottom, var(--bg) 55%, transparent);
-}
-
-.lyrics-bottom {
-  bottom: 0;
-  justify-content: center;
-  padding-top: var(--s-6);
-  padding-bottom: calc(var(--safe-b) + var(--s-3));
-  background: linear-gradient(to top, var(--bg) 55%, transparent);
-}
-
-.lyrics-console {
-  display: flex;
-  align-items: center;
-  gap: var(--s-4);
-  width: 100%;
-  max-width: 880px;
-}
-
-.lyrics-track {
-  flex: 1;
-  min-width: 0;
+  z-index: var(--z-float);
+  top: var(--s-5);
+  bottom: var(--s-5);
+  right: var(--pad-r);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  text-align: center;
+  align-items: flex-end;
+  gap: var(--s-3);
+  width: 120px;
 }
 
-.lyrics-track-title,
-.lyrics-track-artist {
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.lyrics-sizes {
+  display: grid;
+  gap: 10px;
+}
+
+.lyrics-size {
+  --key-h: 46px;
+  width: 84px;
+}
+
+.lyrics-size .readout {
   white-space: nowrap;
 }
 
+.lyrics-size[aria-checked='true'] .readout::before {
+  content: '( ';
+}
+
+.lyrics-size[aria-checked='true'] .readout::after {
+  content: ' )';
+}
+
+.lyrics-aside-rule {
+  flex: 1;
+  width: 2px;
+  background: repeating-linear-gradient(180deg, var(--ink-4) 0 2px, transparent 2px 10px);
+}
+
+.lyrics-sync {
+  text-align: right;
+  font-size: 0.6875rem;
+  line-height: 1.6;
+  color: var(--ink-3);
+}
+
+/* ── The dock: the record, whole, bottom-left ── */
+
+.lyrics-dock {
+  position: absolute;
+  z-index: var(--z-float);
+  left: var(--pad-l);
+  bottom: calc(var(--safe-b) + var(--s-5));
+  display: flex;
+  align-items: flex-end;
+  gap: var(--s-4);
+  max-width: min(640px, calc(100% - var(--pad-l) - 170px));
+  padding: var(--s-3) var(--s-4) var(--s-3) var(--s-3);
+  background: var(--record-deep);
+}
+
+.lyrics-dock-art {
+  width: clamp(72px, 10vw, 132px);
+  box-shadow: 10px 10px 0 rgb(0 0 0 / 0.28);
+}
+
+.lyrics-dock-text {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
 .lyrics-track-title {
-  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: clamp(1.75rem, 1rem + 2.4vw, 3.4rem);
+}
+
+.lyrics-track-artist {
+  font-size: 1.25rem;
 }
 
 .lyrics-scrub {
-  flex: 1;
-  min-width: 0;
+  min-width: 180px;
+}
+
+.lyrics-scrub .scrub-hit {
+  height: 36px;
+}
+
+.lyrics-scrub .scrub-ticks,
+.lyrics-scrub .scrub-minute {
+  display: none;
+}
+
+.lyrics-scrub .scrub-dial::after {
+  top: 18px;
+}
+
+.lyrics-scrub .scrub-lit {
+  top: 16px;
+}
+
+.lyrics-scrub .scrub-needle::before {
+  top: 6px;
+  width: 28px;
+  left: -14px;
+  height: 24px;
+  background:
+    radial-gradient(circle, var(--record) 0 3px, transparent 3.5px) center / 100% 100% no-repeat,
+    #f4eedf;
+  box-shadow: none;
+}
+
+.lyrics-scrub .scrub-times {
+  font-size: 0.75rem;
+}
+
+.lyrics-scrub .scrub-elapsed {
+  font-size: 0.75rem;
 }
 
 .lyrics-empty {
   height: 100%;
+  overflow-y: auto;
   display: grid;
-  place-items: center;
-  padding: 0 var(--pad-r) 0 var(--pad-l);
+  align-content: start;
+  /* Clear of the dock below and the size keys beside. */
+  padding: 8vh calc(var(--pad-r) + 130px) 190px var(--pad-l);
+}
+
+.lyrics-empty .btn {
+  background: rgb(0 0 0 / 0.24);
+  border-color: transparent;
+  box-shadow: 0 5px 0 rgb(0 0 0 / 0.4);
 }
 
 .jump {
   position: absolute;
-  z-index: 3;
+  z-index: var(--z-float);
   left: 50%;
-  bottom: calc(var(--safe-b) + 112px);
+  bottom: calc(var(--safe-b) + 190px);
   translate: -50% 0;
   display: inline-flex;
   align-items: center;
   gap: var(--s-2);
   min-height: var(--tap);
-  padding: 0 var(--s-5) 0 var(--s-4);
-  border-radius: var(--r-pill);
-  background: var(--surface-2);
-  box-shadow: var(--shadow-overlay);
-  font-weight: 600;
-  font-size: 0.9375rem;
-  white-space: nowrap;
-  transition: scale var(--dur-press) var(--ease-out);
-}
-
-.jump svg {
-  color: var(--signal);
+  padding: 0 var(--s-4);
+  border-radius: 3px;
+  background: #f4eedf;
+  color: var(--record-deep);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
 }
 
 .jump:active {
-  scale: 0.96;
+  translate: -50% 2px;
 }
 
-.lyrics:not([data-controls]) .jump {
-  bottom: calc(var(--safe-b) + var(--s-6));
-}
+/* Phones: the column narrows and the dock slims to a strip. */
+@media (max-width: 699px), (max-height: 520px) and (orientation: landscape) {
+  .lyrics-lines {
+    padding-right: calc(var(--pad-r) + 96px);
+    --step: 0.9em;
+  }
 
-@media (hover: hover) and (pointer: fine) {
-  .jump:hover {
-    background: var(--surface-3);
+  .lyrics-aside {
+    width: 84px;
+    top: var(--s-2);
+  }
+
+  .lyrics-size {
+    --key-h: 40px;
+    width: 64px;
+  }
+
+  .lyrics-sync,
+  .lyrics-aside > .label {
+    display: none;
+  }
+
+  .lyrics-empty {
+    padding: var(--s-4) calc(var(--pad-r) + 96px) 110px var(--pad-l);
+  }
+
+  .lyrics-empty .empty-title {
+    font-size: 2rem;
+  }
+
+  .lyrics-dock {
+    left: var(--pad-l);
+    right: calc(var(--pad-r) + 96px);
+    max-width: none;
+    padding: var(--s-2);
+    gap: var(--s-3);
+  }
+
+  .lyrics-dock-art {
+    width: 56px;
+  }
+
+  .lyrics-track-title {
+    font-size: 1.5rem;
+  }
+
+  .lyrics-track-artist,
+  .lyrics-scrub .scrub-times {
+    display: none;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .shell[data-route='lyrics']::before {
+    animation: fade-out var(--dur-fast) ease forwards;
+  }
+
+  @keyframes fade-out {
+    to {
+      opacity: 0;
+    }
+  }
+
+  .lyrics-lines li {
+    transition: opacity 200ms ease;
+  }
+
   .lyrics-lines li[data-state='past'] {
     scale: none;
   }
 
   .jump:active {
-    scale: none;
+    translate: -50% 0;
   }
 }

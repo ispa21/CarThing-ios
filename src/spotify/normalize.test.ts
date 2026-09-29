@@ -150,7 +150,8 @@ describe('normalizeQueue', () => {
     expect(q.current?.title).toBe('Night Drive')
     expect(q.upNext.map((i) => i.title)).toEqual(['One', 'Episode 12', 'Two'])
     expect(q.upNext[1]).toMatchObject({ kind: 'episode', subtitle: 'The Show' })
-    expect(q.upNext[0].art).toBe('https://i.scdn.co/64')
+    expect(q.upNext[0].art).toBe('https://i.scdn.co/300') // next up is shown at scale
+    expect(q.upNext[2].art).toBe('https://i.scdn.co/64') // the rest are rows
   })
   it('handles no queue', () => {
     expect(normalizeQueue(null)).toEqual({ current: null, upNext: [] })
@@ -170,7 +171,7 @@ describe('normalizeSearch / playlists', () => {
     })
     expect(s.tracks).toHaveLength(1)
     expect(s.playlists).toEqual([
-      { id: 'p1', uri: 'spotify:playlist:p1', kind: 'playlist', title: 'Mix', subtitle: 'By Ana, 3 songs', art: null, url: null },
+      { id: 'p1', uri: 'spotify:playlist:p1', kind: 'playlist', title: 'Mix', subtitle: 'By Ana, 3 songs', art: null, url: null, count: 3 },
     ])
     expect(isSearchEmpty(s)).toBe(false)
     expect(isSearchEmpty(normalizeSearch(null))).toBe(true)

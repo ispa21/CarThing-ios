@@ -3,12 +3,16 @@
 .shell {
   height: 100%;
   display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr);
+  transition: background-color var(--dur-deliberate) var(--ease-house);
 }
 
-/* Each route mounts fresh. Rail routes slide in the direction you travelled along
-   the rail (spatial consistency); everything else rises. Short: this happens
-   tens of times a day. Entrance only — the old screen leaves instantly. */
+.shell[data-immersive] {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+/* Screens are states of one machine: each arrives from the side you travelled
+   toward along the rail, and quickly — this happens tens of times a day. */
 .screen {
   position: relative;
   min-height: 0;
@@ -35,75 +39,73 @@
 @keyframes screen-rise {
   from {
     opacity: 0;
-    translate: 0 10px;
+    translate: 0 12px;
   }
 }
 
 @keyframes screen-forward {
   from {
     opacity: 0;
-    translate: 20px 0;
+    translate: 28px 0;
   }
 }
 
 @keyframes screen-back {
   from {
     opacity: 0;
-    translate: -20px 0;
+    translate: -28px 0;
   }
 }
 
 @keyframes screen-immerse {
   from {
     opacity: 0;
-    scale: 0.985;
   }
 }
 
-/* ── Pages (Search, Queue, Settings) ── */
+/* ── Pages (Settings and the modes) ── */
 
 .page {
   width: 100%;
-  max-width: 1200px;
+  max-width: 1320px;
   margin: 0 auto;
-  padding: calc(var(--safe-t) + var(--s-5)) var(--pad-r) var(--s-7) var(--pad-l);
+  padding: var(--s-5) var(--pad-r) var(--s-8) var(--pad-l);
 }
 
 .page-narrow {
-  max-width: 900px;
+  max-width: 920px;
 }
 
-/* A stencilled headline over a machined rule: a groove, then a highlight. */
+/* A page title is printed big, over a single ink rule. */
 .page-head {
   display: flex;
   align-items: flex-end;
   gap: var(--s-4);
-  padding-bottom: var(--s-4);
+  padding-bottom: var(--s-3);
   margin-bottom: var(--s-5);
-  box-shadow:
-    inset 0 -1px 0 rgb(255 255 255 / 0.06),
-    inset 0 -3px 0 var(--outline);
+  border-bottom: 2px solid var(--rule);
 }
 
 .page-title {
   flex: 1;
   min-width: 0;
   font-stretch: var(--w-condensed);
-  font-size: min(var(--t-headline), 13vh);
-  font-weight: 800;
-  line-height: 0.9;
-  letter-spacing: -0.025em;
+  font-size: min(var(--t-headline), 16vh);
+  font-weight: 900;
+  line-height: 0.8;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
 }
 
 .page-meta {
   display: flex;
   align-items: center;
   gap: var(--s-2);
-  padding-bottom: 0.3em;
+  padding-bottom: 0.2em;
 }
 
 .page-head .icon-btn {
-  margin-bottom: -6px;
+  margin-bottom: -4px;
 }
 
 .page-head .icon-btn:first-child {
@@ -122,313 +124,308 @@
   margin-top: 0;
 }
 
-/* ── The rail: the console's preset strip ──
-   Tabs are latching keys: the current screen's key stays down, its lens lit amber. */
+/* ── The rail: the top of the plate ──
+   The wordmark, one fused black shape holding the four keys (necks between them,
+   brackets around where you are), the modes as printed words, the output route. */
 
 .rail {
   position: relative;
   z-index: var(--z-rail);
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-areas:
-    'deck'
-    'tabs';
+  display: flex;
   align-items: center;
-  column-gap: var(--s-3);
-  row-gap: var(--s-2);
-  padding: var(--s-2) var(--pad-r) calc(var(--safe-b) + var(--s-2)) var(--pad-l);
-  background: var(--metal);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.07),
-    0 -1px 0 var(--outline),
-    0 -12px 24px -12px rgb(0 0 0 / 0.8);
+  gap: var(--s-4) var(--s-5);
+  min-height: var(--rail-h);
+  padding: calc(var(--safe-t) + var(--s-2)) var(--pad-r) var(--s-2) var(--pad-l);
+  border-bottom: 1px solid var(--rule);
 }
 
-.rail-deck {
-  grid-area: deck;
+.wordmark-link {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: none;
+  min-height: var(--tap);
+  justify-content: center;
+}
+
+.rail-wordmark {
+  font-stretch: var(--w-expanded);
+  font-weight: 800;
+  font-size: 1.0625rem;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.rail-serial {
+  font-size: 0.625rem;
+  color: var(--ink-3);
+}
+
+.rail-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2) var(--s-5);
   min-width: 0;
-}
-
-.rail-deck:empty {
-  display: none;
+  flex: 1;
 }
 
 .rail-tabs {
-  grid-area: tabs;
   display: flex;
-  gap: 6px;
+  align-items: center;
+  flex: none;
+}
+
+/* The necks: a thin bridge of ink fuses each key to the next. */
+.rail-tabs li + li::before {
+  content: '';
+  display: inline-block;
+  vertical-align: middle;
+  width: 8px;
+  height: 14px;
+  background: var(--ink);
 }
 
 .rail-tabs li {
-  flex: 1;
-}
-
-.rail-tools {
-  grid-area: tools;
-  display: none;
+  display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 2px;
 }
 
 .rail-tab {
-  position: relative;
-  display: flex;
-  flex-direction: column;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  width: 100%;
-  min-height: 54px;
-  padding-top: 6px;
-  border: 1px solid var(--outline);
-  border-radius: var(--r-m);
-  background: linear-gradient(180deg, #2b3035, #212529);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.08),
-    0 3px 0 var(--outline);
-  color: var(--ink-2); /* keycaps are too light for --ink-3 text (4.2:1) */
+  min-height: var(--tap);
+  padding: 0 14px;
+  border-radius: var(--r-xs);
+  background: var(--ink);
+  color: #8f897b;
   font-stretch: var(--w-expanded);
-  font-size: 0.625rem;
+  font-size: var(--t-label);
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
+  transition: color var(--dur-fast) ease;
+}
+
+:root[data-theme='night'] .rail-tab {
+  color: #6e695e;
+}
+
+/* Brackets are the focus state: they fade in and spread apart around where you are. */
+.rail-tab::before,
+.rail-tab::after,
+.rail-mode::before,
+.rail-mode::after {
+  display: inline-block;
+  opacity: 0;
   transition:
-    translate var(--dur-press) var(--ease-out),
-    box-shadow var(--dur-press) ease,
-    color var(--dur-fast) ease;
+    opacity 100ms ease,
+    translate var(--dur-slow) var(--ease-expo);
 }
 
-/* Every preset key has a lens; only the latched one is lit. */
-.rail-tab::before {
-  content: '';
-  position: absolute;
-  top: 5px;
-  left: 50%;
-  width: 16px;
-  height: 3px;
-  margin-left: -8px;
-  border-radius: 1px;
-  background: #1a1e22;
-  box-shadow: inset 0 1px 0 rgb(0 0 0 / 0.5);
+.rail-tab::before,
+.rail-mode::before {
+  content: '(\2009';
+  translate: 6px 0;
 }
 
-.rail-tab:active {
-  translate: 0 3px;
-  box-shadow: 0 0 0 var(--outline);
+.rail-tab::after,
+.rail-mode::after {
+  content: '\2009)';
+  translate: -6px 0;
 }
 
-.rail-tab[aria-current] {
-  translate: 0 2px;
-  background: linear-gradient(180deg, #202428, #1a1d21);
-  box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.5);
+.rail-tab[aria-current],
+.rail-mode[aria-current] {
+  color: var(--on-ink);
+}
+
+.rail-mode[aria-current] {
   color: var(--ink);
 }
 
-.rail-tab[aria-current]::before {
-  background: var(--signal);
-  box-shadow: var(--glow);
+.rail-tab[aria-current]::before,
+.rail-tab[aria-current]::after,
+.rail-mode[aria-current]::before,
+.rail-mode[aria-current]::after {
+  opacity: 1;
+  translate: 0 0;
 }
 
-.rail-tab[aria-disabled] {
-  opacity: 0.35;
+.rail-tab:active {
+  translate: 0 2px;
 }
 
-@media (orientation: landscape) and (min-width: 480px) {
-  .rail {
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-    grid-template-areas: 'deck tabs tools';
-    min-height: var(--rail-h);
-    padding-top: var(--s-2);
-    padding-bottom: calc(var(--safe-b) + var(--s-2) + 3px);
-  }
-
-  .rail-deck:empty {
-    display: block;
-  }
-
-  .rail-tools {
-    display: flex;
-  }
-
-  .rail-tabs li {
-    flex: none;
-  }
-
-  .rail-tab {
-    flex-direction: row;
-    gap: var(--s-2);
-    min-height: 48px;
-    padding: 4px var(--s-4) 0;
-    font-size: 0.6875rem;
-  }
-
-  .rail .mini {
-    max-width: 340px;
-  }
-}
-
-/* Tablets held upright: tabs plus the tools (settings, full screen). */
-@media (orientation: portrait) and (min-width: 600px) {
-  .rail {
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas:
-      'deck deck'
-      'tabs tools';
-  }
-
-  .rail-tools {
-    display: flex;
-  }
-}
-
-/* Landscape phones: the mini deck becomes a puck — cover and play key. A title cut to
-   "M…" says nothing; the cover says what's playing, a tap on it goes to the deck. */
-@media (orientation: landscape) and (min-width: 480px) and (max-width: 1000px) {
-  .rail .mini-text,
-  .rail .mini-idle-text {
-    display: none;
-  }
-
-  .rail .mini {
-    justify-self: start;
-    padding-right: 4px;
-  }
-
-  .rail .mini-idle {
-    padding-left: 5px;
-  }
-}
-
-/* Small landscape phones (e.g. 667×375): tighter keys so the puck still fits. */
-@media (orientation: landscape) and (min-width: 480px) and (max-width: 759px) {
-  .rail {
-    column-gap: var(--s-2);
-  }
-
-  .rail-tabs {
-    gap: 4px;
-  }
-
-  .rail-tab {
-    padding: 4px var(--s-2) 0;
-    gap: 6px;
-    letter-spacing: 0.06em;
-  }
-}
-
-/* ── Mini deck: a small display bay in the rail ── */
-
-.mini {
-  position: relative;
+.rail-modes {
   display: flex;
   align-items: center;
-  gap: var(--s-1);
-  padding: 5px;
-  border-radius: var(--r-m);
-  background: var(--bay);
-  box-shadow: var(--recess);
-  overflow: hidden;
+  gap: var(--s-4);
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent);
 }
 
-.mini-main {
-  flex: 1;
-  min-width: 0;
-  display: flex;
+.rail-modes::-webkit-scrollbar {
+  display: none;
+}
+
+.rail-mode {
+  display: inline-flex;
   align-items: center;
-  gap: var(--s-3);
-  border-radius: var(--r-s);
-  transition: scale var(--dur-press) var(--ease-out);
-}
-
-.mini-main:active {
-  scale: 0.98;
-}
-
-.mini-text {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.mini-title,
-.mini-sub {
-  overflow: hidden;
-  text-overflow: ellipsis;
+  min-height: var(--tap);
   white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--ink-3);
 }
 
-.mini-title {
-  font-weight: 650;
-  font-size: 0.9375rem;
-  line-height: 1.25;
+.rail-tools {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--s-2);
+  flex: none;
+  margin-left: auto;
 }
 
-.mini-sub {
-  color: var(--ink-2);
-  font-size: 0.8125rem;
-}
-
-/* The mini play key is a small bone cap. */
-.mini .icon-btn-strong {
-  border: 1px solid var(--outline);
-  background: linear-gradient(180deg, var(--key), var(--key-shade));
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.6),
-    0 2px 0 var(--outline);
-  color: var(--key-ink);
-}
-
-.mini-line {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 2px;
-  background: var(--hairline);
-}
-
-.mini-line span {
-  display: block;
-  height: 100%;
-  background: var(--signal);
-  box-shadow: 0 0 6px var(--signal-glow);
-  transform-origin: left;
-  transform: scaleX(0);
-}
-
-.mini-idle {
-  justify-content: space-between;
-  padding-left: var(--s-4);
-}
-
-.mini-idle-text {
+.rail-route {
   display: inline-flex;
   align-items: center;
   gap: var(--s-2);
+  min-height: var(--tap);
+  padding: 0 var(--s-2);
+  max-width: 190px;
 }
 
-@media (orientation: landscape) and (min-width: 480px) {
-  .rail .mini {
-    margin: 0;
+.rail-route-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8125rem;
+}
+
+.nowline {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  min-width: 0;
+  padding-right: var(--s-2);
+  border-right: 1px solid var(--rule-soft);
+}
+
+.nowline-text {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8125rem;
+  min-height: var(--tap);
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Phones held sideways: one tight row. The modes scroll; the wordmark steps aside. */
+@media (max-height: 520px) and (orientation: landscape) {
+  .rail {
+    --rail-h: 52px;
+    gap: var(--s-3);
+    padding-top: calc(var(--safe-t) + 4px);
+    padding-bottom: 4px;
+  }
+
+  .wordmark-link,
+  .nowline {
+    display: none;
+  }
+
+  .rail-tab {
+    padding: 0 10px;
+    letter-spacing: 0.12em;
+  }
+
+  .rail-tabs li + li::before {
+    width: 6px;
+  }
+
+  .rail-route-name {
+    max-width: 90px;
+  }
+}
+
+/* Phones held upright: the keys fill a row; modes and tools share the next. */
+@media (max-width: 599px) and (orientation: portrait) {
+  .rail {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'tabs tabs'
+      'modes tools';
+    gap: 0 var(--s-2);
+    padding-bottom: 0;
+  }
+
+  .wordmark-link,
+  .nowline,
+  .rail-route-name {
+    display: none;
+  }
+
+  .rail-nav {
+    display: contents;
+  }
+
+  .rail-tabs {
+    grid-area: tabs;
+  }
+
+  .rail-tabs li {
+    flex: 1;
+  }
+
+  .rail-tab {
+    flex: 1;
+    padding: 0 6px;
+    letter-spacing: 0.1em;
+  }
+
+  .rail-modes {
+    grid-area: modes;
+  }
+
+  .rail-tools {
+    grid-area: tools;
+    gap: 0;
+  }
+}
+
+@media (min-width: 600px) and (max-width: 1099px) and (min-height: 521px) {
+  .rail-serial,
+  .nowline {
+    display: none;
   }
 }
 
 @media (hover: hover) and (pointer: fine) {
   .rail-tab:hover:not([aria-current]) {
+    color: var(--on-ink);
+  }
+
+  .rail-tab:hover::before,
+  .rail-tab:hover::after,
+  .rail-mode:hover::before,
+  .rail-mode:hover::after {
+    opacity: 1;
+    translate: 0 0;
+  }
+
+  .rail-mode:hover {
     color: var(--ink);
-    background: linear-gradient(180deg, #32383e, #262a2f);
   }
 
-  .mini-main:hover .mini-title {
+  .nowline-text:hover {
     text-decoration: underline;
-    text-decoration-color: var(--hairline-strong);
     text-underline-offset: 3px;
-  }
-
-  .mini .icon-btn-strong:hover {
-    background: linear-gradient(180deg, #f3f0e8, var(--key));
-    color: var(--key-ink);
   }
 }
 
@@ -439,26 +436,21 @@
     animation-name: fade-in;
   }
 
-  /* Latched keys still sit down (that's state); they just don't animate there. */
-  .rail-tab {
-    transition: color var(--dur-fast) ease;
+  .rail-tab::before,
+  .rail-tab::after,
+  .rail-mode::before,
+  .rail-mode::after {
+    translate: 0 0;
+    transition: opacity 100ms ease;
   }
 
-  .rail-tab:active,
-  .mini-main:active {
+  .rail-tab:active {
     translate: none;
-    scale: none;
   }
 }
 
 @keyframes fade-in {
   from {
     opacity: 0;
-  }
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  .rail {
-    background: var(--surface-1);
   }
 }

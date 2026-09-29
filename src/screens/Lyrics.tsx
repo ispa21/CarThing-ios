@@ -15,6 +15,7 @@ import { feedback } from '../sensory/feedback'
 import { selectCanToggle, usePlayback } from '../store/playback'
 import { LYRIC_SIZES, useSettings } from '../store/settings'
 import { useClockValue } from '../ui/clock'
+import { Artwork } from '../ui/Artwork'
 import { EmptyState } from '../ui/Feedback'
 import { Icon } from '../ui/Icon'
 import { Scrubber } from '../ui/Scrubber'
@@ -71,7 +72,7 @@ function useAutoHide(playing: boolean) {
     // Keyboard focus only: a mouse click on the scrubber also focuses it, and shouldn't pin the controls.
     const busy = () => {
       const el = document.activeElement as HTMLElement | null
-      return pressing.current || (!!el?.closest('.lyrics-top, .lyrics-bottom') && el.matches(':focus-visible'))
+      return pressing.current || (!!el?.closest('.lyrics-aside, .lyrics-dock') && el.matches(':focus-visible'))
     }
     let t = setTimeout(function tick() {
       if (busy()) t = setTimeout(tick, HIDE_CONTROLS_MS)
@@ -108,6 +109,8 @@ export function LyricsScreen({ source }: { source: PlaybackSource }) {
       trackId: s.playback.trackId,
       title: s.playback.title,
       artist: s.playback.artist,
+      art: s.playback.albumArt,
+      album: s.playback.album,
       durationMs: s.playback.durationMs,
       isPlaying: s.playback.isPlaying,
       canToggle: selectCanToggle(s),
@@ -177,42 +180,17 @@ export function LyricsScreen({ source }: { source: PlaybackSource }) {
 
   const sizeIndex = useSettings((s) => s.lyricSize)
   const size = LYRIC_SIZES[sizeIndex]
-  const cycleSize = () => {
+  const pickSize = (i: number) => {
+    if (i === sizeIndex) return
     feedback.play('select')
-    useSettings.setState({ lyricSize: (sizeIndex + 1) % LYRIC_SIZES.length })
+    useSettings.setState({ lyricSize: i })
   }
 
   const showJump = showJumpButton(mode, { timed, autoScroll, hasCurrent: current >= 0 })
   const fade = { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 }, transition: { duration: 0.2 } }
 
   return (
-    <div className="lyrics" {...handlers} data-controls={controls || undefined}>
-      <AnimatePresence>
-        {controls && (
-          <m.header key="top" className="lyrics-top" {...fade}>
-            <button
-              className="icon-btn"
-              onClick={() => {
-                feedback.play('back')
-                back(src.backTo)
-              }}
-              aria-label="Back"
-            >
-              <Icon name="back" />
-            </button>
-            <div className="lyrics-track">
-              <span className="lyrics-track-title">{track.title ?? 'Lyrics'}</span>
-              {/* The demo clock is silent — say so rather than imply playback. */}
-              {(demo || track.artist) && <span className="lyrics-track-artist label">{demo ? 'Demo · no audio' : track.artist}</span>}
-            </div>
-            <FullscreenButton />
-            <button className="icon-btn" onClick={cycleSize} aria-label={`Text size: ${size.label}. Change`}>
-              <Icon name="textSize" />
-            </button>
-          </m.header>
-        )}
-      </AnimatePresence>
-
+    <div className="lyrics" {...handlers} data-controls={controls || undefined} data-demo={demo || undefined}>
       <h1 className="sr-only">Lyrics{track.title ? `: ${track.title}` : ''}</h1>
 
       {!demo && !spotify.has ? (
@@ -259,9 +237,56 @@ export function LyricsScreen({ source }: { source: PlaybackSource }) {
               </li>
             ))}
           </ol>
-          {state.status === 'ready' && <p className="lyrics-credit readout">Lyrics: {state.lyrics.providerName}</p>}
+          {state.status === 'ready' && <p className="lyrics-credit readout">text · {state.lyrics.providerName.toLowerCase()}</p>}
         </div>
       )}
+
+      {/* The instrument column: size detents, and the sync state said plainly. */}
+      <AnimatePresence>
+        {controls && (
+          <m.aside key="aside" className="lyrics-aside" aria-label="Reader" {...fade}>
+            {demo && (
+              <button
+                className="btn btn-small"
+                onClick={() => {
+                  feedback.play('back')
+                  back(src.backTo)
+                }}
+              >
+                Back
+              </button>
+            )}
+            <span className="label">text size</span>
+            <div className="lyrics-sizes" role="radiogroup" aria-label="Text size">
+              {LYRIC_SIZES.map((z, i) => (
+                <button key={z.label} className="key lyrics-size" role="radio" aria-checked={i === sizeIndex} aria-label={z.label} onClick={() => pickSize(i)}>
+                  <span className="readout">{['s', 'm', 'l', 'xl'][i]}</span>
+                </button>
+              ))}
+            </div>
+            <span className="lyrics-aside-rule" aria-hidden="true" />
+            <FullscreenButton />
+            <p className="readout lyrics-sync">
+              {timed ? (
+                <>
+                  line sync · on
+                  <br />
+                  (demo clock)
+                </>
+              ) : (
+                <>
+                  untimed —<br />
+                  line sync is off
+                  <br />
+                  for spotify
+                  <br />
+                  playback
+                </>
+              )}
+            </p>
+          </m.aside>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {showJump && (
@@ -280,21 +305,19 @@ export function LyricsScreen({ source }: { source: PlaybackSource }) {
         )}
       </AnimatePresence>
 
+      {/* The record docks bottom-left, whole and unaltered. */}
       <AnimatePresence>
         {controls && (demo || spotify.has) && (
-          <m.footer key="bottom" className="lyrics-bottom" {...fade}>
-            <div className="lyrics-console">
-              <PlayKey small isPlaying={track.isPlaying} onPress={src.toggle} disabled={!demo && !spotify.canToggle} />
+          <m.footer key="dock" className="lyrics-dock" {...fade}>
+            <Artwork src={demo ? null : spotify.art} alt={demo ? '' : spotify.album ? `${spotify.album} cover` : ''} className="lyrics-dock-art" />
+            <div className="lyrics-dock-text">
+              <span className="lyrics-track-title display">{track.title ?? 'Lyrics'}</span>
+              <span className="lyrics-track-artist serif">{demo ? 'Demo · no audio' : track.artist}</span>
               <div className="lyrics-scrub">
-                <Scrubber
-                  clock={src.clock}
-                  durationMs={track.durationMs}
-                  onSeek={src.seek}
-                  disabled={!demo && spotify.cantSeek}
-                  label="Song position"
-                />
+                <Scrubber clock={src.clock} durationMs={track.durationMs} onSeek={src.seek} disabled={!demo && spotify.cantSeek} label="Song position" />
               </div>
             </div>
+            <PlayKey small isPlaying={track.isPlaying} onPress={src.toggle} disabled={!demo && !spotify.canToggle} />
           </m.footer>
         )}
       </AnimatePresence>

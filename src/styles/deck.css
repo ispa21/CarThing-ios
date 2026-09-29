@@ -1,85 +1,165 @@
-/* ── The deck: a console ───────────────────────────────────────────────── */
+/* ── The deck ──────────────────────────────────────────────────────────────
+   The song's name, enormous, with its cover set into it like a letter; the
+   record's colour offset behind the cover like misregistered print; a knob too
+   big for the plate, falling off its right edge; a scrub line from edge to edge;
+   keys along the bottom; the queue as a handle pinned to the bottom edge. */
 
 .np {
-  --np-t: clamp(2rem, 8.4vw, 2.75rem); /* title size before the length tier */
   position: relative;
   height: 100%;
+  overflow: hidden;
+  padding: var(--s-4) var(--pad-r) 0 var(--pad-l);
   display: flex;
   flex-direction: column;
-  padding: calc(var(--safe-t) + var(--s-4)) var(--pad-r) var(--s-4) var(--pad-l);
 }
 
-/* Loose (idle, loading, error): the ⋮ sits in the corner. On the deck it joins the status row. */
-.np > .np-more {
-  position: absolute;
-  z-index: var(--z-float);
-  top: calc(var(--safe-t) + 6px);
-  right: calc(var(--pad-r) - 10px);
-}
-
-.np-sync {
-  margin-bottom: var(--s-2);
-  text-align: center;
-  color: var(--ink-3);
-}
-
-/* Upright phones (the compact fallback): stacked. Auto margins centre it when there's
-   room and top-align it when there isn't. */
 .np-body {
-  position: relative; /* above the ambient light */
+  --knob: clamp(300px, 58dvh, 520px);
+  /* What the title may occupy: the height left after the other rows, split over two lines. */
+  --title-max: min(15vw, calc((100dvh - 420px) / 1.66));
+  position: relative;
   flex: 1;
   min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto auto;
+  grid-template-areas:
+    'status'
+    'lockup'
+    'line'
+    'scrub'
+    'keys';
+}
+
+.np-status-row {
+  grid-area: status;
   display: flex;
-  flex-direction: column;
-  gap: clamp(16px, 2.6vh, 28px);
-  width: 100%;
-  max-width: 540px;
-  margin: 0 auto;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: var(--tap);
+  padding-right: calc(var(--knob) * 0.55);
 }
 
-.np-body > :first-child {
-  margin-top: auto;
+.np-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: 0.8125rem;
 }
 
-.np-body > :last-child {
-  margin-bottom: auto;
+.np-status-rule {
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
 }
 
-/* ── The screen: the cover in a bezel, framed by HUD brackets (never on the cover) ── */
+.roll {
+  display: inline-grid;
+  overflow: hidden;
+}
 
+.roll > span {
+  grid-area: 1 / 1;
+}
+
+/* ── The lockup ── */
+
+.np-lockup {
+  grid-area: lockup;
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(16px, 2.6vw, 44px);
+  min-height: 0;
+  padding: var(--s-2) calc(var(--knob) * 0.74 - var(--pad-r)) 0 0;
+}
+
+.np-meta-stack {
+  display: grid;
+  flex: 0 1 auto;
+  min-width: 0;
+  transition: opacity var(--dur-base) ease;
+}
+
+.np-meta-stack > * {
+  grid-area: 1 / 1;
+}
+
+/* Between pressing skip and Spotify reporting the new track, the old title dims. */
+.np-meta-stack[data-pending] {
+  opacity: 0.35;
+}
+
+.np-mask {
+  overflow: hidden;
+  padding-bottom: 0.04em;
+}
+
+.np-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+  font-stretch: var(--w-condensed);
+  font-weight: 900;
+  font-size: calc(var(--title-max) * var(--fit, 1));
+  line-height: 0.8;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+  color: var(--ink);
+  -webkit-text-stroke: 0 var(--ink);
+  transition:
+    color var(--dur-base) var(--ease-house),
+    -webkit-text-stroke-width var(--dur-base) var(--ease-house);
+}
+
+.np-title[data-stack] {
+  width: min-content;
+  overflow-wrap: normal;
+  hyphens: manual;
+}
+
+.np-title[data-fit='m'] {
+  --fit: 0.72;
+}
+
+.np-title[data-fit='l'] {
+  --fit: 0.52;
+  line-height: 0.84;
+}
+
+.np-title[data-fit='xl'] {
+  --fit: 0.4;
+  line-height: 0.86;
+}
+
+/* Paused: the title drains to an outline. Play fills the ink back in. */
+.np-body[data-paused] .np-title {
+  color: transparent;
+  -webkit-text-stroke-width: max(2px, 0.012em);
+}
+
+/* The record: whole, never cropped or covered. Its colour sits behind it, offset. */
 .np-art {
+  --art: min(calc(var(--title-max) * 1.6), 34vw);
   position: relative;
   flex: none;
-  width: min(calc(100% - 16px), 30vh);
-  aspect-ratio: 1;
-  margin-inline: auto;
-  border-radius: var(--r-s);
-  background: var(--bay);
-  box-shadow:
-    0 0 0 5px #0d0f11,
-    0 0 0 6px var(--outline),
-    0 0 0 7px rgb(255 255 255 / 0.06),
-    0 30px 60px -30px rgb(0 0 0 / 0.95);
+  display: grid;
+  width: var(--art);
+  height: var(--art);
+  margin-top: 0.1em;
   touch-action: pan-y;
   cursor: grab;
 }
 
-/* HUD corner brackets, outside the bezel: they frame the screen, never touch the art. */
-.np-art::after {
+.np-art::before {
   content: '';
   position: absolute;
-  inset: -16px;
-  pointer-events: none;
-  --b: var(--ink-4);
-  background:
-    linear-gradient(var(--b), var(--b)) top left / 14px 2px no-repeat,
-    linear-gradient(var(--b), var(--b)) top left / 2px 14px no-repeat,
-    linear-gradient(var(--b), var(--b)) top right / 14px 2px no-repeat,
-    linear-gradient(var(--b), var(--b)) top right / 2px 14px no-repeat,
-    linear-gradient(var(--b), var(--b)) bottom left / 14px 2px no-repeat,
-    linear-gradient(var(--b), var(--b)) bottom left / 2px 14px no-repeat,
-    linear-gradient(var(--b), var(--b)) bottom right / 14px 2px no-repeat,
-    linear-gradient(var(--b), var(--b)) bottom right / 2px 14px no-repeat;
+  inset: 0;
+  translate: 5.5% 5.5%;
+  background: var(--record);
+  transition: background-color var(--dur-colour) linear;
 }
 
 .np-art:active {
@@ -87,294 +167,195 @@
 }
 
 .np-art-layer {
-  position: absolute;
-  inset: 0;
+  position: relative;
+  grid-area: 1 / 1;
 }
 
-.np-art-layer .art {
+.np-art .art {
   width: 100%;
   height: 100%;
-  border-radius: var(--r-s);
 }
 
-.np-art-layer img {
-  pointer-events: none; /* the drag belongs to the housing, not the image */
-}
+/* ── The human voice ── */
 
-/* ── The console module: machined metal ── */
-
-.np-console {
+.np-line {
+  grid-area: line;
   display: flex;
-  flex-direction: column;
-  gap: var(--s-3);
-  min-width: 0;
-  padding: var(--s-3);
-  border: 1px solid var(--outline);
-  border-radius: var(--r-l);
-  background: var(--metal);
-  box-shadow:
-    var(--bevel),
-    0 6px 0 var(--outline),
-    var(--ambient-shadow);
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--s-3);
+  padding: var(--s-4) calc(var(--knob) * 0.74 - var(--pad-r)) 0 0;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: clamp(1.25rem, 0.9rem + 1.6vw, 2.5rem);
+  line-height: 1.05;
 }
 
-.np-panel {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-3);
-  min-width: 0;
-  container: panel / inline-size;
+.np-album-name {
+  font-style: normal;
 }
 
-/* A narrow console with height to spare (tablets): the output plate gets its own row
-   instead of shrinking to an icon. Phones keep one row: height is what they lack. */
-@media (min-height: 600px) {
-  @container panel (max-width: 420px) {
-    .np-keys {
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-    .np-keys .np-device {
-      flex: 1 0 100%;
-      max-width: none;
-      justify-content: center;
-    }
-  }
-}
-
-/* The display bay: recessed dark glass holding what's playing and the dial. */
-.np-display {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-2);
-  min-width: 0;
-  padding: var(--s-3) var(--s-4) var(--s-2);
-  border-radius: var(--r-m);
-  background:
-    linear-gradient(180deg, rgb(255 255 255 / 0.025), transparent 40%),
-    var(--bay);
-  box-shadow: var(--recess);
-}
-
-.np-status-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--s-3);
-  min-height: 28px;
-}
-
-.np-status {
-  display: flex;
-  align-items: center;
-  gap: var(--s-2);
-  white-space: nowrap;
-}
-
-.np-status-tools {
-  display: flex;
-  align-items: center;
-  gap: var(--s-1);
-  margin-right: -10px;
-}
-
-.np-meta-stack {
-  display: grid;
-  transition: opacity var(--dur-fast) ease;
-}
-
-.np-meta-stack > * {
-  grid-area: 1 / 1;
-  min-width: 0;
-}
-
-.np-meta-stack[data-pending] {
-  opacity: 0.4;
-}
-
-/* Each line changes inside its own mask. Padding keeps descenders out of the clip. */
-.np-mask {
-  display: block;
-  overflow: hidden;
-  padding-bottom: 0.14em;
-  margin-bottom: -0.14em;
-}
-
-.np-title {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  font-stretch: var(--w-condensed);
-  /* Sized by the viewport, capped by the console's own width (cqi of the panel). */
-  font-size: calc(min(var(--np-t), 17cqi) * var(--fit, 1));
-  font-weight: 800;
-  line-height: 0.98;
-  letter-spacing: -0.022em;
-  text-wrap: balance;
-  overflow-wrap: anywhere;
-  padding-bottom: 0.06em; /* the clamp would otherwise clip the last line's descenders */
-}
-
-/* Fit the marquee: short titles get poster scale, long ones stay inside three lines. */
-.np-title[data-fit='m'] {
-  --fit: 0.8;
-}
-
-.np-title[data-fit='l'] {
-  --fit: 0.64;
-  letter-spacing: -0.012em;
-}
-
-.np-artist {
-  display: block;
-  margin-top: var(--s-1);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--ink-2);
-  font-size: var(--t-lead);
-  font-weight: 500;
-}
-
-.np-album {
-  color: var(--ink-3);
-  font-weight: 400;
-}
-
-/* The link-back, as a stencilled plate label in the status row. */
 .np-attr {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   min-height: var(--tap);
-  padding: 0 8px;
-  border-radius: var(--r-s);
-  transition: color var(--dur-fast) ease;
+  font-family: var(--font-mono);
+  font-style: normal;
+  font-size: 0.75rem;
+  color: var(--ink-3);
 }
 
-/* Telemetry: elapsed, the dial, remaining — one instrument line. */
-.np-display .scrub,
-.lyrics-scrub .scrub {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  grid-template-areas: 'el dial rem';
-  align-items: center;
-  column-gap: var(--s-3);
-}
-
-.np-display .scrub-hit,
-.lyrics-scrub .scrub-hit {
-  grid-area: dial;
-}
-
-.np-display .scrub-times,
-.lyrics-scrub .scrub-times {
-  display: contents;
-}
-
-.np-display .scrub-elapsed,
-.lyrics-scrub .scrub-elapsed {
-  grid-area: el;
-}
-
-.np-display .scrub-remaining,
-.lyrics-scrub .scrub-remaining {
-  grid-area: rem;
-}
-
-/* The dial sits at the bottom of the display bay; the title block keeps the top. */
-.np-display .scrub {
-  margin-top: auto;
-}
-
-/* ── Keys on the metal ── */
-
-.np-keys {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--s-4);
-  padding: var(--s-1) var(--s-1) var(--s-2);
-}
-
-.np-device {
-  max-width: 100%;
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-/* ── The channel strip: modes and level ── */
+/* ── The level knob, falling off the plate ── */
 
 .np-channel {
-  display: flex;
-  padding-top: var(--s-3);
-  box-shadow:
-    inset 0 1px 0 rgb(0 0 0 / 0.6),
-    inset 0 2px 0 rgb(255 255 255 / 0.05);
+  position: absolute;
+  z-index: 1;
+  top: calc(var(--tap) + var(--s-2));
+  right: calc(-1 * (var(--pad-r) + var(--knob) * 0.3));
 }
 
-.channel {
-  flex: 1;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  grid-template-areas: 'modes fader';
-  align-items: center;
+.level {
+  position: relative;
+}
+
+.level .knob {
+  --knob: inherit;
+}
+
+.level-readout {
+  position: absolute;
+  left: calc(var(--knob) * 0.02);
+  bottom: calc(var(--knob) * -0.02);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.level-readout .label {
+  font-size: 0.5625rem;
+  color: var(--ink-3);
+}
+
+.level-value {
+  font-size: clamp(1.25rem, 1rem + 1vw, 2rem);
+  line-height: 1;
+}
+
+/* ── The scrub line, full bleed ── */
+
+.np-scrub {
+  grid-area: scrub;
+  position: relative;
+  z-index: 2;
+  margin: var(--s-4) calc(-1 * var(--pad-r)) 0 calc(-1 * var(--pad-l));
+  --scrub-pad: var(--pad-l);
+}
+
+/* ── Keys along the bottom; the queue handle pinned to the bottom edge ── */
+
+.np-keys {
+  grid-area: keys;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
   gap: var(--s-4);
+  padding: var(--s-4) 0 calc(var(--safe-b) + var(--s-5));
 }
 
-/* Upright, the channel is one row: modes, then a long fader (its % readout names it). */
-.channel-label {
-  display: none;
-}
-
-.channel[data-orientation='horizontal'] .latch {
-  width: 46px;
-}
-
-.channel[data-orientation='horizontal'] .fader-value::after {
-  content: '%';
-}
-
-.channel-modes {
-  grid-area: modes;
+.modekeys {
   display: flex;
-  gap: var(--s-2);
+  align-items: flex-end;
+  gap: 12px;
 }
 
-.channel .fader {
-  grid-area: fader;
+.modekeys-rule {
+  align-self: stretch;
+  width: 1px;
+  margin: 4px 4px 0;
+  background: var(--rule);
 }
 
-/* ── Nothing playing: the deck shows your playlists instead of a dead end ── */
+.handle {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  translate: -50% 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-3);
+  min-width: min(360px, 34vw);
+  max-width: 40vw;
+  height: calc(var(--safe-b) + 54px);
+  padding: 0 var(--s-5) var(--safe-b);
+  border-radius: 3px 3px 0 0;
+  background: var(--ink);
+  color: var(--on-ink);
+  white-space: nowrap;
+  transition: translate var(--dur-base) var(--ease-house);
+}
+
+.handle-chev {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+}
+
+.handle-next {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 1.125rem;
+  color: var(--on-ink-2);
+}
+
+.handle:active {
+  translate: -50% -4px;
+}
+
+.np-more {
+  flex: none;
+}
+
+/* ── States: loading, standby, sync notice ── */
+
+.np-sync {
+  position: absolute;
+  z-index: var(--z-float);
+  left: var(--pad-l);
+  bottom: calc(var(--safe-b) + 84px);
+  padding: 6px 10px;
+  background: var(--ink);
+  color: var(--on-ink);
+}
 
 .np-empty {
   flex: 1;
-  display: grid;
-  place-items: center;
   min-height: 0;
+  overflow-y: auto;
+  padding-bottom: var(--s-7);
+}
+
+.np > .np-more {
+  position: absolute;
+  z-index: var(--z-float);
+  top: var(--s-2);
+  right: var(--pad-r);
 }
 
 .np-idle {
-  align-self: stretch;
-  width: 100%;
-  max-width: 1200px;
-  max-height: 100%;
-  margin: 0 auto;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  display: grid;
+  gap: var(--s-6);
 }
 
 .np-idle-head {
   display: grid;
   justify-items: start;
-  gap: var(--s-2);
-  padding: 0 44px var(--s-5) 0; /* clear the ⋮ */
-  margin-bottom: var(--s-5);
-  border-bottom: 1px solid var(--hairline);
+  gap: var(--s-3);
+  padding-top: var(--s-5);
 }
 
 .np-idle-status {
@@ -385,430 +366,314 @@
 
 .np-idle-title {
   font-stretch: var(--w-condensed);
-  font-size: min(var(--t-headline), 13vh);
-  font-weight: 800;
-  line-height: 0.92;
-  letter-spacing: -0.025em;
+  font-weight: 900;
+  font-size: min(var(--t-headline), 18vh);
+  line-height: 0.8;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  -webkit-text-stroke: 2px var(--ink);
+  color: transparent;
 }
 
 .np-idle-sub {
-  color: var(--ink-2);
+  font-family: var(--font-serif);
+  font-style: italic;
   font-size: var(--t-lead);
+  max-width: 34ch;
 }
 
-.np-idle-head .np-device {
-  margin-top: var(--s-2);
+.skel-title {
+  width: 60%;
+  height: 22vh;
 }
 
-/* Upright phones get a gentle nudge — never a wall. */
+.skel-label {
+  width: 20%;
+}
+
+.skel-short {
+  width: 36%;
+}
+
+.skel-dial {
+  width: 100%;
+  height: 8px;
+}
+
+.skel-keys {
+  display: flex;
+  gap: 14px;
+}
+
+.skel-key {
+  width: 104px;
+  height: 64px;
+}
+
+.np-body[aria-busy] {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas: 'status' 'lockup' 'keys';
+  gap: var(--s-4);
+}
+
+.np-body[aria-busy] .np-art {
+  --art: 34vh;
+}
+
+/* The tutorial's up-next list (the real deck uses the queue handle). */
+.np-next {
+  display: none;
+}
+
 .rotate-hint {
   display: flex;
   align-items: center;
   gap: var(--s-3);
-  align-self: flex-start;
-  max-width: calc(100% - 44px);
-  margin-bottom: var(--s-1);
-  padding: 4px 4px 4px var(--s-3);
-  border: 1px solid var(--outline);
-  border-radius: var(--r-m);
-  background: var(--surface-1);
-  box-shadow: var(--bevel);
-  color: var(--ink-2);
-  font-size: 0.875rem;
-  line-height: 1.3;
+  margin-bottom: var(--s-3);
+  padding: var(--s-2) var(--s-2) var(--s-2) var(--s-3);
+  border: 2px solid var(--ink);
+  font-size: var(--t-small);
+}
+
+.rotate-hint > span:nth-child(2) {
+  flex: 1;
 }
 
 .rotate-glyph {
-  display: grid;
-  color: var(--signal);
+  display: inline-grid;
+  place-items: center;
+  rotate: 90deg;
 }
 
-.rotate-glyph svg {
-  animation: rotate-nudge 3.2s var(--ease-in-out) 3;
-}
-
-@keyframes rotate-nudge {
-  0%,
-  45% {
-    rotate: 0deg;
-  }
-  65%,
-  90% {
-    rotate: -90deg;
-  }
-  100% {
-    rotate: 0deg;
-  }
-}
-
-/* Upright: the console's parts line up in one column — display, keys, channel, output. */
-@media (orientation: portrait), (max-width: 479px) {
-  .np-body {
-    padding-top: var(--s-4); /* room for the screen's brackets under the rotate hint */
+/* Narrower plates: the handle keeps its words, drops the next title. */
+@media (max-width: 1299px) {
+  .handle {
+    min-width: 0;
   }
 
-  .np-panel,
-  .np-keys {
-    display: contents;
-  }
-
-  /* (Child selectors follow the DOM: these still live in .np-keys, whose box is dissolved.) */
-  .np-keys > .transport {
-    align-self: center;
-    padding: var(--s-1) 0 var(--s-2);
-  }
-
-  .np-channel {
-    order: 1;
-  }
-
-  .np-keys > .np-device {
-    order: 2;
-    align-self: center;
-  }
-}
-
-/* Tablets held upright: the same stack, at tablet scale. */
-@media (orientation: portrait) and (min-width: 600px) {
-  .np {
-    --np-t: clamp(2.75rem, 7vw, 4.5rem);
-  }
-
-  .np-body {
-    max-width: 640px;
-  }
-}
-
-/* ── Landscape: PartyDeck's identity ──
-   The screen left, the console right at exactly the screen's height, rail below. */
-@media (orientation: landscape) and (min-width: 480px) {
-  .screen[data-route='now'] {
-    overflow: hidden;
-  }
-
-  .np {
-    --np-t: clamp(2rem, 1rem + 3.4vw + 3vh, 7.5rem);
-    --art: min(calc(100% - 12px), 40vw, 740px);
-    padding-top: calc(var(--safe-t) + var(--s-5));
-    padding-bottom: var(--s-5);
-  }
-
-  .np-body > :first-child,
-  .np-body > :last-child {
-    margin-block: 0; /* the portrait auto margins would push the screen and console apart */
-  }
-
-  .np-body {
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-start;
-    max-width: 1560px;
-    gap: clamp(24px, 3.6vw, 72px);
-  }
-
-  .np-art {
-    width: auto;
-    height: var(--art);
-    margin: 0 0 0 6px;
-  }
-
-  /* At least the screen's height (edges align); taller only if its content needs it. */
-  .np-console {
-    flex: 1;
-    flex-direction: row;
-    min-height: var(--art);
-    max-width: 820px;
-  }
-
-  .np-keys {
-    flex-direction: row;
-    justify-content: space-between;
-  }
-
-  .np-device {
-    max-width: 40%;
-  }
-
-  /* The channel stands upright beside the panel, divided by a machined seam. */
-  .np-channel {
-    flex: none;
-    width: 124px;
-    padding-top: 0;
-    padding-left: var(--s-3);
-    box-shadow:
-      inset 1px 0 0 rgb(0 0 0 / 0.6),
-      inset 2px 0 0 rgb(255 255 255 / 0.05);
-  }
-
-  .channel {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto auto minmax(0, 1fr);
-    grid-template-areas:
-      'mode-label'
-      'modes'
-      'lvl-label'
-      'fader';
-    align-items: stretch;
-    justify-items: center;
-    gap: var(--s-2);
-  }
-
-  .channel-label {
-    display: block;
-  }
-
-  .channel-label:first-child {
-    grid-area: mode-label;
-  }
-
-  .channel-label:not(:first-child) {
-    grid-area: lvl-label;
-  }
-
-  .channel-modes {
-    flex-direction: column;
-    gap: var(--s-3);
-  }
-
-  .channel .fader {
-    min-height: 0;
-  }
-
-  .rotate-hint {
+  .handle-next {
     display: none;
   }
 }
 
-/* Short landscape (phones): every pixel of height counts. */
-@media (orientation: landscape) and (max-height: 500px) {
+/* ── Phones held sideways: the same composition, tightened ── */
+@media (max-height: 520px) and (orientation: landscape) {
   .np {
-    --np-t: min(1.75rem + 2vw, 11vh);
-    padding-top: calc(var(--safe-t) + var(--s-3));
-    padding-bottom: var(--s-3);
+    padding-top: var(--s-2);
   }
 
-  .np-console {
-    padding: var(--s-2);
-    gap: var(--s-2);
+  .np-body {
+    --knob: clamp(190px, 56dvh, 280px);
+    --title-max: calc((100dvh - 250px) / 1.66);
   }
 
-  .np-panel {
-    gap: var(--s-2);
+  .level-readout {
+    left: auto;
+    right: calc(100% + 6px);
+    bottom: auto;
+    top: calc(var(--knob) * 0.36);
+    align-items: flex-end;
   }
 
-  .np-display {
-    gap: 2px;
-    padding: var(--s-2) var(--s-3) 0;
-  }
-
-  .np-title {
-    -webkit-line-clamp: 2;
-  }
-
+  .np-status-row,
   .np-album {
     display: none;
   }
 
-  .np-artist {
-    margin-top: 0;
-    font-size: 0.9375rem;
+  .np-channel {
+    top: calc(var(--s-2) * -1);
   }
 
-  .np-keys {
-    padding: 0 2px 4px;
+  .np-line {
+    padding-top: var(--s-2);
+    font-size: 1.125rem;
   }
 
-  .key-play {
-    width: 76px;
-    height: 52px;
+  .np-scrub {
+    margin-top: var(--s-1);
   }
 
-  .key-skip {
-    width: 52px;
+  .scrub-hit {
     height: 48px;
   }
 
-  .transport {
+  .scrub-needle::before {
+    top: 12px;
+    height: 26px;
+  }
+
+  .scrub-ticks {
+    top: 13px;
+  }
+
+  .scrub-minute {
+    top: 6px;
+    height: 18px;
+  }
+
+  .scrub-lit,
+  .scrub-dial::after {
+    top: 24px;
+  }
+
+  .scrub-lit {
+    top: 22px;
+  }
+
+  .np-keys {
+    padding: var(--s-2) 0 calc(var(--safe-b) + var(--s-2));
     gap: var(--s-2);
   }
 
+  .np-keys .key {
+    --key-h: 48px;
+  }
+
+  .np-keys .key-play {
+    width: 118px;
+  }
+
+  .np-keys .key-skip {
+    width: 60px;
+  }
+
+  .key-word {
+    min-width: 70px;
+  }
+
+  .key-trim,
+  .modekeys-rule {
+    display: none;
+  }
+
+  .handle {
+    min-width: 0;
+    height: calc(var(--safe-b) + 46px);
+    padding: 0 var(--s-4) var(--safe-b);
+  }
+
+  .handle-next {
+    display: none;
+  }
+}
+
+/* ── Phones held upright: a compact fallback — the cover, then the title ── */
+@media (max-width: 599px) and (orientation: portrait) {
+  .np {
+    overflow-y: auto;
+  }
+
+  .np-body {
+    --title-max: 17vw;
+    flex: none;
+    grid-template-rows: auto auto auto auto auto;
+  }
+
+  .np-lockup {
+    min-height: auto;
+  }
+
+  .np-status-row {
+    padding-right: 0;
+  }
+
+  .np-lockup {
+    flex-direction: column-reverse;
+    padding-right: 0;
+    gap: var(--s-4);
+  }
+
+  .np-art {
+    --art: min(62vw, 36dvh);
+  }
+
+  .np-line {
+    padding-right: 0;
+    font-size: 1.375rem;
+  }
+
+  /* The knob needs a plate to fall off; upright, the trim keys set the level. */
   .np-channel {
-    width: 70px;
-    padding-left: var(--s-2);
+    display: none;
   }
 
-  .channel-label {
-    display: none !important;
+  .np-keys {
+    flex-wrap: wrap;
+    padding-bottom: calc(var(--safe-b) + 76px);
   }
 
-  .channel .latch {
-    width: 48px;
-    height: 40px;
+  .np-keys .transport {
+    width: 100%;
   }
 
-  .channel-modes {
-    gap: var(--s-2);
+  .np-keys .transport {
+    --key-gap: 10px;
   }
 
-  .np-idle .tiles {
-    grid-auto-flow: column;
-    grid-template-columns: none;
-    grid-auto-columns: clamp(96px, 28vh, 170px);
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    scrollbar-width: none;
+  .np-keys .key-skip {
+    width: 72px;
   }
 
-  .np-idle-head {
-    padding-bottom: var(--s-3);
-    margin-bottom: var(--s-3);
+  .np-keys .key-play {
+    flex: 1;
+    width: auto;
   }
-}
 
-/* ── Ambient: the cover's colour as light in the room, behind the screen ──
-   Registered so the colour itself can cross-fade between tracks. */
-@property --ambient {
-  syntax: '<color>';
-  inherits: false;
-  initial-value: rgb(0 0 0 / 0);
-}
+  .modekeys {
+    width: 100%;
+  }
 
-.np-ambient {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: radial-gradient(70% 55% at 50% 28%, color-mix(in oklab, var(--ambient) 30%, transparent), transparent 72%);
-  transition:
-    --ambient 900ms linear,
-    opacity var(--dur-deliberate) ease;
-}
+  .modekeys .key-word {
+    flex: 1;
+  }
 
-.np-ambient[data-dim] {
-  opacity: 0.4;
-}
+  .handle {
+    width: 100%;
+    max-width: none;
+    left: 50%;
+  }
 
-:root[data-theme='black'] .np-ambient {
-  opacity: 0.6;
-}
-
-:root[data-theme='black'] .np-ambient[data-dim] {
-  opacity: 0.25;
-}
-
-@media (orientation: landscape) and (min-width: 480px) {
-  .np-ambient {
-    background: radial-gradient(52% 88% at 22% 50%, color-mix(in oklab, var(--ambient) 34%, transparent), transparent 76%);
+  .handle-next {
+    display: none;
   }
 }
 
-/* ── State words roll inside their own line box ── */
-.roll {
-  display: inline-grid;
-  overflow: hidden;
-  vertical-align: bottom;
-}
-
-.roll > * {
-  grid-area: 1 / 1;
-}
-
-/* ── Up next: on the display, beside the next key — the next three, numbered ── */
-.np-next {
-  display: none;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-  padding: var(--s-2) 0;
-  margin-top: auto;
-  box-shadow: inset 0 1px 0 var(--hairline);
-  color: var(--ink-2);
-}
-
-.np-next + .scrub {
-  margin-top: 0;
-}
-
-.np-next-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 24px;
-}
-
-.np-next-head svg {
-  color: var(--ink-3);
-  transition: translate var(--dur-fast) var(--ease-out);
-}
-
-.np-next-list li {
-  display: flex;
-  align-items: baseline;
-  gap: var(--s-3);
-  min-width: 0;
-  min-height: 26px;
-}
-
-/* One by default; three where the display has the height (desktop). */
-.np-next-list li:nth-child(n + 2) {
-  display: none;
-}
-
-.np-next-num {
-  flex: none;
-  color: var(--ink-3);
-}
-
-.np-next-title {
-  flex: 0 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--ink);
-  font-weight: 560;
-}
-
-.np-next-sub {
-  flex: 1 1 0;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--ink-3);
-  font-size: var(--t-small);
-}
-
-@media (orientation: landscape) and (min-height: 620px) {
-  .np-next {
-    display: flex;
+/* Tablets held upright: the cover above, the knob still falling off the edge. */
+@media (min-width: 600px) and (orientation: portrait) {
+  .np-body {
+    --knob: clamp(320px, 44vw, 460px);
+    --title-max: min(12vw, calc((100dvh - 700px) / 1.66));
   }
-}
 
-@media (orientation: landscape) and (min-height: 820px) {
-  .np-next-list li:nth-child(n + 2) {
-    display: flex;
+  .np-lockup {
+    flex-direction: column-reverse;
+  }
+
+  .np-art {
+    --art: min(44vw, 36dvh);
   }
 }
 
 @media (hover: hover) and (pointer: fine) {
+  .handle:hover {
+    translate: -50% -4px;
+  }
+
   .np-attr:hover {
     color: var(--ink);
-  }
-
-  a.np-next:hover .np-next-list li:first-child .np-next-title {
     text-decoration: underline;
-    text-decoration-color: var(--hairline-strong);
-    text-underline-offset: 3px;
-  }
-
-  a.np-next:hover .np-next-head svg {
-    translate: 3px 0;
-    color: var(--ink);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .rotate-glyph svg {
-    animation: none;
+  .np-title {
+    transition: none;
+  }
+
+  .handle,
+  .handle:hover,
+  .handle:active {
+    transition: none;
+    translate: -50% 0;
   }
 }

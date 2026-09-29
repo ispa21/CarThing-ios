@@ -1,5 +1,5 @@
 import { AnimatePresence, m, type Variants } from 'motion/react'
-import { useEffect, useRef, useState, type CSSProperties, type MouseEventHandler, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type MouseEventHandler, type ReactNode } from 'react'
 import { swipeDirection, SWIPE_COMMIT_PX, type SwipeDirection } from '../lib/gesture'
 import { feedback } from '../sensory/feedback'
 import { Artwork } from '../ui/Artwork'
@@ -7,7 +7,6 @@ import { Icon } from '../ui/Icon'
 import type { Clock } from '../ui/clock'
 import { EASE_EXPO, EASE_OUT } from '../ui/motion'
 import { Scrubber } from '../ui/Scrubber'
-import { useArtColor } from '../ui/useArtColor'
 import { TransportKeys, type TransportKeysProps } from './Transport'
 
 /** +1: the next track arrives from the right (like a swipe left). −1: from the left. */
@@ -26,8 +25,14 @@ const lineMotion: Variants = {
   exit: { opacity: 0, y: '-70%', transition: { duration: 0.18, ease: EASE_OUT } },
 }
 
-/** Title length decides its size tier: the marquee fits its words. */
-const titleFit = (t: string | null) => (!t || t.length <= 16 ? undefined : t.length <= 34 ? 'm' : 'l')
+/** Title length decides its size tier: the lockup fits its words. */
+const titleFit = (t: string | null) => (!t || t.length <= 12 ? undefined : t.length <= 22 ? 'm' : t.length <= 40 ? 'l' : 'xl')
+
+/** Short titles stack one word per line, so the record sits right against them. */
+const titleStacks = (t: string | null) => {
+  const words = t?.trim().split(/\s+/) ?? []
+  return words.length > 1 && words.length <= 3 && words.every((w) => w.length <= 11)
+}
 
 export interface DeckProps {
   trackKey: string | null
@@ -100,68 +105,57 @@ export function Deck(p: DeckProps) {
       p.onSwipe?.(d)
     })
 
-  const ambient = useArtColor(p.art)
+  const paused = !p.transport.isPlaying
 
   return (
-    <>
-      {/* The room's light: a glow behind the art in the cover's own colour. Dims when paused. */}
-      <div
-        className="np-ambient"
-        data-dim={!p.transport.isPlaying || undefined}
-        style={ambient ? ({ '--ambient': ambient } as CSSProperties) : undefined}
-        aria-hidden="true"
-      />
-      <div className="np-body">
-        <SwipeArt art={p.art} alt={p.artAlt} dir={shown.dir} onSwipe={onSwipe} />
-        {/* The console: a display bay (what's playing, the dial) over the keys, the channel strip bolted on the side. */}
-        <div className="np-console">
-          <div className="np-panel">
-            <div className="np-display">
-              {(p.status || p.menu || p.attribution) && (
-                <div className="np-status-row">
-                  {p.status && (
-                    <p className="np-status label">
-                      <span className="led" data-off={!p.status.live || undefined} aria-hidden="true" />
-                      <StatusText text={p.status.text} />
-                    </p>
-                  )}
-                  <div className="np-status-tools">
-                    {p.attribution}
-                    {p.menu}
-                  </div>
-                </div>
-              )}
-              {/* Outgoing and incoming lines share one grid cell. (Not mode="popLayout":
-                  it injects a <style> element, which our CSP rightly blocks.) */}
-              <div className="np-meta-stack" data-pending={skipping || undefined}>
-                <AnimatePresence initial={false}>
-                  <m.div key={p.trackKey} initial="enter" animate="center" exit="exit">
-                    <h2 className="np-mask">
-                      <m.span className="np-title" data-fit={titleFit(p.title)} variants={lineMotion} custom={0}>
-                        {p.title}
-                      </m.span>
-                    </h2>
-                    <p className="np-mask">
-                      <m.span className="np-artist" variants={lineMotion} custom={1}>
-                        {p.artist}
-                        {p.album && <span className="np-album"> — {p.album}</span>}
-                      </m.span>
-                    </p>
-                  </m.div>
-                </AnimatePresence>
-              </div>
-              {p.next}
-              <Scrubber clock={p.clock} durationMs={p.durationMs} onSeek={p.onSeek} disabled={p.seekDisabled} label="Song position" />
-            </div>
-            <div className="np-keys">
-              <TransportKeys {...transport} />
-              {p.footer}
-            </div>
-          </div>
-          {p.channel && <div className="np-channel">{p.channel}</div>}
+    <div className="np-body" data-paused={paused || undefined}>
+      {(p.status || p.menu) && (
+        <div className="np-status-row">
+          {p.status && (
+            <p className="np-status readout">
+              <span className="lamp" data-live={p.status.live || undefined} aria-hidden="true" />
+              <StatusText text={p.status.text} />
+            </p>
+          )}
+          <span className="np-status-rule" aria-hidden="true" />
+          {p.menu}
         </div>
+      )}
+      {/* The lockup: the title is the interface, and the record sits in it like a letter.
+          Paused, the title drains to an outline. Outgoing and incoming titles share one
+          grid cell (not mode="popLayout": it injects a <style>, which our CSP blocks). */}
+      <div className="np-lockup">
+        <div className="np-meta-stack" data-pending={skipping || undefined}>
+          <AnimatePresence initial={false}>
+            <m.h2 key={p.trackKey} className="np-mask" initial="enter" animate="center" exit="exit">
+              <m.span className="np-title" data-fit={titleFit(p.title)} data-stack={titleStacks(p.title) || undefined} variants={lineMotion} custom={0}>
+                {p.title}
+              </m.span>
+            </m.h2>
+          </AnimatePresence>
+        </div>
+        <SwipeArt art={p.art} alt={p.artAlt} dir={shown.dir} onSwipe={onSwipe} />
       </div>
-    </>
+      <p className="np-line">
+        <span className="np-artist">{p.artist}</span>
+        {p.album && (
+          <span className="np-album">
+            {' '}
+            — from <span className="np-album-name">{p.album}</span>
+          </span>
+        )}
+        {p.attribution}
+      </p>
+      {p.channel && <div className="np-channel">{p.channel}</div>}
+      <div className="np-scrub">
+        <Scrubber clock={p.clock} durationMs={p.durationMs} onSeek={p.onSeek} disabled={p.seekDisabled} label="Song position" />
+      </div>
+      <div className="np-keys">
+        <TransportKeys {...transport} />
+        {p.next}
+        {p.footer}
+      </div>
+    </div>
   )
 }
 

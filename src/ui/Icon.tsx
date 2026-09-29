@@ -1,4 +1,4 @@
-// PartyDeck's own glyph set: 24px grid, 2px rounded strokes, filled transport keys.
+// PartyDeck's own glyph set: 24px grid, 2px square-cut strokes, filled transport keys.
 
 const paths = {
   play: <path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5Z" fill="currentColor" stroke="none" />,
@@ -92,6 +92,16 @@ const paths = {
     </>
   ),
   add: <path d="M12 5v14M5 12h14" />,
+  minus: <path d="M5 12h14" />,
+  /** Trim: three faders — settings. */
+  trim: (
+    <>
+      <path d="M6 3v18M12 3v18M18 3v18" />
+      <rect x="3.5" y="13" width="5" height="4" fill="currentColor" />
+      <rect x="9.5" y="6" width="5" height="4" fill="currentColor" />
+      <rect x="15.5" y="10" width="5" height="4" fill="currentColor" />
+    </>
+  ),
   external: (
     <>
       <path d="M14 5h5v5M19 5l-8 8" />
@@ -165,8 +175,8 @@ export function Icon({ name, size = 24, className }: { name: IconName; size?: nu
       fill="none"
       stroke="currentColor"
       strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      strokeLinecap="square"
+      strokeLinejoin="miter"
       aria-hidden="true"
       focusable="false"
     >

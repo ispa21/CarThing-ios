@@ -14,7 +14,7 @@ const securityHeaders = Object.fromEntries(
   vercel.headers.find((h) => h.source === '/(.*)')!.headers.map((h) => [h.key, h.value]),
 )
 
-const GRAPHITE = '#17141B'
+const PLATE = '#ECE6D8'
 
 export default defineConfig({
   // Spotify disallows `localhost` redirect URIs; use the loopback IP.
@@ -35,8 +35,8 @@ export default defineConfig({
         scope: '/',
         display: 'standalone',
         orientation: 'any',
-        theme_color: GRAPHITE,
-        background_color: GRAPHITE,
+        theme_color: PLATE,
+        background_color: PLATE,
         categories: ['music', 'entertainment'],
         icons: [
           { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },

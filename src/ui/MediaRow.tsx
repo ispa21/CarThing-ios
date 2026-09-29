@@ -21,12 +21,14 @@ interface Props {
   /** Resolves true once Spotify accepted it; the row then confirms. */
   onQueue?: (item: MediaItem) => Promise<boolean>
   lead?: ReactNode
+  /** After the duration: e.g. when a queued track starts. */
+  trail?: ReactNode
   showKind?: boolean
   /** This is what's playing: a lamp in the gutter (doesn't shift the row). */
   live?: boolean
 }
 
-export function MediaRow({ item, onPlay, onQueue, lead, showKind = false, live = false }: Props) {
+export function MediaRow({ item, onPlay, onQueue, lead, trail, showKind = false, live = false }: Props) {
   const [added, setAdded] = useState(false)
   useEffect(() => {
     if (!added) return
@@ -64,6 +66,7 @@ export function MediaRow({ item, onPlay, onQueue, lead, showKind = false, live =
       ) : (
         <div className="row-main">{body}</div>
       )}
+      {trail}
       {item.durationMs ? (
         <span className="row-time readout" aria-hidden="true">
           {formatTime(item.durationMs)}

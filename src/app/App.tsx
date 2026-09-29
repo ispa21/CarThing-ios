@@ -14,7 +14,10 @@ import { startPlaybackSync, stopPlaybackSync } from '../spotify/playbackService'
 import { useSession } from '../store/session'
 import { THEME_COLORS, useSettings } from '../store/settings'
 import { Toaster } from '../ui/Feedback'
+import { useRecordColours } from '../ui/useRecordColours'
+import { usePlayback } from '../store/playback'
 import { DeviceSheet } from './DeviceSheet'
+import { RAIL_MODES, RAIL_TABS } from './nav'
 import { Rail } from './Rail'
 import { matchRoute, navigate, usePathname, type Route } from './router'
 import { useShortcuts } from './shortcuts'
@@ -31,7 +34,7 @@ const TITLES: Record<Route, string> = {
 }
 
 /** Full-screen routes without the rail. */
-const IMMERSIVE: Route[] = ['lyrics', 'lyrics-demo', 'tutorial']
+const IMMERSIVE: Route[] = ['lyrics-demo', 'tutorial']
 
 export function App() {
   const route = matchRoute(usePathname())
@@ -96,15 +99,45 @@ function ConnectedApp({ route, onboarding }: { route: Route; onboarding: boolean
   const immersive = IMMERSIVE.includes(route)
   return (
     <div className="shell" data-immersive={immersive || undefined} data-route={route}>
-      <Screen route={route} immersive={immersive} />
+      <RecordLight />
       {!immersive && <Rail route={route} />}
+      <Screen route={route} immersive={immersive} />
       <DeviceSheet />
     </div>
   )
 }
 
+/**
+ * The one colour that isn't ours: sampled from the cover that's playing and set on
+ * :root, where the lamp, the slab behind the art and the lyrics flood read it.
+ * The cover itself is never touched. Registered as a <color> (tokens.css), so it
+ * cross-fades between tracks instead of snapping.
+ */
+function RecordLight() {
+  const art = usePlayback((s) => (s.hasPlayback ? s.playback.albumArt : null))
+  const colours = useRecordColours(art)
+  useEffect(() => {
+    const root = document.documentElement.style
+    if (colours) {
+      root.setProperty('--record', colours.record)
+      root.setProperty('--record-deep', colours.deep)
+    } else {
+      root.removeProperty('--record')
+      root.removeProperty('--record-deep')
+    }
+  }, [colours])
+  useEffect(
+    () => () => {
+      document.documentElement.style.removeProperty('--record')
+      document.documentElement.style.removeProperty('--record-deep')
+    },
+    [],
+  )
+  return null
+}
+
 /** The rail's order, left to right: screens enter from the side you travelled toward. */
-const RAIL_ORDER: Route[] = ['now', 'search', 'queue', 'lyrics']
+const RAIL_ORDER: Route[] = [...RAIL_TABS, ...RAIL_MODES].map((t) => t.route)
 
 function direction(from: Route, to: Route): 'forward' | 'back' | undefined {
   const a = RAIL_ORDER.indexOf(from)

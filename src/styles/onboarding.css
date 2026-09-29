@@ -166,12 +166,12 @@
   border: 1px solid var(--outline);
   border-radius: 14px;
   background:
-    radial-gradient(closest-side, #07080a 80%, transparent 81%),
+    radial-gradient(closest-side, var(--ink) 80%, transparent 81%),
     var(--metal);
   box-shadow:
     var(--bevel),
     0 6px 0 var(--outline),
-    0 30px 60px -24px rgb(0 0 0 / 0.9);
+    10px 12px 0 rgb(21 21 19 / 0.14);
 }
 
 .power-ring {
@@ -510,7 +510,7 @@
   box-shadow:
     var(--bevel),
     0 4px 0 var(--outline),
-    0 30px 60px -20px rgb(0 0 0 / 0.9);
+    10px 12px 0 rgb(21 21 19 / 0.14);
 }
 
 .practice-panel-head {
@@ -569,7 +569,7 @@
   box-shadow:
     var(--bevel),
     0 5px 0 var(--outline),
-    0 30px 60px -20px rgb(0 0 0 / 0.9);
+    10px 12px 0 rgb(21 21 19 / 0.14);
   text-align: center;
 }
 

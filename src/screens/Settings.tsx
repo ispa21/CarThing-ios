@@ -11,8 +11,8 @@ import { useUi } from '../store/ui'
 import { Icon } from '../ui/Icon'
 
 const THEMES: Array<{ value: Theme; label: string }> = [
-  { value: 'graphite', label: 'Graphite' },
-  { value: 'black', label: 'Black' },
+  { value: 'plate', label: 'Plate' },
+  { value: 'night', label: 'Night' },
 ]
 
 type BoolSetting = 'sound' | 'haptics' | 'autoScroll'

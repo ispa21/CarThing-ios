@@ -78,6 +78,8 @@ export interface MediaItem {
   art: string | null
   url: string | null
   durationMs?: number
+  /** Playlists: how many tracks it holds (sizes it on the table). */
+  count?: number
 }
 
 export interface Device {
@@ -221,7 +223,8 @@ export function normalizeQueue(raw: RawQueue | null): QueueView {
   if (!raw) return { current: null, upNext: [] }
   return {
     current: raw.currently_playing ? normalizeItem(raw.currently_playing) : null,
-    upNext: raw.queue.filter((i): i is RawItem => Boolean(i?.uri)).map((i) => normalizeItem(i)),
+    // The first is shown at scale on the Queue; the rest as rows.
+    upNext: raw.queue.filter((i): i is RawItem => Boolean(i?.uri)).map((i, n) => normalizeItem(i, n === 0 ? 300 : 64)),
   }
 }
 
@@ -238,6 +241,7 @@ export function normalizePlaylist(p: RawPlaylist, artWidth = 300): MediaItem {
       .join(', '),
     art: pickImage(p.images, artWidth),
     url: safeSpotifyUrl(p.external_urls?.spotify),
+    ...(total != null ? { count: total } : {}),
   }
 }
 

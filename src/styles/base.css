@@ -1,4 +1,17 @@
-/* ── Base: reset, the display glass, type defaults, focus ─────────────── */
+/* ── Base: reset, the plate, the three type voices, focus ─────────────── */
+
+/* The record's colour is a registered <color>, so it cross-fades between tracks. */
+@property --record {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #8f897b;
+}
+
+@property --record-deep {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #4a463e;
+}
 
 *,
 *::before,
@@ -15,16 +28,16 @@ body,
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  transition:
+    --record var(--dur-colour) linear,
+    --record-deep var(--dur-colour) linear;
 }
 
-/* The display glass: a faint top-left sheen and static grain, so the dark
-   reads as a material rather than an empty page. Nothing here animates. */
+/* The plate: flat ecru with a faint printed line screen, so it reads as a material. */
 body {
   margin: 0;
-  background-color: var(--bg);
-  background-image:
-    radial-gradient(110% 70% at 18% -10%, rgb(190 215 255 / 0.05), transparent 62%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .045 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-color: var(--plate);
+  background-image: repeating-linear-gradient(0deg, rgb(21 21 19 / 0.022) 0 1px, transparent 1px 4px);
   color: var(--ink);
   font-family: var(--font-ui);
   font-size: var(--t-body);
@@ -35,12 +48,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior: none;
-  transition: background-color var(--dur-slow) ease;
 }
 
-/* OLED black stays black: no sheen, no grain lighting up pixels. */
-:root[data-theme='black'] body {
-  background-image: none;
+:root[data-theme='night'] body {
+  background-image: repeating-linear-gradient(0deg, rgb(236 230 216 / 0.02) 0 1px, transparent 1px 4px);
 }
 
 h1,
@@ -48,7 +59,8 @@ h2,
 h3,
 p,
 ul,
-ol {
+ol,
+figure {
   margin: 0;
   font-weight: inherit;
   font-size: inherit;
@@ -97,14 +109,14 @@ pre {
 }
 
 ::selection {
-  background: var(--signal);
-  color: var(--signal-ink);
+  background: var(--ink);
+  color: var(--on-ink);
 }
 
-/* Focus is live state, so it's amber. The outline follows each control's own radius. */
+/* Focus is printed: a hard ink ring, offset so it never touches the control. */
 :focus-visible {
-  outline: 2px solid var(--signal);
-  outline-offset: 3px;
+  outline: 2px solid var(--ink);
+  outline-offset: 4px;
 }
 
 main:focus,
@@ -121,26 +133,61 @@ main:focus,
   white-space: nowrap;
 }
 
-/* ── Type roles (used across screens) ── */
+/* ── The three voices ── */
 
-/* Faceplate label: expanded caps. Encodes what a zone is, never decoration. */
+/* The machine's legends: expanded caps, printed small. */
 .label {
   font-stretch: var(--w-expanded);
   font-size: var(--t-label);
   font-weight: 700;
   line-height: 1.2;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--ink-3);
+  color: inherit;
 }
 
-/* Instrument readout: mono, tabular, never reflows as digits change. */
+/* The machine's state: lowercase mono, tabular, never reflows as digits change. */
 .readout {
   font-family: var(--font-mono);
   font-size: var(--t-readout);
   font-weight: 450;
-  letter-spacing: 0.02em;
+  letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
-  color: var(--ink-2);
 }
 
+/* People and places: the italic serif. */
+.serif {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+/* The song: condensed black caps. */
+.display {
+  font-stretch: var(--w-condensed);
+  font-weight: 900;
+  line-height: 0.8;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+}
+
+/* The one lamp. Off: print grey. Live: the record's colour. Fault: red. */
+.lamp {
+  display: inline-block;
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ink-4);
+  transition: background-color var(--dur-fast) ease;
+}
+
+.lamp[data-live] {
+  background: var(--record);
+  box-shadow: 0 0 0 3px var(--rule-soft);
+}
+
+.lamp[data-fault] {
+  background: var(--error);
+}

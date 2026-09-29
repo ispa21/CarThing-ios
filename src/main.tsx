@@ -1,7 +1,9 @@
-// One variable family whose width axis is the voice (condensed marquee ↔ expanded
-// faceplate), plus a mono for readouts. Self-hosted: the CSP allows fonts from 'self' only.
+// Three voices: Archivo (its width axis: condensed song titles ↔ expanded legends),
+// Martian Mono for the machine, Instrument Serif for people. Self-hosted: the CSP allows fonts from 'self' only.
 import '@fontsource-variable/archivo/wdth.css'
 import '@fontsource-variable/martian-mono/wdth.css'
+import '@fontsource/instrument-serif/latin-400-italic.css'
+import '@fontsource/instrument-serif/latin-400.css'
 import './styles/tokens.css'
 import './styles/base.css'
 import './styles/controls.css'

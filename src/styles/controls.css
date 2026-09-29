@@ -1,8 +1,8 @@
-/* ── Controls: keycaps, latches, lamps, levers, the dial, the fader ────── */
-
-/* Keys are physical: a hard, blur-free drop under a bevelled cap, and a press that
-   travels down onto it (translate + drop collapsing). `translate`/`scale` are used as
-   individual properties so they compose with Motion's inline transform on PressKey. */
+/* ── Controls: keys, the scrub line, the knob, levers, fields ──────────────
+   Keys are printed-and-machined: ecru caps, a 2px ink edge, a hard ink drop.
+   A press travels down onto the drop; a latched key stays down and inverts.
+   `translate` is used as its own property so it composes with Motion's inline
+   transform on PressKey. */
 
 .btn {
   display: inline-flex;
@@ -11,91 +11,70 @@
   gap: var(--s-2);
   min-height: 48px;
   padding: 0 var(--s-5);
-  border: 1px solid var(--outline);
+  border: 2px solid var(--ink);
   border-radius: var(--r-m);
-  background: linear-gradient(180deg, #2d3237, #22262b);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.09),
-    var(--drop);
+  background: var(--plate-hi);
+  box-shadow: 0 5px 0 var(--ink);
   color: var(--ink);
-  font-weight: 650;
-  font-size: 0.9375rem;
-  letter-spacing: 0.01em;
+  font-stretch: var(--w-expanded);
+  font-size: var(--t-label);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   white-space: nowrap;
   transition:
     translate var(--dur-press) var(--ease-out),
-    box-shadow var(--dur-press) ease,
+    box-shadow var(--dur-press) var(--ease-out),
     background-color var(--dur-fast) ease,
-    opacity var(--dur-fast) ease;
+    color var(--dur-fast) ease;
 }
 
 .btn:active:not(:disabled) {
-  translate: 0 3px;
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.06),
-    var(--drop-pressed);
+  translate: 0 4px;
+  box-shadow: 0 1px 0 var(--ink);
 }
 
 .btn:disabled {
-  opacity: 0.4;
+  opacity: 0.45;
 }
 
-/* Primary = the bone keycap. One per screen. */
 .btn-primary {
-  background: linear-gradient(180deg, var(--key), var(--key-shade));
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.7),
-    inset 0 -2px 0 rgb(0 0 0 / 0.12),
-    var(--drop);
-  color: var(--key-ink);
-  font-weight: 750;
-}
-
-.btn-primary:active:not(:disabled) {
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.5),
-    var(--drop-pressed);
+  background: var(--ink);
+  color: var(--on-ink);
 }
 
 .btn-quiet {
   border-color: transparent;
   background: transparent;
   box-shadow: none;
-  color: var(--ink-2);
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }
 
 .btn-quiet:active:not(:disabled) {
-  translate: none;
+  translate: 0 1px;
   box-shadow: none;
-  background: var(--surface-1);
 }
 
 .btn-danger {
-  background: linear-gradient(180deg, #3a2322, #2b1b1b);
   color: var(--error);
+  border-color: var(--error);
+  box-shadow: 0 5px 0 var(--error);
+}
+
+.btn-danger[data-armed] {
+  background: var(--error);
+  color: var(--plate-hi);
 }
 
 .btn-small {
   min-height: var(--tap);
   padding: 0 var(--s-4);
-  font-size: 0.875rem;
 }
 
 .btn-block {
   width: 100%;
-  margin-top: var(--s-3);
 }
-
-/* Armed for a destructive second press: the whole cap lights red. */
-.btn-danger[data-armed] {
-  background: var(--error);
-  box-shadow:
-    0 0 18px var(--error-glow),
-    var(--drop);
-  color: #1c0906;
-}
-
-/* ── Icon buttons: flat tools, hard-edged ── */
 
 .icon-btn {
   display: inline-grid;
@@ -103,35 +82,36 @@
   flex: none;
   width: var(--tap);
   height: var(--tap);
-  border-radius: var(--r-m);
-  color: var(--ink-2);
+  border-radius: var(--r-s);
+  color: var(--ink);
   transition:
-    scale var(--dur-press) var(--ease-out),
+    translate var(--dur-press) var(--ease-out),
     background-color var(--dur-fast) ease,
     color var(--dur-fast) ease;
 }
 
 .icon-btn:active:not(:disabled) {
-  scale: 0.92;
-  background: var(--surface-3);
-  color: var(--ink);
+  translate: 0 2px;
 }
 
 .icon-btn:disabled {
-  opacity: 0.36;
+  opacity: 0.35;
 }
 
 .icon-btn[aria-pressed='true'],
 .icon-btn[aria-current] {
-  color: var(--ink);
+  background: var(--ink);
+  color: var(--on-ink);
 }
 
 .icon-btn-strong {
-  color: var(--ink);
+  border: 2px solid var(--ink);
+  background: var(--plate-hi);
 }
 
 .icon-btn[data-added] {
-  color: var(--success);
+  background: var(--ink);
+  color: var(--on-ink);
 }
 
 .icon-btn[data-added] svg {
@@ -140,14 +120,13 @@
 
 @keyframes pop {
   from {
-    scale: 0.6;
-    opacity: 0;
+    scale: 0.4;
   }
 }
 
 .icon-btn-spacer {
   width: var(--tap);
-  flex: none;
+  height: var(--tap);
 }
 
 .icon-btn[data-spin] svg {
@@ -160,47 +139,30 @@
   }
 }
 
-/* ── Indicator lights: small, rectangular, each colour one meaning ── */
-
+/* The small status lamp. Off is print grey; on is the record's colour. */
 .led {
   display: inline-block;
   flex: none;
   width: 8px;
   height: 8px;
-  border-radius: 2px;
-  background: var(--signal);
-  box-shadow:
-    0 0 0 1px rgb(0 0 0 / 0.6),
-    var(--glow);
+  border-radius: 50%;
+  background: var(--record);
 }
 
 .led[data-tone='mode'] {
-  background: var(--mode);
-  box-shadow:
-    0 0 0 1px rgb(0 0 0 / 0.6),
-    0 0 10px var(--mode-glow);
+  background: var(--ink);
 }
 
 .led[data-tone='ok'] {
   background: var(--success);
-  box-shadow:
-    0 0 0 1px rgb(0 0 0 / 0.6),
-    0 0 10px var(--success-glow);
 }
 
 .led[data-tone='error'] {
   background: var(--error);
-  box-shadow:
-    0 0 0 1px rgb(0 0 0 / 0.6),
-    0 0 10px var(--error-glow);
 }
 
-/* Off: the lens is still there, dark. */
 .led[data-off] {
-  background: #20252a;
-  box-shadow:
-    0 0 0 1px rgb(0 0 0 / 0.6),
-    inset 0 1px 0 rgb(255 255 255 / 0.06);
+  background: var(--ink-4);
 }
 
 .led-pulse {
@@ -209,35 +171,27 @@
 
 @keyframes led-pulse {
   from {
-    opacity: 0.3;
+    opacity: 0.35;
   }
 }
-
-/* ── Chips: the output selector, a labelled plate ── */
 
 .chip {
   display: inline-flex;
   align-items: center;
   gap: var(--s-2);
   min-height: var(--tap);
-  min-width: 0;
+  max-width: 100%;
   padding: 0 var(--s-3);
-  border: 1px solid var(--outline);
-  border-radius: var(--r-m);
-  background: var(--surface-1);
-  box-shadow:
-    var(--bevel),
-    0 2px 0 var(--outline);
-  color: var(--ink-2);
-  transition:
-    translate var(--dur-press) var(--ease-out),
-    box-shadow var(--dur-press) ease,
-    color var(--dur-fast) ease;
+  border: 2px solid var(--ink);
+  border-radius: var(--r-s);
+  background: var(--plate-hi);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  transition: translate var(--dur-press) var(--ease-out);
 }
 
 .chip:active {
   translate: 0 2px;
-  box-shadow: var(--bevel);
 }
 
 .chip > span:not(.led) {
@@ -248,32 +202,22 @@
 
 .chip svg {
   flex: none;
-  color: var(--ink-3);
 }
 
-/* ── Search field: a recessed input bay ── */
+/* ── Fields ── */
 
 .field {
   display: flex;
   align-items: center;
   gap: var(--s-3);
   min-height: 56px;
-  padding: 0 var(--s-4);
-  border-radius: var(--r-m);
-  background: var(--bay);
+  padding: 0 var(--s-3);
+  border-bottom: 2px solid var(--ink);
   color: var(--ink-3);
-  box-shadow: var(--recess);
-  transition:
-    box-shadow var(--dur-fast) ease,
-    color var(--dur-fast) ease;
 }
 
 .field:focus-within {
-  color: var(--signal);
-  box-shadow:
-    var(--recess),
-    0 0 0 2px var(--signal),
-    0 0 18px var(--signal-dim);
+  color: var(--ink);
 }
 
 .field[data-busy] svg {
@@ -289,99 +233,67 @@
   background: none;
   color: var(--ink);
   font-size: 1.125rem; /* ≥16px: iOS doesn't zoom on focus */
-  font-weight: 500;
 }
 
 .field input::placeholder {
   color: var(--ink-3);
-  font-weight: 400;
 }
 
-.field input::-webkit-search-cancel-button {
-  filter: invert(0.7);
-}
-
-form[role='search'] {
-  margin-bottom: var(--s-5);
-}
-
-/* ── Switch: a lever in a slot, with a lens that lights cyan when engaged ── */
+/* ── Switch: a lever thrown along a slot ── */
 
 .switch {
   appearance: none;
   -webkit-appearance: none;
   position: relative;
   flex: none;
-  width: 58px;
-  height: 30px;
+  width: 60px;
+  height: 32px;
   margin: 0;
+  border: 2px solid var(--ink);
   border-radius: var(--r-s);
-  background: var(--bay);
-  box-shadow: var(--recess);
+  background: var(--plate-lo);
   cursor: pointer;
-  transition: box-shadow var(--dur-base) ease;
+  transition: background-color var(--dur-fast) ease;
 }
 
-/* The lever cap: machined, with grip lines. */
 .switch::before {
   content: '';
   position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 26px;
+  top: 2px;
+  left: 2px;
+  width: 24px;
   height: 24px;
-  border: 1px solid var(--outline);
-  border-radius: 3px;
-  background:
-    repeating-linear-gradient(90deg, rgb(0 0 0 / 0.28) 0 1px, transparent 1px 4px) center / 12px 12px no-repeat,
-    linear-gradient(180deg, var(--key), var(--key-shade));
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.6);
-  transition: translate var(--dur-base) var(--ease-out);
+  border: 2px solid var(--ink);
+  border-radius: 2px;
+  background: repeating-linear-gradient(90deg, var(--ink) 0 2px, transparent 2px 5px) center / 10px 12px no-repeat, var(--plate-hi);
+  /* A throw with a small overshoot: the lever lands, the slot fills after. */
+  transition: translate 110ms cubic-bezier(0.5, 0, 0.1, 1.4);
 }
 
-/* The lens at the open end of the slot. */
-.switch::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  right: 7px;
-  width: 6px;
-  height: 6px;
-  margin-top: -3px;
-  border-radius: 1px;
-  background: #20252a;
-  transition:
-    background-color var(--dur-fast) ease,
-    box-shadow var(--dur-fast) ease;
+.switch:checked {
+  background: var(--ink);
+  transition-delay: 40ms;
 }
 
 .switch:checked::before {
-  translate: 26px 0;
-}
-
-.switch:checked::after {
-  right: auto;
-  left: 7px;
-  background: var(--mode);
-  box-shadow: 0 0 8px var(--mode-glow);
+  translate: 28px 0;
 }
 
 .switch:focus-visible {
-  outline-offset: 3px;
+  outline-offset: 4px;
 }
 
-/* ── Segmented: a row of latching keys — the chosen one stays down, lit ── */
+/* ── Segmented: a row of latching keys — the chosen one stays down, inverted ── */
 
 .seg {
   display: grid;
   grid-auto-columns: 1fr;
   grid-auto-flow: column;
-  gap: 4px;
+  gap: 8px;
   flex: none;
-  padding: 4px 4px 6px;
-  border-radius: var(--r-m);
-  background: var(--bay);
-  box-shadow: var(--recess);
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 2px 2px 7px;
 }
 
 .seg label {
@@ -403,561 +315,425 @@ form[role='search'] {
   place-items: center;
   min-height: var(--tap);
   padding: 0 var(--s-3);
-  border: 1px solid var(--outline);
+  border: 2px solid var(--ink);
   border-radius: var(--r-s);
-  background: linear-gradient(180deg, #2b3035, #212529);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.08),
-    0 3px 0 var(--outline);
-  color: var(--ink-2);
+  background: var(--plate-hi);
+  box-shadow: 0 4px 0 var(--ink);
+  font-family: var(--font-mono);
   font-size: 0.8125rem;
-  font-weight: 650;
   white-space: nowrap;
   transition:
     translate var(--dur-press) var(--ease-out),
     box-shadow var(--dur-press) ease,
+    background-color var(--dur-fast) ease,
     color var(--dur-fast) ease;
 }
 
 .seg input:checked + span {
   translate: 0 3px;
-  background: #1c2024;
-  box-shadow: inset 0 2px 3px rgb(0 0 0 / 0.5);
-  color: var(--ink);
-}
-
-/* The lens on a latched key. */
-.seg input:checked + span::before {
-  content: '';
-  position: absolute;
-  top: 4px;
-  left: 50%;
-  width: 14px;
-  height: 3px;
-  margin-left: -7px;
-  border-radius: 1px;
-  background: var(--mode);
-  box-shadow: 0 0 8px var(--mode-glow);
+  box-shadow: 0 1px 0 var(--ink);
+  background: var(--ink);
+  color: var(--on-ink);
 }
 
 .seg input:focus-visible + span {
-  outline: 2px solid var(--signal);
-  outline-offset: 2px;
+  outline: 2px solid var(--ink);
+  outline-offset: 4px;
 }
 
-/* ── Transport keys ── */
+/* ── Keys ── */
 
 .transport {
   display: flex;
-  align-items: center;
-  gap: var(--s-3);
+  align-items: flex-end;
+  gap: var(--key-gap, 14px);
 }
 
 .key {
+  --key-h: clamp(52px, 8.4vh, 72px);
   position: relative;
-  display: grid;
-  place-items: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
   flex: none;
-  border: 1px solid var(--outline);
+  height: var(--key-h);
+  min-width: var(--tap);
+  padding: 0 var(--s-4);
+  border: 2px solid var(--ink);
+  border-radius: var(--r-key);
+  background: var(--plate-hi);
+  box-shadow: 0 5px 0 var(--ink);
+  color: var(--ink);
   transition:
-    translate var(--dur-press) var(--ease-out),
-    box-shadow var(--dur-press) ease,
-    opacity var(--dur-fast) ease;
+    translate var(--dur-press) cubic-bezier(0.3, 0, 0.2, 1),
+    box-shadow var(--dur-press) cubic-bezier(0.3, 0, 0.2, 1),
+    background-color var(--dur-fast) ease,
+    color var(--dur-fast) ease;
 }
 
 .key:disabled {
-  opacity: 0.3;
+  opacity: 0.4;
 }
 
-/* Dark keycaps. */
+.key:active:not(:disabled),
+.key[aria-pressed='true'],
+.key-play[data-playing] {
+  translate: 0 4px;
+  box-shadow: 0 1px 0 var(--ink);
+}
+
+/* Latched: down, and inverted. */
+.key[aria-pressed='true'],
+.key-play[data-playing] {
+  background: var(--ink);
+  color: var(--on-ink);
+}
+
 .key-skip {
-  width: 64px;
-  height: 58px;
-  border-radius: var(--r-key);
-  background: linear-gradient(180deg, #32373d, #25292e);
-  color: var(--ink);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.1),
-    inset 0 -3px 0 rgb(0 0 0 / 0.3),
-    var(--drop),
-    var(--ambient-shadow);
+  width: calc(var(--key-h) * 1.4);
 }
 
-.key-skip:active:not(:disabled),
-.key-play:active:not(:disabled) {
-  translate: 0 3px;
-}
-
-.key-skip:active:not(:disabled) {
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.06),
-    inset 0 -1px 0 rgb(0 0 0 / 0.3),
-    var(--drop-pressed);
-}
-
-/* The play key: the bone cap, wider than the others, with a lens along its top edge
-   that lights amber while music plays. */
 .key-play {
-  width: 96px;
-  height: 66px;
-  border-radius: 8px;
-  background: linear-gradient(180deg, var(--key), var(--key-shade));
-  color: var(--key-ink);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.75),
-    inset 0 -3px 0 rgb(0 0 0 / 0.14),
-    0 5px 0 var(--outline),
-    var(--ambient-shadow);
-}
-
-.key-play:active:not(:disabled) {
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.55),
-    var(--drop-pressed);
-}
-
-.key-lamp {
-  position: absolute;
-  top: 7px;
-  left: 50%;
-  width: 26px;
-  height: 4px;
-  margin-left: -13px;
-  border-radius: 1px;
-  background: rgb(0 0 0 / 0.18);
-  box-shadow: inset 0 1px 1px rgb(0 0 0 / 0.25);
-  transition:
-    background-color var(--dur-fast) ease,
-    box-shadow var(--dur-fast) ease;
-}
-
-.key-play[data-playing] .key-lamp {
-  background: var(--signal);
-  box-shadow: 0 0 10px var(--signal), 0 0 2px var(--signal);
+  width: calc(var(--key-h) * 2.9);
+  gap: var(--s-3);
 }
 
 .key-play-sm {
+  --key-h: 52px;
   width: 64px;
-  height: 52px;
 }
 
-.key-play-sm .key-lamp {
-  top: 5px;
-  width: 18px;
-  margin-left: -9px;
+.key-verb {
+  font-size: 0.75rem;
 }
 
-/* ── Latch keys: modes (shuffle, repeat). Engaged = held down, lens lit cyan. ── */
-
-.latch {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 52px;
-  height: 46px;
-  border: 1px solid var(--outline);
-  border-radius: var(--r-key);
-  background: linear-gradient(180deg, #2e3338, #23272c);
-  color: var(--ink-2);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.09),
-    var(--drop);
-  transition:
-    translate var(--dur-press) var(--ease-out),
-    box-shadow var(--dur-press) ease,
-    color var(--dur-fast) ease,
-    opacity var(--dur-fast) ease;
+.key-word {
+  flex-direction: column;
+  gap: 3px;
+  min-width: 84px;
+  padding: 0 var(--s-3);
 }
 
-.latch::before {
-  content: '';
-  position: absolute;
-  top: 5px;
-  left: 50%;
-  width: 16px;
-  height: 3px;
-  margin-left: -8px;
-  border-radius: 1px;
-  background: #1a1e22;
-  box-shadow: inset 0 1px 0 rgb(0 0 0 / 0.5);
-  transition:
-    background-color var(--dur-fast) ease,
-    box-shadow var(--dur-fast) ease;
+.key-word .label {
+  font-size: 0.625rem;
 }
 
-.latch[aria-pressed='true'] {
-  translate: 0 2px;
-  background: linear-gradient(180deg, #25292e, #1d2125);
-  color: var(--ink);
-  box-shadow:
-    inset 0 2px 4px rgb(0 0 0 / 0.45),
-    0 2px 0 var(--outline);
+.key-trim {
+  width: 56px;
+  padding: 0;
 }
 
-.latch[aria-pressed='true']::before {
-  background: var(--mode);
-  box-shadow: 0 0 8px var(--mode-glow);
-}
-
-.latch:active:not(:disabled) {
-  translate: 0 3px;
-  box-shadow: var(--drop-pressed);
-}
-
-.latch:disabled {
-  opacity: 0.32;
-}
-
-/* Repeat one: a numeral on the cap, like the "1" on a hardware repeat key. */
-.latch-badge {
-  position: absolute;
-  right: 6px;
-  bottom: 4px;
-  font-family: var(--font-mono);
-  font-size: 0.5625rem;
-  font-weight: 600;
-  color: var(--mode);
-}
-
-/* ── The dial: a tuning scale for time, in a recessed channel ── */
+/* ── The scrub line: the plate's baseline, edge to edge ──
+   Printed second ticks, taller minute ticks, a thick ink run for what's played,
+   and a cap riding the line with the record's lamp in it. Painted per frame by
+   transform only (ui/Scrubber.tsx). */
 
 .scrub {
-  user-select: none;
-  -webkit-user-select: none;
+  display: grid;
+  gap: 2px;
 }
 
 .scrub-hit {
   position: relative;
-  height: var(--tap);
-  cursor: pointer;
-  touch-action: pan-y;
-  border-radius: var(--r-s);
-  container-type: inline-size; /* the needle travels in cqw: compositor-only, no overflow */
+  height: 60px;
+  container-type: inline-size;
+  cursor: grab;
+  touch-action: none;
+}
+
+.scrub[data-dragging] .scrub-hit {
+  cursor: grabbing;
 }
 
 .scrub[data-disabled] .scrub-hit {
   cursor: default;
-  opacity: 0.45;
+  opacity: 0.5;
 }
 
 .scrub-dial {
   position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  height: 22px;
-  translate: 0 -50%;
-  overflow: hidden;
-  border-radius: 3px;
-  background: var(--bay);
-  box-shadow: var(--recess);
-}
-
-.scrub-ticks,
-.scrub-lit-ticks {
-  position: absolute;
-  inset: 0 3px;
-  background: repeating-linear-gradient(to right, var(--tick, var(--ink-4)) 0 1.5px, transparent 1.5px 6px);
-  -webkit-mask-image: linear-gradient(to bottom, transparent 30%, #000 30%, #000 70%, transparent 70%);
-  mask-image: linear-gradient(to bottom, transparent 30%, #000 30%, #000 70%, transparent 70%);
-}
-
-.scrub-lit,
-.scrub-lit-ticks {
-  will-change: transform;
-}
-
-.scrub-lit {
-  position: absolute;
   inset: 0;
   overflow: hidden;
-  transform: translateX(-100%);
 }
 
-.scrub-lit-ticks {
-  --tick: var(--signal);
-  transform: translateX(100%);
+/* The fine ticks, printed above the line. */
+.scrub-ticks {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 18px;
+  height: 11px;
+  background-image: repeating-linear-gradient(90deg, var(--ink) 0 1px, transparent 1px 12px);
+  opacity: 0.55;
 }
 
 .scrub-minute {
   position: absolute;
-  top: 4px;
-  bottom: 4px;
-  width: 1.5px;
-  background: var(--ink-3);
+  top: 8px;
+  width: 2px;
+  height: 22px;
+  background: var(--ink);
+}
+
+/* The line itself, and the thick run of what's been played. */
+.scrub-dial::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 31px;
+  height: 1px;
+  background: var(--ink);
+}
+
+.scrub-lit {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 29px;
+  height: 5px;
+  background: var(--ink);
+  transform: translateX(-100%);
+}
+
+.scrub-lit-ticks {
+  display: none;
 }
 
 .scrub-needle {
   position: absolute;
+  left: 0;
   top: 0;
   bottom: 0;
-  left: 0;
   width: 0;
   pointer-events: none;
-  will-change: transform;
 }
 
+/* The cap: an ink block with grip lines and the record's lamp. */
 .scrub-needle::before {
   content: '';
   position: absolute;
-  left: -2px;
-  top: 50%;
-  width: 4px;
-  height: 30px;
-  margin-top: -15px;
-  border-radius: 1px;
-  background: var(--signal);
-  box-shadow:
-    0 0 0 1px rgb(0 0 0 / 0.55),
-    var(--glow);
-  transition: scale var(--dur-fast) var(--ease-out);
+  left: -22px;
+  top: 16px;
+  width: 44px;
+  height: 32px;
+  border-radius: 2px;
+  background:
+    radial-gradient(circle, var(--record) 0 3.5px, transparent 4px) center / 100% 100% no-repeat,
+    linear-gradient(90deg, transparent 12px, #5c574c 12px 14px, transparent 14px 30px, #5c574c 30px 32px, transparent 32px),
+    var(--ink);
+  box-shadow: 0 4px 0 rgb(21 21 19 / 0.25);
+  transition: scale var(--dur-press) var(--ease-out);
 }
 
-.scrub[data-dragging] .scrub-needle::before,
-.scrub-hit:focus-visible .scrub-needle::before {
-  scale: 1.4 1.2;
+.scrub[data-dragging] .scrub-needle::before {
+  scale: 1.08 0.94;
 }
 
 .scrub-hit:focus-visible {
-  outline-offset: 2px;
+  outline: none;
+}
+
+.scrub-hit:focus-visible .scrub-needle::before {
+  outline: 2px solid var(--ink);
+  outline-offset: 4px;
 }
 
 .scrub-times {
   display: flex;
   justify-content: space-between;
-  margin-top: 2px;
+  padding: 0 var(--scrub-pad, 0);
+  font-size: 0.8125rem;
 }
 
 .scrub-elapsed {
-  color: var(--signal);
+  font-size: 1.125rem;
+  color: var(--ink);
 }
 
-/* ── Fader: the channel's level. A slot, a scale, a chunky cap, a level meter. ── */
+.scrub-remaining {
+  color: var(--ink-3);
+}
 
-.fader {
-  --pos: 0.5;
+/* ── The knob ──
+   Bigger than it needs to be, and allowed to fall off the plate's edge. Printed
+   ticks on its visible side fill with ink as it passes. Its rotation eases out
+   over --spin: that's the momentum after a throw, then the detent. */
+
+.knob {
+  --knob: 460px;
+  --r: calc(var(--knob) / 2);
   position: relative;
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
-  justify-items: center;
-  gap: var(--s-2);
-  min-height: 0;
-  user-select: none;
-  -webkit-user-select: none;
+  width: var(--knob);
+  height: var(--knob);
 }
 
-.fader-track {
-  position: relative;
-  width: 52px;
-  height: 100%;
-  min-height: 110px;
-  cursor: pointer;
-  touch-action: none;
-  border-radius: var(--r-s);
-  container-type: size;
-}
-
-/* The slot the cap rides in. */
-.fader-track::before {
-  content: '';
-  position: absolute;
-  top: 10px;
-  bottom: 10px;
-  left: 50%;
-  width: 6px;
-  margin-left: -3px;
-  border-radius: 2px;
-  background: var(--bay);
-  box-shadow: var(--recess);
-}
-
-/* The scale printed beside the slot. */
-.fader-track::after {
-  content: '';
-  position: absolute;
-  top: 10px;
-  bottom: 10px;
-  left: 4px;
-  width: 8px;
-  background: repeating-linear-gradient(to bottom, var(--ink-4) 0 1px, transparent 1px 10%);
-}
-
-/* Level meter: lit segments up to the level (a state readout, not an audio meter). */
-.fader-meter {
-  position: absolute;
-  top: 10px;
-  bottom: 10px;
-  right: 6px;
-  width: 5px;
-  border-radius: 1px;
-  background: repeating-linear-gradient(to top, #1d2226 0 4px, transparent 4px 6px);
-  overflow: hidden;
-}
-
-.fader-meter::before {
-  content: '';
+.knob-scale {
   position: absolute;
   inset: 0;
-  background: repeating-linear-gradient(to top, var(--signal) 0 4px, transparent 4px 6px);
-  clip-path: inset(calc((1 - var(--pos)) * 100%) 0 0 0);
-}
-
-.fader-cap {
-  position: absolute;
-  left: 50%;
-  top: 10px;
-  width: 44px;
-  height: 22px;
-  margin-left: -22px;
-  border: 1px solid var(--outline);
-  border-radius: 3px;
-  background:
-    linear-gradient(to bottom, transparent 10px, rgb(0 0 0 / 0.55) 10px 12px, transparent 12px),
-    repeating-linear-gradient(to bottom, rgb(0 0 0 / 0.22) 0 1px, transparent 1px 3px),
-    linear-gradient(180deg, #454b52, #2a2f34);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.18),
-    0 3px 0 var(--outline),
-    0 8px 14px -6px rgb(0 0 0 / 0.8);
-  translate: 0 calc((1 - var(--pos)) * (100cqh - 42px));
   pointer-events: none;
 }
 
-.fader[data-dragging] .fader-cap {
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.18),
-    0 1px 0 var(--outline),
-    0 0 0 2px var(--signal-dim);
+.knob-tick {
+  position: absolute;
+  left: calc(50% - 1px);
+  top: 0;
+  width: 2px;
+  height: 14px;
+  background: var(--ink);
+  transform-origin: 1px var(--r);
+  rotate: calc(-160deg + var(--i) * 5deg);
+  opacity: clamp(0.22, calc((var(--level) - var(--v) + 1.8) * 10), 1);
 }
 
-.fader-track:focus-visible {
-  outline-offset: 2px;
+.knob-tick[data-major] {
+  left: calc(50% - 1.5px);
+  width: 3px;
+  height: 24px;
+  transform-origin: 1.5px var(--r);
 }
 
-.fader[data-disabled] .fader-track {
+.knob-num {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  translate: -50% -50%;
+}
+
+.knob-num[data-at='0'] {
+  transform: rotate(-160deg) translateY(calc(var(--r) * -0.83)) rotate(160deg);
+}
+
+.knob-num[data-at='5'] {
+  transform: rotate(-90deg) translateY(calc(var(--r) * -0.83)) rotate(90deg);
+}
+
+.knob-num[data-at='10'] {
+  transform: rotate(-20deg) translateY(calc(var(--r) * -0.83)) rotate(20deg);
+}
+
+.knob-body {
+  position: absolute;
+  inset: 14%;
+  border-radius: 50%;
+  background: repeating-conic-gradient(#1c1b18 0 3deg, #34322d 3deg 6deg);
+  box-shadow: -10px 12px 0 rgb(21 21 19 / 0.18);
+  rotate: var(--angle);
+  transition: rotate var(--spin, 0ms) cubic-bezier(0.2, 0.9, 0.25, 1);
+  cursor: grab;
+  touch-action: none;
+}
+
+.knob[data-held] .knob-body {
+  transition: none;
+  cursor: grabbing;
+}
+
+.knob[data-fixed] .knob-body {
   cursor: default;
-  opacity: 0.4;
+  opacity: 0.55;
 }
 
-.fader-value {
-  min-width: 3ch;
-  text-align: center;
+.knob[data-fixed] .knob-tick {
+  opacity: 0.22;
 }
 
-/* Horizontal (upright phones): the same parts, turned. */
-.fader[data-orientation='horizontal'] {
-  grid-template-rows: none;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  justify-items: stretch;
+.knob-cap {
+  position: absolute;
+  inset: 6%;
+  border-radius: 50%;
+  background: #f2ede2;
+  box-shadow:
+    inset 0 0 0 2px #151513,
+    inset 0 -5px 0 #c9c1ae;
 }
 
-.fader[data-orientation='horizontal'] .fader-track {
-  width: 100%;
-  height: 44px;
-  min-height: 0;
+.knob-pointer {
+  position: absolute;
+  left: calc(50% - 4px);
+  top: 5%;
+  width: 8px;
+  height: 34%;
+  background: #151513;
 }
 
-.fader[data-orientation='horizontal'] .fader-track::before {
-  top: 50%;
-  bottom: auto;
-  left: 10px;
-  right: 10px;
-  width: auto;
-  height: 6px;
-  margin: -3px 0 0;
+.knob-lamp {
+  position: absolute;
+  left: calc(50% - 6px);
+  top: 6%;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--record);
 }
 
-.fader[data-orientation='horizontal'] .fader-track::after {
-  top: auto;
-  bottom: 2px;
-  left: 10px;
-  right: 10px;
-  width: auto;
-  height: 6px;
-  background: repeating-linear-gradient(to right, var(--ink-4) 0 1px, transparent 1px 10%);
+.knob-body:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 6px;
 }
-
-.fader[data-orientation='horizontal'] .fader-meter {
-  display: none;
-}
-
-.fader[data-orientation='horizontal'] .fader-cap {
-  top: 50%;
-  left: 10px;
-  width: 22px;
-  height: 34px;
-  margin: -17px 0 0;
-  background:
-    linear-gradient(to right, transparent 10px, rgb(0 0 0 / 0.55) 10px 12px, transparent 12px),
-    repeating-linear-gradient(to right, rgb(0 0 0 / 0.22) 0 1px, transparent 1px 3px),
-    linear-gradient(180deg, #454b52, #2a2f34);
-  translate: calc(var(--pos) * (100cqw - 42px)) 0;
-}
-
-/* ── Pointer hover (never on touch) ── */
 
 @media (hover: hover) and (pointer: fine) {
   .btn:hover:not(:disabled) {
-    background: linear-gradient(180deg, #363b41, #282c31);
+    background: var(--plate-lo);
   }
 
   .btn-primary:hover:not(:disabled) {
-    background: linear-gradient(180deg, #f3f0e8, var(--key));
+    background: var(--ink-2);
   }
 
   .btn-quiet:hover:not(:disabled) {
-    background: var(--surface-1);
-    color: var(--ink);
+    background: transparent;
+    text-decoration-thickness: 2px;
   }
 
-  .btn-danger:hover:not(:disabled):not([data-armed]) {
-    background: linear-gradient(180deg, #452826, #331f1e);
+  .icon-btn:hover:not(:disabled):not([aria-pressed='true']):not([aria-current]) {
+    background: var(--plate-lo);
   }
 
-  .icon-btn:hover:not(:disabled) {
-    background: var(--surface-3);
-    color: var(--ink);
+  .key:hover:not(:disabled):not([aria-pressed='true']):not([data-playing]) {
+    background: #fbf8f1;
   }
 
-  .chip:hover {
-    color: var(--ink);
-    background: var(--surface-2);
+  .seg span:hover {
+    background: var(--plate-lo);
   }
 
-  .key-skip:hover:not(:disabled),
-  .latch:hover:not(:disabled):not([aria-pressed='true']) {
-    background: linear-gradient(180deg, #3a4046, #2b3035);
-  }
-
-  .key-play:hover:not(:disabled) {
-    background: linear-gradient(180deg, #f3f0e8, var(--key));
-  }
-
-  .seg label:hover input:not(:checked) + span {
-    color: var(--ink);
-  }
-
-  .scrub-hit:hover .scrub-needle::before {
-    scale: 1.25 1.1;
+  .seg input:checked + span:hover {
+    background: var(--ink);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .icon-btn:active:not(:disabled) {
-    scale: none;
-  }
-
-  .icon-btn[data-added] svg,
-  .icon-btn[data-spin] svg,
-  .field[data-busy] svg,
-  .led-pulse {
-    animation: none;
-  }
-
-  /* State still changes; it just doesn't travel. */
-  .switch::before,
+  /* Nothing travels: latched keys still read as down by their collapsed drop. */
+  .btn,
+  .key,
+  .icon-btn,
+  .chip,
   .seg span {
+    transition:
+      box-shadow var(--dur-press) ease,
+      background-color var(--dur-fast) ease,
+      color var(--dur-fast) ease;
+  }
+
+  .btn:active:not(:disabled),
+  .key:active:not(:disabled),
+  .key[aria-pressed='true'],
+  .key-play[data-playing],
+  .icon-btn:active:not(:disabled),
+  .chip:active,
+  .seg input:checked + span {
+    translate: none;
+  }
+
+  .switch::before {
+    transition: none;
+  }
+
+  .knob-body {
     transition: none;
   }
 }

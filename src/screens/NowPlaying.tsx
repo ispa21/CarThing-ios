@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
-import { ChannelStrip } from '../app/ChannelStrip'
-import { Deck, UpNextList } from '../app/Deck'
+import { LevelKnob, ModeKeys } from '../app/ChannelStrip'
+import { Deck } from '../app/Deck'
 import { tickLink } from '../app/router'
 import { usePhonePortrait } from '../lib/orientation'
 import { feedback } from '../sensory/feedback'
@@ -139,10 +139,10 @@ export function NowPlaying() {
             onNext: skipNext,
           }}
           onSwipe={(dir) => void (dir === 'next' ? skipNext() : skipPrevious())}
-          status={{ text: s.isPlaying ? 'Now playing' : 'Paused', live: s.isPlaying }}
+          status={{ text: s.isPlaying ? 'running' : 'standby', live: s.isPlaying }}
           menu={more}
-          next={<UpNext uri={s.uri} />}
-          channel={<ChannelStrip />}
+          next={<QueueHandle uri={s.uri} />}
+          channel={<LevelKnob />}
           attribution={
             (s.uri || s.url) && (
               <SpotifyLink className="np-attr label" uri={s.uri} url={s.url} label="Open in Spotify">
@@ -151,13 +151,7 @@ export function NowPlaying() {
               </SpotifyLink>
             )
           }
-          footer={
-            <button className="chip np-device" onClick={chooseDevice} aria-label={`Playing on ${s.deviceName ?? 'unknown device'}. Change device`}>
-              <Icon name="speaker" size={18} />
-              <span>{s.deviceName ?? 'Choose device'}</span>
-              <Icon name="down" size={16} />
-            </button>
-          }
+          footer={<ModeKeys />}
         />
       )}
 
@@ -192,15 +186,27 @@ export function NowPlaying() {
 }
 
 /**
- * The next track, beside the next key. Fetched once per song (one request, silent on
- * failure); hidden when the queue isn't about the current song yet, or there's no room.
+ * The queue lives below the plate: a handle that says what it is. Pull it (tap)
+ * and the queue rises. The next track is fetched once per song, silent on failure.
  */
-function UpNext({ uri }: { uri: string | null }) {
+function QueueHandle({ uri }: { uri: string | null }) {
   const next = usePlayback((st) => (st.queue.data?.current?.uri === uri ? st.queue.data.upNext : NO_ITEMS))
   useEffect(() => {
     if (uri) void refreshQueue()
   }, [uri])
-  return <UpNextList items={next} href="/queue" onClick={tickLink} />
+  const count = next.length
+  return (
+    <a className="handle" href="/queue" onClick={tickLink} aria-label={count ? `Queue, ${count} up next: ${next[0].title} first. Open` : 'Open the queue'}>
+      <span className="handle-chev" aria-hidden="true">
+        ︿
+      </span>
+      <span className="label">queue{count ? ` (${count})` : ''}</span>
+      {count > 0 && <span className="handle-next">next, {next[0].title}</span>}
+      <span className="handle-chev" aria-hidden="true">
+        ︿
+      </span>
+    </a>
+  )
 }
 
 const NO_ITEMS: MediaItem[] = []

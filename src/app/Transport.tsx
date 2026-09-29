@@ -21,11 +21,11 @@ export function TransportKeys(p: TransportKeysProps) {
   return (
     <div className="transport">
       <PressKey className="key key-skip" depth={1} onClick={p.onPrevious} disabled={!p.canPrevious} aria-label="Previous" data-coach={p.coach === 'skip' || undefined}>
-        <Icon name="previous" size={30} />
+        <Icon name="previous" size={26} />
       </PressKey>
       <PlayKey isPlaying={p.isPlaying} onPress={p.onToggle} disabled={!p.canToggle} coach={p.coach === 'play'} />
       <PressKey className="key key-skip" depth={1} onClick={p.onNext} disabled={!p.canNext} aria-label="Next" data-coach={p.coach === 'skip' || undefined}>
-        <Icon name="next" size={30} />
+        <Icon name="next" size={26} />
       </PressKey>
     </div>
   )
@@ -60,8 +60,12 @@ export function PlayKey({ isPlaying, onPress, disabled, small, coach }: { isPlay
       data-coach={coach || undefined}
       data-playing={isPlaying || undefined}
     >
-      <span className="key-lamp" aria-hidden="true" />
-      <Icon name={isPlaying ? 'pause' : 'play'} size={small ? 24 : 34} />
+      <Icon name={isPlaying ? 'pause' : 'play'} size={small ? 22 : 28} />
+      {!small && (
+        <span className="key-verb label" aria-hidden="true">
+          {isPlaying ? 'hold' : 'play'}
+        </span>
+      )}
     </PressKey>
   )
 }
