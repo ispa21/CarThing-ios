@@ -13,7 +13,6 @@ export type Route =
   | 'settings'
   | 'callback'
   | 'tutorial'
-  | 'mix'
   | 'visual'
   | 'screen'
   | 'crate'
@@ -32,7 +31,6 @@ export const PATHS: Record<Route, string> = {
   settings: '/settings',
   callback: '/callback',
   tutorial: '/tutorial',
-  mix: '/mix',
   visual: '/visual',
   screen: '/screen',
   crate: '/crate',

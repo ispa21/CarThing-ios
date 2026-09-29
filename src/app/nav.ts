@@ -10,7 +10,6 @@ export const RAIL_TABS: Array<{ route: Route; label: string }> = [
 
 /** The modes: printed beside the keys, because each changes the whole machine. On phones they live behind the MODES key. */
 export const RAIL_MODES: Array<{ route: Route; label: string; about: string; short?: string }> = [
-  { route: 'mix', label: 'mix', about: 'Two decks and a crossfader.' },
   { route: 'visual', label: 'visual', about: 'The cover becomes the room.' },
   { route: 'crate', label: 'crate', about: 'What you’re into right now.' },
   { route: 'transmission', label: 'transmission', short: 'radio', about: 'Radio stations from your library.' },
