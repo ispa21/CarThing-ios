@@ -6,7 +6,7 @@ import { SOURCES } from './sources'
 /**
  * Desktop keyboard shortcuts:
  *   Space / K  play-pause      ← / →  seek 10s      N / P  next / previous
- *   /  search   Q  queue   L  lyrics   Esc  leave Now Playing / Lyrics
+ *   /  search   Q  queue   L  lyrics   Esc  leave Lyrics / Mix / Visual
  */
 export function useShortcuts(route: Route, connected: boolean, enabled = true) {
   useEffect(() => {
@@ -36,7 +36,7 @@ export function useShortcuts(route: Route, connected: boolean, enabled = true) {
           return
         }
         case 'Escape':
-          if (route === 'lyrics' || demo) back(source.backTo)
+          if (route === 'lyrics' || route === 'visual' || route === 'mix' || demo) back(source.backTo)
           return
       }
       if (!connected) return

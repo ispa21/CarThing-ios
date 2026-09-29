@@ -3,6 +3,7 @@
 .shell {
   height: 100%;
   display: grid;
+  grid-template-columns: minmax(0, 1fr); /* the rail never widens the plate: its modes scroll instead */
   grid-template-rows: auto minmax(0, 1fr);
   transition: background-color var(--dur-deliberate) var(--ease-house);
 }
@@ -167,6 +168,7 @@
   gap: var(--s-2) var(--s-5);
   min-width: 0;
   flex: 1;
+  overflow: hidden;
 }
 
 .rail-tabs {

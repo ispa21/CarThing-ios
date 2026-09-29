@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { contrast, deepen, hex, PAPER, paletteFrom, recordFrom, type RGB } from './record'
+import { contrast, deepen, hex, mixHex, PAPER, paletteFrom, recordFrom, type RGB } from './record'
 
 const fill = (n: number, rgba: number[]) => Array.from({ length: n }, () => rgba).flat()
 
@@ -54,5 +54,18 @@ describe('paletteFrom', () => {
 
   it('returns null with no opaque pixels', () => {
     expect(paletteFrom(fill(10, [0, 0, 0, 0]))).toBeNull()
+  })
+})
+
+describe('mixHex', () => {
+  it('blends between the two ends', () => {
+    expect(mixHex('#d2562b', '#0e3b38', 0)).toBe('#d2562b')
+    expect(mixHex('#d2562b', '#0e3b38', 1)).toBe('#0e3b38')
+    expect(mixHex('#000000', '#ffffff', 0.5)).toBe('#808080')
+  })
+
+  it('clamps t and survives bad input', () => {
+    expect(mixHex('#000000', '#ffffff', 2)).toBe('#ffffff')
+    expect(mixHex('nope', '#ffffff', 0.3)).toBe('#ffffff')
   })
 })

@@ -9,7 +9,10 @@ import { LyricsScreen } from '../screens/Lyrics'
 import { NowPlaying } from '../screens/NowPlaying'
 import { Queue } from '../screens/Queue'
 import { Search } from '../screens/Search'
+import { Mix } from '../screens/Mix'
+import { Screen as ScreenMode } from '../screens/Screen'
 import { Settings } from '../screens/Settings'
+import { Visual } from '../screens/Visual'
 import { startPlaybackSync, stopPlaybackSync } from '../spotify/playbackService'
 import { useSession } from '../store/session'
 import { THEME_COLORS, useSettings } from '../store/settings'
@@ -31,10 +34,13 @@ const TITLES: Record<Route, string> = {
   settings: 'Settings · PartyDeck',
   callback: 'Connecting · PartyDeck',
   tutorial: 'Tutorial · PartyDeck',
+  mix: 'Mix · PartyDeck',
+  visual: 'Visual · PartyDeck',
+  screen: 'Screen · PartyDeck',
 }
 
 /** Full-screen routes without the rail. */
-const IMMERSIVE: Route[] = ['lyrics-demo', 'tutorial']
+const IMMERSIVE: Route[] = ['lyrics-demo', 'tutorial', 'visual', 'screen']
 
 export function App() {
   const route = matchRoute(usePathname())
@@ -172,6 +178,9 @@ function Screen({ route, immersive = false }: { route: Route; immersive?: boolea
       {route === 'lyrics' && <LyricsScreen source="spotify" />}
       {route === 'lyrics-demo' && <LyricsScreen source="demo" />}
       {route === 'settings' && <Settings />}
+      {route === 'mix' && <Mix />}
+      {route === 'visual' && <Visual />}
+      {route === 'screen' && <ScreenMode />}
       {route === 'tutorial' && (
         <Tutorial
           onFinish={() => {

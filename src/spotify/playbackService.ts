@@ -260,6 +260,33 @@ export function seekTo(ms: number, { silent = false }: { silent?: boolean } = {}
   return command(() => api.seekToPosition(target), { progressMs: target })
 }
 
+/**
+ * MIX's crossfade move. Spotify plays one track at a time, so this is a real move, not
+ * a blend: dip the level, skip to the next track, seek it to its in-cue, bring the level
+ * back. Four requests, spaced so Spotify has applied each before the next. `silent` for
+ * the automatic move at the out-cue (a timer, not a gesture: no feedback from timers).
+ */
+export async function crossfadeToNext({ inMs = 0, silent = false }: { inMs?: number; silent?: boolean } = {}) {
+  if (!can('skippingNext')) return false
+  if (!silent) feedback.play('next-track')
+  const level = get().playback.volume
+  const dip = level === null ? null : Math.round(level * 0.3)
+  if (dip !== null) await command(() => api.setVolume(dip), { volume: dip })
+  await wait(350)
+  const skipped = await command(api.skipToNext, { progressMs: 0 })
+  if (skipped && inMs > 0) {
+    await wait(450) // let Spotify switch tracks, or the seek lands on the old one
+    await command(() => api.seekToPosition(inMs), { progressMs: inMs })
+  }
+  if (level !== null) {
+    await wait(250)
+    await command(() => api.setVolume(level), { volume: level })
+  }
+  return skipped
+}
+
+const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
 export const seekBy = (deltaMs: number) => {
   const { playback, syncedAt } = get()
   return seekTo(interpolateProgress(playback, syncedAt, Date.now()) + deltaMs)

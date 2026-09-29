@@ -4,7 +4,18 @@
 import { useSyncExternalStore, type MouseEvent } from 'react'
 import { feedback } from '../sensory/feedback'
 
-export type Route = 'now' | 'search' | 'queue' | 'lyrics' | 'lyrics-demo' | 'settings' | 'callback' | 'tutorial'
+export type Route =
+  | 'now'
+  | 'search'
+  | 'queue'
+  | 'lyrics'
+  | 'lyrics-demo'
+  | 'settings'
+  | 'callback'
+  | 'tutorial'
+  | 'mix'
+  | 'visual'
+  | 'screen'
 
 /** The deck (Now Playing) is home. */
 export const PATHS: Record<Route, string> = {
@@ -16,6 +27,9 @@ export const PATHS: Record<Route, string> = {
   settings: '/settings',
   callback: '/callback',
   tutorial: '/tutorial',
+  mix: '/mix',
+  visual: '/visual',
+  screen: '/screen',
 }
 
 const ROUTES: Record<string, Route> = {

@@ -9,4 +9,8 @@ export const RAIL_TABS: Array<{ route: Route; label: string }> = [
 ]
 
 /** The modes: printed beside the keys, because each changes the whole machine. */
-export const RAIL_MODES: Array<{ route: Route; label: string }> = []
+export const RAIL_MODES: Array<{ route: Route; label: string }> = [
+  { route: 'mix', label: 'mix' },
+  { route: 'visual', label: 'visual' },
+  { route: 'screen', label: 'screen' },
+]

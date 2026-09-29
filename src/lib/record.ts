@@ -143,3 +143,20 @@ export function paletteFrom(px: ArrayLike<number>): Palette | null {
   }
   return { ground, line, accent }
 }
+
+const parseHex = (h: string): RGB | null => {
+  const m = /^#?([0-9a-f]{6})$/i.exec(h.trim())
+  if (!m) return null
+  const n = parseInt(m[1], 16)
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255]
+}
+
+/** Blend two hex colours: t = 0 → a, t = 1 → b. Unparseable input falls back to the other colour. */
+export function mixHex(a: string, b: string, t: number): string {
+  const ca = parseHex(a)
+  const cb = parseHex(b)
+  if (!ca) return cb ? hex(cb) : a
+  if (!cb) return hex(ca)
+  const k = Math.max(0, Math.min(1, t))
+  return hex(ca.map((v, i) => v + (cb[i] - v) * k) as RGB)
+}
