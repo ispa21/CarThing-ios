@@ -155,7 +155,14 @@ Each scope was checked against the OpenAPI schema.
 | `user-read-playback-state` | `GET /me/player`, `GET /me/player/devices` |
 | `user-modify-playback-state` | play, pause, next, previous, seek, add to queue, transfer device, shuffle, repeat, volume |
 | `user-read-currently-playing` | required by `GET /me/player/queue` |
-| `playlist-read-private` | Home → Your playlists (`GET /me/playlists`) |
+| `playlist-read-private` | Your playlists (`GET /me/playlists`), and their contents for Stories (`GET /playlists/{id}/items`) |
+| `playlist-modify-private` | Crate / session / story → save as a private playlist (`POST /me/playlists`, `POST /playlists/{id}/items`) |
+| `user-read-recently-played` | Archive fills in your last 50 plays (`GET /me/player/recently-played`) |
+| `user-library-read` | Stories, the builder and Transmission read your liked songs (`GET /me/tracks`) |
+
+Sessions connected before these scopes were added must reconnect; the screens that need them offer a Reconnect button.
+
+The listening log, crate and library index live on the device in IndexedDB (`partydeck`), never uploaded, and are wiped on Disconnect. The optional streaming-history import reads only track, artist, album, time, ms played and skip fields.
 
 Not requested:
 - `user-read-private`: the fields it unlocked (`product`, `country`) were removed from `/me` in the Feb 2026 changes; the schema marks them deprecated. `/me` is only used for "Connected as". Without this scope it returns the public profile.

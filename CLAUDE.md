@@ -48,6 +48,15 @@ Car Thing–inspired Spotify controller PWA: Now Playing deck, search, queue, gi
 - Render lyrics and Spotify text only as text nodes. No `dangerouslySetInnerHTML`.
 - Links to Spotify use `ui/SpotifyLink`: the validated `spotify:` URI (`safeSpotifyUri`) opens the Spotify app; without one it falls back to the `safeSpotifyUrl` https page. Never hand-roll a Spotify `<a>`.
 
+## Instrument language (2026 redesign)
+
+- See `docs/redesign/instrument/language.md`. Plate `--plate`, ink `--ink`, print grey `--ink-3`; `--record` / `--record-deep` are sampled from the cover at runtime (`ui/useRecordColours.ts`) and are the only accent.
+- Three voices: Archivo condensed `.display` for titles, expanded `.label` for legends, Martian Mono `.readout` lowercase for machine state, Instrument Serif italic `.serif` for people and sentences.
+- Focus and the current route are brackets: `( deck )`.
+- VISUAL's slow disc spin is a sanctioned looping exception (transform only, stops under reduced motion).
+- Local data: `src/history/*` (IndexedDB: plays, crate, library). Stories logic is pure in `src/stories/*` and must not import `src/spotify/*`. Only `spotify/playbackService` fetches; `history/service` keeps.
+- No genre, BPM, key or audio features: Spotify withdrew them for new apps. Stations are behavioural clusters; never claim otherwise in copy.
+
 ## Env and secrets
 
 - `VITE_SPOTIFY_CLIENT_ID` and `VITE_SPOTIFY_REDIRECT_URI` are public, in `.env.local` (gitignored). `.env.example` documents the shape.

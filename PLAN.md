@@ -47,7 +47,10 @@ Checked against the official docs and OpenAPI schema (downloaded 2026‑09‑25)
   - `user-read-playback-state`: `GET /me/player`, `GET /me/player/devices`
   - `user-modify-playback-state`: play/pause/next/previous/seek/queue add/transfer
   - `user-read-currently-playing`: needed by `GET /me/player/queue`
-  - `playlist-read-private`: Home's "Your playlists" (`GET /me/playlists`)
+  - `playlist-read-private`: "Your playlists" (`GET /me/playlists`) and their items (`GET /playlists/{id}/items`)
+  - `playlist-modify-private`: save as playlist (`POST /me/playlists`, `POST /playlists/{id}/items`)
+  - `user-read-recently-played`: Archive's last 50 plays
+  - `user-library-read`: liked songs for Stories (`GET /me/tracks`)
   - Not requested:
     - `user-read-private`: its fields (`product`, `country`) were removed from `/me` in Feb 2026
     - `playlist-read-collaborative`: not listed by the spec for `/me/playlists`
