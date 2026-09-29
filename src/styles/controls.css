@@ -300,6 +300,14 @@
   position: relative;
 }
 
+@media (max-width: 479px) {
+  .group-row-stack .seg:has(> label:nth-child(4)) {
+    grid-auto-flow: row;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+  }
+}
+
 .seg input {
   position: absolute;
   inset: 0;

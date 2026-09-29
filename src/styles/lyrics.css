@@ -375,6 +375,56 @@
   }
 }
 
+/* Upright phones: the column is too narrow to share. Lyrics take the full width; the
+   size keys become a row above the dock, and the dock spans the screen. */
+@media (max-width: 699px) and (orientation: portrait) {
+  .lyrics-lines {
+    padding-right: var(--pad-r);
+    padding-bottom: 50vh;
+  }
+
+  .lyrics-empty {
+    padding-right: var(--pad-r);
+  }
+
+  .lyrics-aside {
+    top: auto;
+    left: var(--pad-l);
+    right: var(--pad-r);
+    bottom: calc(var(--safe-b) + var(--s-3) + 84px);
+    width: auto;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--s-2);
+  }
+
+  .lyrics-sizes {
+    grid-auto-flow: column;
+    gap: 6px;
+  }
+
+  .lyrics-size {
+    --key-h: 44px;
+    width: 52px;
+  }
+
+  .lyrics-aside-rule {
+    width: auto;
+    height: 2px;
+    background: repeating-linear-gradient(90deg, var(--ink-4) 0 2px, transparent 2px 10px);
+  }
+
+  .lyrics-dock {
+    right: var(--pad-r);
+    bottom: calc(var(--safe-b) + var(--s-3));
+    align-items: center;
+  }
+
+  .lyrics-scrub {
+    min-width: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .shell[data-route='lyrics']::before {
     animation: fade-out var(--dur-fast) ease forwards;
