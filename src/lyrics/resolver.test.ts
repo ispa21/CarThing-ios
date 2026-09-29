@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { DEMO_LRC, DEMO_TRACK } from './demo'
 import { parseLRC } from './lrc'
-import { createMockProvider, matchKey, resolveLyrics, type LyricsProvider } from './resolver'
+import { createMockProvider, matchKey, mockProvider, resolveLyrics, type LyricsProvider } from './resolver'
 
 describe('matchKey', () => {
   it.each([
@@ -14,14 +14,14 @@ describe('matchKey', () => {
 
 describe('resolveLyrics', () => {
   it('finds the demo track, matching on first artist', async () => {
-    const r = await resolveLyrics({ title: 'Night Drive', artist: 'PartyDeck Demo, Guest' })
+    const r = await resolveLyrics({ title: 'Night Drive', artist: 'PartyDeck Demo, Guest' }, [mockProvider])
     expect(r?.synced).toBe(true)
     expect(r?.providerName).toBe('PartyDeck demo library')
     expect(r?.lines.find((l) => l.text)?.text).toBe('Streetlights counting down the avenue')
   })
 
   it('returns null for unknown tracks (→ "Lyrics unavailable")', async () => {
-    expect(await resolveLyrics({ title: 'Some Other Song', artist: 'Someone' })).toBeNull()
+    expect(await resolveLyrics({ title: 'Some Other Song', artist: 'Someone' }, [mockProvider])).toBeNull()
   })
 
   it('treats malformed LRC as unavailable', async () => {

@@ -12,7 +12,6 @@ import { LyricsScreen } from '../screens/Lyrics'
 import { NowPlaying } from '../screens/NowPlaying'
 import { Queue } from '../screens/Queue'
 import { Search } from '../screens/Search'
-import { Mix } from '../screens/Mix'
 import { Screen as ScreenMode } from '../screens/Screen'
 import { Settings } from '../screens/Settings'
 import { Stories } from '../screens/Stories'
@@ -40,7 +39,6 @@ const TITLES: Record<Route, string> = {
   settings: 'Settings · PartyDeck',
   callback: 'Connecting · PartyDeck',
   tutorial: 'Tutorial · PartyDeck',
-  mix: 'Mix · PartyDeck',
   visual: 'Visual · PartyDeck',
   screen: 'Screen · PartyDeck',
   crate: 'Crate · PartyDeck',
@@ -193,7 +191,6 @@ function Screen({ route, immersive = false }: { route: Route; immersive?: boolea
       {route === 'lyrics' && <LyricsScreen source="spotify" />}
       {route === 'lyrics-demo' && <LyricsScreen source="demo" />}
       {route === 'settings' && <Settings />}
-      {route === 'mix' && <Mix />}
       {route === 'visual' && <Visual />}
       {route === 'screen' && <ScreenMode />}
       {route === 'crate' && <Crate />}

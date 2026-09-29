@@ -1,8 +1,12 @@
 // Lyrics resolver: track metadata in, lyrics out. Provider-agnostic.
-// Phase 2 adds a licensed provider here — only after its terms are verified.
+// Providers: the bundled demo library, then LRCLIB (lyrics/lrclib.ts).
 
 import { DEMO_LRC, DEMO_TRACK } from './demo'
+import { LRCLIB_ENABLED, lrclibProvider } from './lrclib'
+import { matchKey } from './match'
 import { parseLRC, type LyricLine } from './lrc'
+
+export { matchKey }
 
 export interface TrackQuery {
   title: string
@@ -24,18 +28,6 @@ export interface LyricsProvider {
   find(query: TrackQuery): Promise<ResolvedLyrics | null>
 }
 
-/** "Blinding Lights - 2020 Remaster (feat. X)" and "blinding lights" → "blinding lights". */
-export function matchKey(s: string): string {
-  return s
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/\s[-–—]\s.*$/, '')
-    .replace(/[([].*?[)\]]/g, '')
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim()
-}
-
 /** Bundled, original LRC files. Holds the demo track only. */
 export function createMockProvider(library: Array<{ title: string; artist: string; lrc: string }>): LyricsProvider {
   const index = new Map(library.map((e) => [`${matchKey(e.title)}|${matchKey(e.artist)}`, e.lrc]))
@@ -55,13 +47,17 @@ export function createMockProvider(library: Array<{ title: string; artist: strin
 
 export const mockProvider = createMockProvider([{ ...DEMO_TRACK, lrc: DEMO_LRC }])
 
-export async function resolveLyrics(query: TrackQuery, providers: LyricsProvider[] = [mockProvider]) {
+const PROVIDERS = LRCLIB_ENABLED ? [mockProvider, lrclibProvider] : [mockProvider]
+
+export async function resolveLyrics(query: TrackQuery, providers: LyricsProvider[] = PROVIDERS) {
   for (const p of providers) {
     try {
       const found = await p.find(query)
       if (found?.lines.some((l) => l.text)) return found
-    } catch {
-      // A failing provider shouldn't hide results from the next one.
+    } catch (err) {
+      // A failing provider shouldn't hide results from the next one. Said in the
+      // console, so "Lyrics unavailable" from a network failure can be told apart.
+      console.warn(`Lyrics: ${p.name} failed`, err)
     }
   }
   return null

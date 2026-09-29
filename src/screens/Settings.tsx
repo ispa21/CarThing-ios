@@ -5,6 +5,7 @@ import { back, navigate } from '../app/router'
 import { canOfferFullscreen, isStandalone } from '../lib/fullscreen'
 import { feedback, hapticsAvailable } from '../sensory/feedback'
 import { wipeHistory } from '../history/service'
+import { LRCLIB_ENABLED } from '../lyrics/lrclib'
 import { logout } from '../spotify/auth'
 import { useSession } from '../store/session'
 import { LYRIC_SIZES, useSettings, type Theme } from '../store/settings'
@@ -160,6 +161,19 @@ export function Settings() {
               </span>
             </span>
           </div>
+          {LRCLIB_ENABLED && (
+            <div className="group-row">
+              <span className="group-label">
+                Lyrics
+                <span className="group-detail">
+                  Lyrics come from LRCLIB (lrclib.net), a free, public database written by its users. PartyDeck doesn’t
+                  store, host, edit or sell them: your device fetches them from LRCLIB when you open a song. All lyrics are
+                  the property of their songwriters and publishers and are shown for personal, non-commercial use only.
+                  PartyDeck isn’t affiliated with LRCLIB and can’t vouch for the accuracy of any lyric.
+                </span>
+              </span>
+            </div>
+          )}
           <div className="group-row">
             <span className="group-label">Version</span>
             <span className="readout">{__APP_VERSION__}</span>
