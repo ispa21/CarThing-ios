@@ -109,7 +109,7 @@
 .row-sub {
   max-width: 100%;
   font-family: var(--font-serif);
-  font-style: italic;
+  font-style: normal;
   font-size: 1.0625rem;
   color: var(--ink-3);
 }
@@ -250,7 +250,7 @@
 
 .empty-title {
   font-family: var(--font-display);
-  font-synthesis: none;
+  font-stretch: var(--w-condensed);
   font-weight: 900;
   font-size: clamp(2rem, 1.4rem + 2.4vw, 3.5rem);
   line-height: 0.85;
@@ -260,7 +260,7 @@
 
 .empty-detail {
   font-family: var(--font-serif);
-  font-style: italic;
+  font-style: normal;
   font-size: var(--t-lead);
   color: var(--ink-3);
   max-width: 40ch;
@@ -564,7 +564,7 @@
   outline: 0;
   background: none;
   font-family: var(--font-display);
-  font-synthesis: none;
+  font-stretch: var(--w-condensed);
   font-weight: 900;
   font-size: clamp(4rem, 2rem + 9vw, 14.5rem);
   line-height: 0.82;

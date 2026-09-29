@@ -29,13 +29,13 @@ const lineMotion: Variants = {
 const titleFit = (t: string | null) => (!t || t.length <= 12 ? undefined : t.length <= 22 ? 'm' : t.length <= 40 ? 'l' : 'xl')
 const TIER_FIT = { m: 0.72, l: 0.52, xl: 0.4 } as const
 /**
- * Geist Pixel is wide (about 0.62em a letter), so the longest word also sets the size:
- * about four and a half letters fill the title column at full size. Words shrink rather than break.
+ * The longest word also sets the size, so a long word shrinks rather than breaks:
+ * about six condensed letters fill the title column at full size.
  */
 const titleScale = (t: string | null) => {
   const tier = titleFit(t)
   const longest = Math.max(1, ...(t?.trim().split(/\s+/) ?? []).map((w) => w.length))
-  return Math.min(tier ? TIER_FIT[tier] : 1, 4.4 / longest)
+  return Math.min(tier ? TIER_FIT[tier] : 1, 6 / longest)
 }
 
 /** Short titles stack one word per line, so the record sits right against them. */

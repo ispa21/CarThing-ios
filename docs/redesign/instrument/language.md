@@ -8,12 +8,12 @@ A printed plate with black keys on it. The machine takes the colour of the recor
 - Keys: ecru caps, 2px ink edge, hard ink drop (`0 5px 0`). A press travels onto the drop; a latched key stays down and inverts.
 - Artwork is never cropped, filtered or overlaid. Colour blocks sit *behind* it.
 
-## Type — four voices
-- **Geist Pixel** `.display` for titles and big numbers. It's wide: titles are sized by their longest word.
+## Type — three faces
+- **Archivo** at 62% width and 900 weight, `.display`, for titles and big numbers. Titles are also sized by their longest word, so words shrink instead of breaking.
 - **Stack Sans Text** for labels (`.label`, tracked caps), keys and body.
 - **Departure Mono** `.readout`, lowercase and tabular, for anything the machine measures.
-- **Junicode** italic `.serif` for people, places and the one sentence each screen says.
-- All self-hosted from `src/assets/fonts` under the SIL OFL.
+- **Stack Sans Text**, upright, is also the human voice (`.serif`): artists, places and the one sentence each screen says.
+- All self-hosted (CSP); Stack Sans Text and Departure Mono from `src/assets/fonts` under the SIL OFL, Archivo via Fontsource.
 
 ## Composition
 - The rail is one fused black shape (four keys joined by necks) plus printed mode words. Where you are is written in brackets: `( stories )`.

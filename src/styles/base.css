@@ -158,7 +158,7 @@ main:focus,
 /* People and places: the italic serif. */
 .serif {
   font-family: var(--font-serif);
-  font-style: italic;
+  font-style: normal;
   font-weight: 400;
   letter-spacing: 0;
 }
@@ -166,7 +166,7 @@ main:focus,
 /* The song: condensed black caps. */
 .display {
   font-family: var(--font-display);
-  font-synthesis: none;
+  font-stretch: var(--w-condensed);
   font-weight: 900;
   line-height: 0.8;
   letter-spacing: -0.03em;

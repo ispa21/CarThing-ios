@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
-import { LevelKnob, ModeKeys } from '../app/ChannelStrip'
+import { ModeKeys } from '../app/ChannelStrip'
 import { Deck } from '../app/Deck'
 import { tickLink } from '../app/router'
 import { usePhonePortrait } from '../lib/orientation'
@@ -144,7 +144,6 @@ export function NowPlaying() {
           status={{ text: s.isPlaying ? 'running' : 'standby', live: s.isPlaying }}
           menu={more}
           next={<QueueHandle uri={s.uri} />}
-          channel={<LevelKnob />}
           attribution={
             (s.uri || s.url) && (
               <SpotifyLink className="np-attr label" uri={s.uri} url={s.url} label="Open in Spotify">

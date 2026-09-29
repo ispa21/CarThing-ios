@@ -1,7 +1,7 @@
 /* ── The deck ──────────────────────────────────────────────────────────────
    The song's name, enormous, with its cover set into it like a letter; the
-   record's colour offset behind the cover like misregistered print; a knob too
-   big for the plate, falling off its right edge; a scrub line from edge to edge;
+   record's colour offset behind the cover like misregistered print; a scrub line
+   from edge to edge;
    keys along the bottom; the queue as a handle pinned to the bottom edge. */
 
 .np {
@@ -14,7 +14,6 @@
 }
 
 .np-body {
-  --knob: clamp(300px, 58dvh, 520px);
   /* What the title may occupy: the height left after the other rows, split over two lines. */
   --title-max: min(15vw, calc((100dvh - 420px) / 1.66));
   position: relative;
@@ -36,7 +35,6 @@
   align-items: center;
   gap: var(--s-3);
   min-height: var(--tap);
-  padding-right: calc(var(--knob) * 0.55);
 }
 
 .np-status {
@@ -69,7 +67,7 @@
   align-items: flex-start;
   gap: clamp(16px, 2.6vw, 44px);
   min-height: 0;
-  padding: var(--s-2) calc(var(--knob) * 0.74 - var(--pad-r)) 0 0;
+  padding: var(--s-2) 0 0 0;
 }
 
 .np-meta-stack {
@@ -100,7 +98,7 @@
   line-clamp: 3;
   overflow: hidden;
   font-family: var(--font-display);
-  font-synthesis: none;
+  font-stretch: var(--w-condensed);
   font-weight: 900;
   font-size: calc(var(--title-max) * var(--fit, 1));
   line-height: 0.8;
@@ -185,9 +183,9 @@
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0 var(--s-3);
-  padding: var(--s-4) calc(var(--knob) * 0.74 - var(--pad-r)) 0 0;
+  padding: var(--s-4) 0 0 0;
   font-family: var(--font-serif);
-  font-style: italic;
+  font-style: normal;
   font-size: clamp(1.25rem, 0.9rem + 1.6vw, 2.5rem);
   line-height: 1.05;
 }
@@ -205,42 +203,6 @@
   font-style: normal;
   font-size: 0.75rem;
   color: var(--ink-3);
-}
-
-/* ── The level knob, falling off the plate ── */
-
-.np-channel {
-  position: absolute;
-  z-index: 1;
-  top: calc(var(--tap) + var(--s-2));
-  right: calc(-1 * (var(--pad-r) + var(--knob) * 0.3));
-}
-
-.level {
-  position: relative;
-}
-
-.level .knob {
-  --knob: inherit;
-}
-
-.level-readout {
-  position: absolute;
-  left: calc(var(--knob) * 0.02);
-  bottom: calc(var(--knob) * -0.02);
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.level-readout .label {
-  font-size: 0.5625rem;
-  color: var(--ink-3);
-}
-
-.level-value {
-  font-size: clamp(1.25rem, 1rem + 1vw, 2rem);
-  line-height: 1;
 }
 
 /* ── The scrub line, full bleed ── */
@@ -308,7 +270,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   font-family: var(--font-serif);
-  font-style: italic;
+  font-style: normal;
   font-size: 1.125rem;
   color: var(--on-ink-2);
 }
@@ -367,7 +329,7 @@
 
 .np-idle-title {
   font-family: var(--font-display);
-  font-synthesis: none;
+  font-stretch: var(--w-condensed);
   font-weight: 900;
   font-size: min(var(--t-headline), 18vh);
   line-height: 0.8;
@@ -379,7 +341,7 @@
 
 .np-idle-sub {
   font-family: var(--font-serif);
-  font-style: italic;
+  font-style: normal;
   font-size: var(--t-lead);
   max-width: 34ch;
 }
@@ -465,30 +427,12 @@
   }
 
   .np-body {
-    --knob: clamp(190px, 56dvh, 280px);
     --title-max: calc((100dvh - 250px) / 1.66);
-  }
-
-  .level-readout {
-    left: auto;
-    right: calc(100% + 6px);
-    bottom: auto;
-    top: calc(var(--knob) * 0.1);
-    align-items: flex-end;
-  }
-
-  /* The level readout sits left of the knob here: keep the record clear of it. */
-  .np-lockup {
-    padding-right: calc(var(--knob) * 0.74 - var(--pad-r) + 72px);
   }
 
   .np-status-row,
   .np-album {
     display: none;
-  }
-
-  .np-channel {
-    top: calc(var(--s-2) * -1);
   }
 
   .np-line {
@@ -599,11 +543,6 @@
     font-size: 1.375rem;
   }
 
-  /* The knob needs a plate to fall off; upright, the trim keys set the level. */
-  .np-channel {
-    display: none;
-  }
-
   .np-keys {
     flex-wrap: wrap;
     padding-bottom: calc(var(--safe-b) + 76px);
@@ -645,10 +584,9 @@
   }
 }
 
-/* Tablets held upright: the cover above, the knob still falling off the edge. */
+/* Tablets held upright: the cover above the title. */
 @media (min-width: 600px) and (orientation: portrait) {
   .np-body {
-    --knob: clamp(320px, 44vw, 460px);
     --title-max: min(12vw, calc((100dvh - 700px) / 1.66));
   }
 

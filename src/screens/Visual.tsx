@@ -1,4 +1,4 @@
-import { useMemo, useRef, type CSSProperties } from 'react'
+import { useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { back, linkHandler } from '../app/router'
 import { formatTime } from '../lib/progress'
@@ -8,6 +8,18 @@ import { Artwork } from '../ui/Artwork'
 import { spotifyClock, useClockPainter, useClockValue } from '../ui/clock'
 import { EmptyState } from '../ui/Feedback'
 import { useRecordColours } from '../ui/useRecordColours'
+import { VisualWorld } from '../ui/VisualWorld'
+import { WORLDS, type World } from '../visual/worlds'
+
+const WORLD_KEY = 'partydeck.world'
+const readWorld = (): World => {
+  try {
+    const w = localStorage.getItem(WORLD_KEY) as World | null
+    return w && WORLDS.includes(w) ? w : 'rings'
+  } catch {
+    return 'rings'
+  }
+}
 
 const SIZE = 1000
 const C = SIZE / 2
@@ -60,6 +72,16 @@ export function Visual({ embedded = false }: { embedded?: boolean }) {
   const colours = useRecordColours(s.art)
   const world = colours?.palette ?? { ground: '#ece6d8', line: '#151513', accent: '#8f897b' }
   const paths = useWorldPaths()
+  const [worldKind, setWorldKind] = useState<World>(readWorld)
+  const pick = (w: World) => {
+    feedback.play('select')
+    setWorldKind(w)
+    try {
+      localStorage.setItem(WORLD_KEY, w)
+    } catch {
+      // private mode: remembered for this visit only
+    }
+  }
 
   const sweepRef = useRef<SVGGElement>(null)
   useClockPainter(spotifyClock, (ms, snap) => {
@@ -94,6 +116,7 @@ export function Visual({ embedded = false }: { embedded?: boolean }) {
     <div
       className="visual"
       data-paused={!s.isPlaying || undefined}
+      data-world={worldKind}
       style={
         {
           '--ground': world.ground,
@@ -104,7 +127,8 @@ export function Visual({ embedded = false }: { embedded?: boolean }) {
       }
     >
       <h1 className="sr-only">Visual: {s.title}</h1>
-      <svg className="visual-world" viewBox={`0 0 ${SIZE} ${SIZE}`} preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      {worldKind !== 'rings' && <VisualWorld world={worldKind} palette={world} />}
+      <svg className="visual-world" data-hidden={worldKind !== 'rings' || undefined} viewBox={`0 0 ${SIZE} ${SIZE}`} preserveAspectRatio="xMidYMid slice" aria-hidden="true">
         <path d={paths.thin} className="visual-ring" />
         <path d={paths.thick} className="visual-ring visual-ring-thick" />
         <path d={paths.minor} className="visual-tick" />
@@ -144,6 +168,13 @@ export function Visual({ embedded = false }: { embedded?: boolean }) {
           {formatTime(time)} / {formatTime(s.durationMs)}
         </span>
       </div>
+          <div className="visual-worlds" role="radiogroup" aria-label="World">
+            {WORLDS.map((w) => (
+              <button key={w} type="button" role="radio" aria-checked={w === worldKind} className="readout visual-worldkey" onClick={() => pick(w)}>
+                {w === worldKind ? `( ${w} )` : w}
+              </button>
+            ))}
+          </div>
         </>
       )}
     </div>

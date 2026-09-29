@@ -1,4 +1,5 @@
 // Four voices, self-hosted (the CSP allows fonts from 'self' only): see styles/fonts.css.
+import '@fontsource-variable/archivo/wdth.css'
 import './styles/fonts.css'
 import './styles/tokens.css'
 import './styles/base.css'

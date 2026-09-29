@@ -60,9 +60,11 @@
 
   /* ── Type: three voices ── */
   --font-ui: 'Stack Sans Text', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-display: 'Geist Pixel', 'Stack Sans Text', ui-monospace, monospace;
+  /* Big type: Archivo at its most condensed and heaviest — built for giant sizes. */
+  --font-display: 'Archivo Variable', 'Archivo', system-ui, sans-serif;
   --font-mono: 'Departure Mono', ui-monospace, 'SF Mono', Menlo, monospace;
-  --font-serif: 'Junicode', 'Iowan Old Style', Georgia, serif;
+  /* The human voice (artists, places, sentences): the interface face, upright. */
+  --font-serif: 'Stack Sans Text', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --w-condensed: 62%;
   --w-semi: 86%;
   --w-normal: 100%;

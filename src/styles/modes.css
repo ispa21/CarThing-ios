@@ -37,6 +37,70 @@
   height: 100%;
 }
 
+.visual-world[data-hidden] {
+  display: none;
+}
+
+/* The generative worlds: one canvas, full bleed, under the record and the title. */
+.visual-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+.visual-world-note {
+  position: absolute;
+  left: var(--pad-l);
+  bottom: calc(var(--safe-b) + 72px);
+  font-size: 11px;
+}
+
+.visual-canvas[data-world='orb'] {
+  image-rendering: auto;
+}
+
+/* With the world keys along the bottom, the title stands just above them. */
+.visual:has(.visual-worlds) .visual-title {
+  bottom: calc(var(--safe-b) + var(--s-3) + 52px);
+}
+
+/* Over a busy world, the printed corners get a plate so they stay legible. */
+.visual:not([data-world='rings']) .visual-corner {
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-xs);
+  background: color-mix(in srgb, var(--ground) 86%, transparent);
+}
+
+/* Which world: printed words along the bottom edge, like the builder's rooms. */
+.visual-worlds {
+  position: absolute;
+  z-index: 3;
+  left: var(--pad-l);
+  bottom: calc(var(--safe-b) + var(--s-3));
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--s-4);
+  padding: 0 var(--s-2);
+  border-radius: var(--r-xs);
+  background: color-mix(in srgb, var(--ground) 82%, transparent);
+}
+
+.visual-worldkey {
+  min-height: var(--tap);
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: color-mix(in srgb, var(--line) 60%, var(--ground));
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.visual-worldkey[aria-checked='true'] {
+  color: var(--line);
+}
+
 .visual-ring {
   fill: none;
   stroke: var(--line);
