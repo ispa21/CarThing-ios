@@ -1,4 +1,4 @@
-import { useEffect, useRef, type MouseEvent } from 'react'
+import { useEffect, useRef, useState, type MouseEvent } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { feedback } from '../sensory/feedback'
 import { togglePlay } from '../spotify/playbackService'
@@ -7,6 +7,7 @@ import { openDevices } from '../store/ui'
 import { FullscreenButton } from '../ui/FullscreenButton'
 import { Icon } from '../ui/Icon'
 import { PressKey } from '../ui/PressKey'
+import { ModesSheet } from './ModesSheet'
 import { RAIL_MODES, RAIL_TABS } from './nav'
 import { linkHandler, PATHS, tickLink, type Route } from './router'
 
@@ -29,6 +30,9 @@ export function Rail({ route }: { route: Route }) {
     const list = modesRef.current
     if (el && list) list.scrollLeft = el.offsetLeft - list.clientWidth / 2 + el.clientWidth / 2
   }, [route])
+  const [modesOpen, setModesOpen] = useState(false)
+  const mode = RAIL_MODES.find((m) => m.route === route)
+  const device = usePlayback((s) => s.playback.deviceName)
   return (
     <header className="rail" data-route={route}>
       <a className="wordmark-link" href="/" onClick={tickLink} aria-label="PartyDeck, go to the deck">
@@ -51,6 +55,22 @@ export function Rail({ route }: { route: Route }) {
               </a>
             </li>
           ))}
+          {/* Phones: the fifth key. It names the mode you're in, and opens all of them. */}
+          <li className="rail-more-item">
+            <button
+              className="rail-tab rail-more"
+              aria-haspopup="dialog"
+              aria-expanded={modesOpen}
+              aria-current={mode || route === 'settings' ? 'page' : undefined}
+              aria-label={mode ? `Modes, in ${mode.label}` : 'Modes'}
+              onClick={() => {
+                feedback.play('select')
+                setModesOpen(true)
+              }}
+            >
+              {mode ? (mode.short ?? mode.label) : route === 'settings' ? 'settings' : 'modes'}
+            </button>
+          </li>
         </ul>
         {RAIL_MODES.length > 0 && (
           <ul ref={modesRef} className="rail-modes" aria-label="Modes">
@@ -72,6 +92,7 @@ export function Rail({ route }: { route: Route }) {
           <Icon name="trim" />
         </a>
       </div>
+      <ModesSheet open={modesOpen} onClose={() => setModesOpen(false)} route={route} device={device} />
     </header>
   )
 }

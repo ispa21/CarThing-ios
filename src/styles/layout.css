@@ -343,7 +343,17 @@
   align-items: center;
 }
 
-/* Phones held sideways: one tight row. The modes scroll; the wordmark steps aside. */
+/* The MODES key exists only on phones (below). */
+.rail-tabs .rail-more-item {
+  display: none;
+}
+
+.rail-more {
+  border: 0;
+  cursor: pointer;
+}
+
+/* Phones held sideways: one tight row — the four keys, MODES, and the output lamp. */
 @media (max-height: 520px) and (orientation: landscape) {
   .rail {
     --rail-h: 52px;
@@ -353,8 +363,14 @@
   }
 
   .wordmark-link,
-  .nowline {
+  .nowline,
+  .rail-modes,
+  .rail-tools > .icon-btn {
     display: none;
+  }
+
+  .rail-tabs .rail-more-item {
+    display: flex;
   }
 
   .rail-tab {
@@ -371,49 +387,59 @@
   }
 }
 
-/* Phones held upright: the keys fill a row; modes and tools share the next. */
+/* Phones held upright: one row of five keys. Modes, output and settings sit behind MODES. */
 @media (max-width: 599px) and (orientation: portrait) {
   .rail {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas:
-      'tabs tabs'
-      'modes tools';
-    gap: 0 var(--s-2);
-    padding-bottom: 0;
+    gap: 0;
   }
 
   .wordmark-link,
-  .nowline,
-  .rail-route-name {
+  .rail-modes,
+  .rail-tools {
     display: none;
   }
 
   .rail-nav {
-    display: contents;
+    flex: 1;
   }
 
   .rail-tabs {
-    grid-area: tabs;
+    flex: 1;
+    min-width: 0;
   }
 
-  .rail-tabs li {
-    flex: 1;
+  .rail-tabs li,
+  .rail-tabs .rail-more-item {
+    display: flex;
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .rail-tabs li + li::before {
+    flex: none;
+    width: 5px;
   }
 
   .rail-tab {
     flex: 1;
-    padding: 0 6px;
-    letter-spacing: 0.1em;
+    min-width: 0;
+    padding: 0 2px;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  .rail-modes {
-    grid-area: modes;
+  .rail-tab::before,
+  .rail-tab::after {
+    display: none;
   }
 
-  .rail-tools {
-    grid-area: tools;
-    gap: 0;
+  /* Where you are, without brackets that would not fit: the key lights up. */
+  .rail-tab[aria-current] {
+    background: var(--record-deep);
+    color: var(--on-ink);
   }
 }
 

@@ -8,13 +8,13 @@ export const RAIL_TABS: Array<{ route: Route; label: string }> = [
   { route: 'search', label: 'library' },
 ]
 
-/** The modes: printed beside the keys, because each changes the whole machine. */
-export const RAIL_MODES: Array<{ route: Route; label: string }> = [
-  { route: 'mix', label: 'mix' },
-  { route: 'visual', label: 'visual' },
-  { route: 'crate', label: 'crate' },
-  { route: 'transmission', label: 'transmission' },
-  { route: 'archive', label: 'archive' },
-  { route: 'stories', label: 'stories' },
-  { route: 'screen', label: 'screen' },
+/** The modes: printed beside the keys, because each changes the whole machine. On phones they live behind the MODES key. */
+export const RAIL_MODES: Array<{ route: Route; label: string; about: string; short?: string }> = [
+  { route: 'mix', label: 'mix', about: 'Two decks and a crossfader.' },
+  { route: 'visual', label: 'visual', about: 'The cover becomes the room.' },
+  { route: 'crate', label: 'crate', about: 'What you’re into right now.' },
+  { route: 'transmission', label: 'transmission', short: 'radio', about: 'Radio stations from your library.' },
+  { route: 'archive', label: 'archive', about: 'Your days, as stacks of records.' },
+  { route: 'stories', label: 'stories', about: 'What your listening says.' },
+  { route: 'screen', label: 'screen', about: 'Put the deck on a TV.' },
 ]

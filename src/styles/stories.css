@@ -974,3 +974,9 @@
     transition: none;
   }
 }
+
+/* No stations: one column at every size. */
+.tx.tx-empty {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: none;
+}

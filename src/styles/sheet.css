@@ -402,3 +402,118 @@
     scale: none;
   }
 }
+
+/* ── Modes (phones): seven tiles, then output and settings ── */
+
+.sheet {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.modes-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.modes-tile {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas: 'num name' 'about about';
+  align-items: baseline;
+  gap: 2px var(--s-2);
+  min-height: 76px;
+  padding: var(--s-3);
+  border: 2px solid var(--ink);
+  border-radius: var(--r-m);
+  background: var(--plate-hi);
+  box-shadow: 0 4px 0 var(--ink);
+  color: var(--ink);
+  text-decoration: none;
+  transition:
+    translate var(--dur-press) var(--ease-out),
+    box-shadow var(--dur-press) var(--ease-out);
+}
+
+.modes-tile:active {
+  translate: 0 3px;
+  box-shadow: 0 1px 0 var(--ink);
+}
+
+.modes-tile[aria-current] {
+  background: var(--ink);
+  color: var(--on-ink);
+  translate: 0 3px;
+  box-shadow: 0 1px 0 var(--ink);
+}
+
+.modes-num {
+  grid-area: num;
+  font-size: 10px;
+  color: var(--ink-3);
+}
+
+.modes-tile[aria-current] .modes-num {
+  color: var(--on-ink-2);
+}
+
+.modes-name {
+  grid-area: name;
+  font-size: clamp(1.25rem, 0.6rem + 3vw, 1.75rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.modes-about {
+  grid-area: about;
+  font-size: 0.9375rem;
+  line-height: 1.2;
+}
+
+.modes-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3);
+  margin-top: var(--s-5);
+}
+
+.modes-tools .btn {
+  text-decoration: none;
+}
+
+.modes-device {
+  flex: 1 1 200px;
+  justify-content: flex-start;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.modes-device .readout {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .modes-tile {
+    min-height: 0;
+    padding: var(--s-2) var(--s-3);
+  }
+
+  .modes-name {
+    font-size: 1.375rem;
+  }
+
+  .modes-about {
+    font-size: 0.8125rem;
+  }
+
+  .modes-tools {
+    margin-top: var(--s-3);
+  }
+}
