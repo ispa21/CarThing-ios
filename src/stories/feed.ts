@@ -2,8 +2,9 @@
 // thing worth interrupting you with. Stories is the presentation layer; this decides
 // what's worth showing today. Pure.
 
-import type { LibraryPlaylist } from '../history/library'
+import type { LibraryPlaylist, TopLists } from '../history/library'
 import { capsuleOf, eras, monthSoundtrack, thenVsNow, timeCapsule, type Capsule } from './archive'
+import { faded, longGame, rising } from './past'
 import type { Card } from './cards'
 import { albumNeglect, almostFans, compression, discoveryDebt, duplicateTaste, followTheThread, forgottenPlaylist, graveyard, outsideTheCore, theBridge } from './discover'
 import { stories, type Inputs, type Story } from './engine'
@@ -37,6 +38,7 @@ import {
 export interface FeedInputs extends Inputs {
   playlists?: LibraryPlaylist[]
   followed?: string[]
+  top?: TopLists | null
   capsules?: Capsule[]
   /** Story ids you've set aside, until when. */
   dismissed?: Record<string, number>
@@ -73,7 +75,7 @@ function safely<T>(f: () => T): T | null {
 }
 
 export function buildFeed(input: FeedInputs, seed: number): Feed {
-  const m = buildModel({ plays: input.plays, library: input.library, playlists: input.playlists, now: input.now })
+  const m = buildModel({ plays: input.plays, library: input.library, playlists: input.playlists, top: input.top, now: input.now })
   const legacy = stories(input, seed)
   const makers: Array<() => Card | null> = [
     // now
@@ -110,7 +112,10 @@ export function buildFeed(input: FeedInputs, seed: number): Feed {
     () => comebacks(m),
     () => closers(m),
     () => whatPartyDeckKnows(m, seed),
+    () => faded(m),
+    () => rising(m),
     // archive
+    () => longGame(m),
     () => eras(m),
     () => thenVsNow(m),
     () => monthSoundtrack(m),

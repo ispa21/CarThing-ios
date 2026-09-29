@@ -32,7 +32,7 @@ export function useFeed() {
   useEffect(() => {
     if (!loaded) return
     let live = true
-    void ask({ type: 'feed', input: { ...inputs, playlists: library?.playlists, followed: library?.followed, capsules, dismissed }, seed }).then((r) => {
+    void ask({ type: 'feed', input: { ...inputs, playlists: library?.playlists, followed: library?.followed, top: library?.top, capsules, dismissed }, seed }).then((r) => {
       if (!live || r.type !== 'feed') return
       setResult({ for: inputs, view: r.view })
       if (r.view.capsule && capsuleDue(capsules, now)) sealCapsule(r.view.capsule)

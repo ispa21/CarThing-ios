@@ -133,3 +133,24 @@ describe('the feed', () => {
     expect(capsuleDue([{ at: NOW - DAY, artists: [], rooms: [], emerging: [], uris: [] }], NOW)).toBe(true === (new Date(NOW - DAY).getMonth() !== new Date(NOW).getMonth()))
   })
 })
+
+describe('stories from Spotify’s ranking of your past', () => {
+  const ref = (artist: string, i: number) => ({ uri: `spotify:track:${artist.replace(/\W/g, '').slice(0, 6)}${i}`.padEnd(36, 'q'), title: `${artist} ${i}`, artist, album: null, art: null, durationMs: 200_000 })
+  const top = {
+    fetchedAt: NOW,
+    long: { tracks: Array.from({ length: 20 }, (_, i) => ref(i < 10 ? 'Old Love' : 'Constant', i)), artists: ['Old Love', 'Faded Two', 'Constant'] },
+    medium: { tracks: [ref('Constant', 12)], artists: ['Constant'] },
+    short: { tracks: [ref('Constant', 12), ref('New One', 1), ref('New Two', 1), ref('New One', 2)], artists: ['Constant', 'New One', 'New Two'] },
+  }
+
+  it('works on day one, with no plays and no library', () => {
+    const ids = buildFeed({ plays: [], library: [], top, now: NOW }, 1).cards.map((c) => c.id)
+    expect(ids).toEqual(expect.arrayContaining(['long-game', 'rising']))
+  })
+
+  it('stands the ranking in for the core when there is little history', () => {
+    const m = buildModel({ plays: [], library: [], top, now: NOW })
+    expect(m.core.size).toBeGreaterThan(10)
+    expect(m.bucket(top.long.tracks[0].uri)).toBe('core')
+  })
+})

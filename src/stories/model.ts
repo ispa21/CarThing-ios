@@ -6,7 +6,7 @@
 // track then gets a RISK bucket — how likely you are to enjoy it — which is what lets a
 // session be safe or deliberately uncertain.
 
-import type { LibraryPlaylist, LibraryTrack } from '../history/library'
+import type { LibraryPlaylist, LibraryTrack, TopLists } from '../history/library'
 import { sessionsFrom } from '../history/sessions'
 import type { Play, Session, TrackRef } from '../history/types'
 import { DAY, describe, trackStats, type TrackStats } from './stats'
@@ -46,6 +46,9 @@ export interface Model {
   graph: Map<string, Map<string, number>>
   core: Set<string>
   artistListens: Map<string, number>
+  /** Spotify's ranking of your past, when read. */
+  top: TopLists | null
+  topArtists: Set<string>
   /** Indexes, so stories never rescan everything per artist or per track. */
   statsByArtist: Map<string, TrackStats[]>
   libByArtist: Map<string, LibraryTrack[]>
@@ -64,7 +67,7 @@ export const lead = (artist: string) => artist.split(', ')[0] ?? artist
 /** Playlists bigger than this are dumps: they say little about which artists belong together. */
 const DUMP = 150
 
-export function buildModel(input: { plays: Play[]; library: LibraryTrack[]; playlists?: LibraryPlaylist[]; now: number }): Model {
+export function buildModel(input: { plays: Play[]; library: LibraryTrack[]; playlists?: LibraryPlaylist[]; top?: TopLists | null; now: number }): Model {
   const { now } = input
   const plays = [...input.plays].sort((a, b) => a.ts - b.ts)
   const playlists = input.playlists ?? []
@@ -77,7 +80,12 @@ export function buildModel(input: { plays: Play[]; library: LibraryTrack[]; play
     return n
   }
 
+  const top = input.top ?? null
+  const topTracks = new Map<string, TrackRef>()
+  for (const r of ['long', 'medium', 'short'] as const) for (const t of top?.[r].tracks ?? []) topTracks.set(t.uri, t)
+  const topArtists = new Set((['long', 'medium', 'short'] as const).flatMap((r) => (top?.[r].artists ?? []).map(lead)))
   const artistOf = new Map<string, string>()
+  for (const t of topTracks.values()) artistOf.set(t.uri, lead(t.artist))
   for (const t of input.library) artistOf.set(t.uri, lead(t.artist))
   for (const s of stats.values()) if (!artistOf.has(s.track.uri)) artistOf.set(s.track.uri, lead(s.track.artist))
   const primary = (uri: string) => artistOf.get(uri) ?? ''
@@ -250,6 +258,9 @@ export function buildModel(input: { plays: Play[]; library: LibraryTrack[]; play
       core.add(u)
       acc += n
     }
+  } else if (top) {
+    // Little history yet: Spotify's own ranking of your last months and years stands in.
+    for (const t of [...top.medium.tracks, ...top.long.tracks]) core.add(t.uri)
   }
   const coreArtists = new Set([...core].map(primary))
   const coreRooms = new Set([...coreArtists].map((a) => roomOf.get(a)).filter(Boolean))
@@ -258,10 +269,10 @@ export function buildModel(input: { plays: Play[]; library: LibraryTrack[]; play
   const bucket = (uri: string): Bucket => {
     if (core.has(uri)) return 'core'
     const s = stats.get(uri)
-    if (s && s.listens >= 3 && now - s.last < 180 * DAY) return 'familiar'
+    if ((s && s.listens >= 3 && now - s.last < 180 * DAY) || topTracks.has(uri)) return 'familiar'
     if (s && s.listens >= 1) return 'rediscovery'
     const a = primary(uri)
-    if ((artistListens.get(a) ?? 0) >= 5 || coreRooms.has(roomOf.get(a))) return 'adjacent'
+    if ((artistListens.get(a) ?? 0) >= 5 || topArtists.has(a) || coreRooms.has(roomOf.get(a))) return 'adjacent'
     if (nearCore(a) || (artistListens.get(a) ?? 0) > 0) return 'experiment'
     return 'wild'
   }
@@ -279,11 +290,13 @@ export function buildModel(input: { plays: Play[]; library: LibraryTrack[]; play
     graph,
     core,
     artistListens,
+    top,
+    topArtists,
     statsByArtist,
     libByArtist,
     earlyExits,
     primary,
-    track: (uri) => describe(uri, lib, stats),
+    track: (uri) => describe(uri, lib, stats) ?? topTracks.get(uri) ?? null,
     bucket,
     recent,
   }

@@ -7,6 +7,8 @@ import type {
   RawCreatedPlaylist,
   RawDevice,
   RawFollowedArtists,
+  RawTopArtists,
+  RawTopTracks,
   RawPaging,
   RawPlayback,
   RawPlaylist,
@@ -135,6 +137,11 @@ export const getSavedTracks = (offset = 0) => spotify<RawPaging<RawSavedTrack>>(
 /** Scope playlist-read-private. Feb 2026: `/tracks` became `/items`, and each entry's `track` became `item`. */
 export const getPlaylistItems = (id: string, offset = 0) =>
   spotify<RawPaging<RawPlaylistItem>>(`/playlists/${encodeURIComponent(id)}/items`, { query: { limit: 50, offset } })
+
+/** Scope user-top-read. short_term ≈ 4 weeks, medium_term ≈ 6 months, long_term ≈ a year and more. */
+export type TopRange = 'short_term' | 'medium_term' | 'long_term'
+export const getTopTracks = (range: TopRange, offset = 0) => spotify<RawTopTracks>('/me/top/tracks', { query: { time_range: range, limit: 50, offset } })
+export const getTopArtists = (range: TopRange, offset = 0) => spotify<RawTopArtists>('/me/top/artists', { query: { time_range: range, limit: 50, offset } })
 
 /** Scope user-follow-read. Artists you follow, 50 at a time, by cursor. */
 export const getFollowedArtists = (after?: string) => spotify<RawFollowedArtists>('/me/following', { query: { type: 'artist', limit: 50, after } })

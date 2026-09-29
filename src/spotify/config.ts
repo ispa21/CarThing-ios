@@ -20,6 +20,9 @@ export const SPOTIFY_SCOPES = [
   'user-library-read',
   // Stories: artists you follow but never really listened to ("discovery debt").
   'user-follow-read',
+  // Stories: your top tracks and artists over 4 weeks, 6 months and ~a year+ — the past,
+  // before PartyDeck was watching (the API keeps no older play-by-play history).
+  'user-top-read',
 ] as const
 
 export const isSpotifyConfigured = SPOTIFY_CLIENT_ID.length > 0

@@ -28,6 +28,8 @@ import {
   normalizeRecent,
   normalizeSavedTracks,
   normalizeSearch,
+  normalizeTopArtists,
+  normalizeTopTracks,
   type MediaItem,
   type PlaybackState,
   type RepeatMode,
@@ -437,7 +439,7 @@ export async function scanLibrary(
   const delta = { newLiked: 0, changed: 0, unchanged: 0, fullLiked: !prev }
   let skipped = 0
 
-  const index = (): LibraryIndex => ({ tracks: [...map.values()], playlists: [...lists.values()], followed: prev?.followed, scannedAt: Date.now() })
+  const index = (): LibraryIndex => ({ tracks: [...map.values()], playlists: [...lists.values()], followed: prev?.followed, top: prev?.top, scannedAt: Date.now() })
 
   /** One request, waiting out rate limits. Other errors are the caller's. */
   async function call<T>(fn: () => Promise<T>, resume: ScanProgress): Promise<T> {
@@ -567,6 +569,31 @@ export async function scanLibrary(
     problems.push(said(e))
   }
 
+  // Your past, as Spotify ranks it: top tracks and artists over three horizons.
+  let top: LibraryIndex['top'] = prev?.top
+  if (hasScope('user-top-read') && !stop() && (!prev?.top || Date.now() - prev.top.fetchedAt > DAY_MS)) {
+    try {
+      const ranges = [
+        ['short', 'short_term'],
+        ['medium', 'medium_term'],
+        ['long', 'long_term'],
+      ] as const
+      const next = { fetchedAt: Date.now() } as NonNullable<LibraryIndex['top']>
+      for (const [name, range] of ranges) {
+        const tracks = [...normalizeTopTracks(await call(() => api.getTopTracks(range, 0), { phase: 'playlists', done: 0, total: 1, name: `your top tracks (${name})` })), ...normalizeTopTracks(await call(() => api.getTopTracks(range, 49), { phase: 'playlists', done: 0, total: 1 }))]
+        const artists = [...normalizeTopArtists(await call(() => api.getTopArtists(range, 0), { phase: 'playlists', done: 0, total: 1 })), ...normalizeTopArtists(await call(() => api.getTopArtists(range, 49), { phase: 'playlists', done: 0, total: 1 }))]
+        const seen = new Set<string>()
+        next[name] = {
+          tracks: tracks.filter((t) => !seen.has(t.uri) && seen.add(t.uri)).map(({ addedAt: _a, ...t }) => t),
+          artists: [...new Set(artists)],
+        }
+      }
+      top = next
+    } catch (e) {
+      if (!(e instanceof DOMException)) problems.push(`top tracks: ${said(e)}`)
+    }
+  }
+
   const followed: string[] = []
   if (hasScope('user-follow-read') && !stop()) {
     try {
@@ -583,5 +610,5 @@ export async function scanLibrary(
   }
   // A track that's neither liked nor in any playlist has left your library.
   for (const [uri, t] of map) if (!t.liked && !t.playlists.length) map.delete(uri)
-  return { ...index(), followed: followed.length ? followed : prev?.followed, skipped, problems, delta }
+  return { ...index(), followed: followed.length ? followed : prev?.followed, top, skipped, problems, delta }
 }

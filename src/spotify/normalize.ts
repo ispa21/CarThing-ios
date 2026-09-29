@@ -346,3 +346,9 @@ export const normalizeSavedTracks = (page: RawPaging<RawSavedTrack> | null) =>
 
 export const normalizePlaylistItems = (page: RawPaging<RawPlaylistItem> | null) =>
   (page?.items ?? []).map((i) => libraryEntry(i?.item, i?.added_at)).filter((t): t is LibraryEntry => t !== null)
+
+/** Top tracks as library entries (no added date: they're about listening, not saving). */
+export const normalizeTopTracks = (page: RawPaging<RawItem | null> | null) =>
+  (page?.items ?? []).map((t) => libraryEntry(t, null)).filter((t): t is LibraryEntry => t !== null)
+
+export const normalizeTopArtists = (page: RawPaging<{ name: string } | null> | null) => (page?.items ?? []).flatMap((a) => (a?.name ? [a.name] : []))

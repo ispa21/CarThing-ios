@@ -23,11 +23,16 @@ export interface LibraryPlaylist {
   checkedAt?: number
 }
 
+export type TopRangeName = 'short' | 'medium' | 'long'
+export type TopLists = Record<TopRangeName, { tracks: TrackRef[]; artists: string[] }> & { fetchedAt: number }
+
 export interface LibraryIndex {
   tracks: LibraryTrack[]
   playlists: LibraryPlaylist[]
   /** Names of artists you follow, when the session can read them. */
   followed?: string[]
+  /** Spotify's own view of your past: top tracks and artists per time range, best first. */
+  top?: TopLists
   scannedAt: number
 }
 

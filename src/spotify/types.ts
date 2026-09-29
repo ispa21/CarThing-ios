@@ -163,3 +163,7 @@ export interface RawCreatedPlaylist {
 export interface RawFollowedArtists {
   artists: { items: Array<RawArtist | null>; next: string | null; cursors?: { after?: string | null } | null; total?: number }
 }
+
+/** GET /me/top/{tracks|artists} */
+export type RawTopTracks = RawPaging<RawTrack | null>
+export type RawTopArtists = RawPaging<RawArtist | null>

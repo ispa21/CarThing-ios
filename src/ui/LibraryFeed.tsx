@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { readExportFiles, type ExportText } from '../history/exportFiles'
 import { parseStreamingHistory } from '../history/importer'
 import { addPlays } from '../history/service'
 import type { Play } from '../history/types'
@@ -27,13 +28,25 @@ export function LibraryFeed() {
 
   async function importFiles(files: FileList | null) {
     if (!files?.length) return
-    setStatus('Reading the export…')
+    setStatus('Opening the export…')
     const found: Play[] = []
     let basic = 0
     let unknown = 0
-    for (const file of files) {
+    let texts: ExportText[] = []
+    try {
+      texts = await readExportFiles(files)
+    } catch {
+      setStatus('That ZIP couldn’t be opened. Try the JSON files inside it instead.')
+      return
+    }
+    if (!texts.length) {
+      setStatus('No listening history in there. Look for files named Streaming_History_Audio_….json.')
+      return
+    }
+    setStatus(`Reading ${texts.length} ${texts.length === 1 ? 'file' : 'files'}…`)
+    for (const file of texts) {
       try {
-        const r = parseStreamingHistory(JSON.parse(await file.text()))
+        const r = parseStreamingHistory(JSON.parse(file.text))
         if (r.kind === 'extended') found.push(...r.plays)
         else if (r.kind === 'basic') basic++
         else unknown++
@@ -89,8 +102,8 @@ export function LibraryFeed() {
         )}
         {canScan && !followScope && <ReconnectButton label="Reconnect to include followed artists" />}
         <label className="btn feed-file" onClick={() => feedback.play('select')}>
-          Import streaming history
-          <input type="file" accept=".json,application/json" multiple className="sr-only" onChange={(e) => {
+          Import Spotify export (.zip or .json)
+          <input type="file" accept=".json,.zip,application/json,application/zip" multiple className="sr-only" onChange={(e) => {
               const input = e.currentTarget
               void importFiles(input.files).finally(() => {
                 input.value = ''
