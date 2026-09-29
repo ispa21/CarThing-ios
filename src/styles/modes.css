@@ -74,7 +74,7 @@
   bottom: 4dvh;
   text-align: center;
   white-space: nowrap;
-  font-size: calc(clamp(64px, 12vw, 176px) * var(--fit, 1));
+  font-size: calc(min(12vw, 176px) * var(--fit, 1));
   color: var(--line);
 }
 
@@ -170,6 +170,22 @@
 
 .visual-artist {
   font-size: 1.625rem;
+}
+
+/* Upright phones: the two corners share one narrow top edge. */
+@media (max-width: 699px) and (orientation: portrait) {
+  .visual-tl {
+    max-width: 44%;
+  }
+
+  .visual-tr {
+    max-width: 52%;
+    text-align: right;
+  }
+
+  .visual-artist {
+    font-size: 1.25rem;
+  }
 }
 
 /* ── SCREEN: the TV ── */
@@ -310,12 +326,13 @@
 .tv-modes {
   position: absolute;
   z-index: 4;
-  left: 0;
-  right: 0;
+  left: var(--pad-l);
+  right: var(--pad-r);
   bottom: calc(var(--safe-b) + 18px);
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
-  gap: var(--s-3);
+  gap: 0 var(--s-3);
   transition: opacity var(--dur-slow) ease;
 }
 

@@ -124,9 +124,10 @@ export function LyricsScreen({ source }: { source: PlaybackSource }) {
 
   const state = useResolvedLyrics(track.title ? { title: track.title, artist: track.artist ?? '', durationMs: track.durationMs } : null)
 
-  const lines = state.status === 'ready' ? state.lyrics.lines : NO_LINES
   // Timed follow only when the lyrics have stamps AND the clock isn't Spotify audio (policy.ts).
   const timed = state.status === 'ready' && state.lyrics.synced && canTimeSync(source)
+  // Untimed readers get the reading layout (verse breaks) when the provider has one.
+  const lines = state.status === 'ready' ? (timed ? state.lyrics.lines : (state.lyrics.plain ?? state.lyrics.lines)) : NO_LINES
 
   const deriveIndex = useCallback(
     (ms: number, isPlaying: boolean) => (timed ? lyricsEngine({ lyrics: lines, playbackPositionMs: ms, isPlaying }).currentIndex : -1),

@@ -390,7 +390,7 @@
   position: relative;
   flex: 1;
   margin: var(--s-4) calc(var(--pad-r) * 0.45) 0 calc(var(--pad-l) * 0.45);
-  padding: 34px calc(var(--pad-r) * 0.55) calc(var(--safe-b) + var(--s-7)) calc(var(--pad-l) * 0.55);
+  padding: 44px calc(var(--pad-r) * 0.55) calc(var(--safe-b) + var(--s-7)) calc(var(--pad-l) * 0.55);
   border-radius: 4px 4px 0 0;
   background: var(--ink);
   color: var(--on-ink);
@@ -415,7 +415,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--s-3);
-  min-height: 34px;
+  min-height: var(--tap);
   padding: 0 var(--s-4);
   font-family: var(--font-mono);
   font-size: 0.75rem;

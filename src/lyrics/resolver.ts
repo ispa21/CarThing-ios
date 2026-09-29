@@ -18,6 +18,8 @@ export interface ResolvedLyrics {
   lines: LyricLine[]
   /** True when lines carry real timestamps. */
   synced: boolean
+  /** The same lyrics laid out for reading (verse breaks kept), for untimed readers. */
+  plain?: LyricLine[]
   /** Shown as attribution under the lyrics. */
   providerName: string
 }
