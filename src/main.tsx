@@ -15,6 +15,7 @@ import './styles/lyrics.css'
 import './styles/onboarding.css'
 import './styles/settings.css'
 import './styles/modes.css'
+import './styles/stories.css'
 
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'

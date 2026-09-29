@@ -1,8 +1,9 @@
-// The listening log and the crate, kept on this device in IndexedDB (a year of plays
+// The listening log, the crate and the library index, kept on this device in IndexedDB (a year of plays
 // is more than localStorage should hold). No library: two object stores, a few calls.
 // If IndexedDB is unavailable (private mode in some browsers), everything lives in
 // memory for the session and says so nowhere else — the features still work.
 
+import type { LibraryIndex } from './library'
 import type { Crate, Play } from './types'
 
 const NAME = 'partydeck'
@@ -58,26 +59,31 @@ export async function allPlays(): Promise<Play[]> {
   })
 }
 
-export async function getCrate(): Promise<Crate | null> {
+async function getKv<T>(key: string): Promise<T | null> {
   const db = await open()
-  if (!db) return (memory.kv.get('crate') as Crate | undefined) ?? null
+  if (!db) return (memory.kv.get(key) as T | undefined) ?? null
   return new Promise((resolve) => {
-    const req = db.transaction('kv').objectStore('kv').get('crate')
-    req.onsuccess = () => resolve((req.result as Crate | undefined) ?? null)
+    const req = db.transaction('kv').objectStore('kv').get(key)
+    req.onsuccess = () => resolve((req.result as T | undefined) ?? null)
     req.onerror = () => resolve(null)
   })
 }
 
-export async function putCrate(crate: Crate) {
+async function putKv(key: string, value: unknown) {
   const db = await open()
   if (!db) {
-    memory.kv.set('crate', crate)
+    memory.kv.set(key, value)
     return
   }
   const tx = db.transaction('kv', 'readwrite')
-  tx.objectStore('kv').put(crate, 'crate')
+  tx.objectStore('kv').put(value, key)
   await done(tx)
 }
+
+export const getCrate = () => getKv<Crate>('crate')
+export const putCrate = (crate: Crate) => putKv('crate', crate)
+export const getLibrary = () => getKv<LibraryIndex>('library')
+export const putLibrary = (library: LibraryIndex) => putKv('library', library)
 
 /** Disconnect: forget the log and the crate. */
 export async function wipe() {

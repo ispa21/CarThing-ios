@@ -1,0 +1,38 @@
+// Your library, as PartyDeck understands it: every track in your liked songs and your
+// playlists, with where it lives. Scanned on request (spotify/playbackService.scanLibrary)
+// and kept on this device.
+
+import type { TrackRef } from './types'
+
+export interface LibraryTrack extends TrackRef {
+  /** When it was first added anywhere (epoch ms), if Spotify said. */
+  addedAt: number | null
+  liked: boolean
+  /** Ids of the playlists it's in. */
+  playlists: string[]
+}
+
+export interface LibraryPlaylist {
+  id: string
+  name: string
+  count: number
+}
+
+export interface LibraryIndex {
+  tracks: LibraryTrack[]
+  playlists: LibraryPlaylist[]
+  scannedAt: number
+}
+
+/** Merge a track seen in one more place into the index being built. */
+export function addToIndex(map: Map<string, LibraryTrack>, t: TrackRef, from: { liked?: boolean; playlist?: string; addedAt?: number | null }) {
+  const had = map.get(t.uri)
+  if (!had) {
+    map.set(t.uri, { ...t, addedAt: from.addedAt ?? null, liked: Boolean(from.liked), playlists: from.playlist ? [from.playlist] : [] })
+    return
+  }
+  if (from.liked) had.liked = true
+  if (from.playlist && !had.playlists.includes(from.playlist)) had.playlists.push(from.playlist)
+  if (from.addedAt && (!had.addedAt || from.addedAt < had.addedAt)) had.addedAt = from.addedAt
+  if (!had.art && t.art) had.art = t.art
+}

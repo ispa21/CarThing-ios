@@ -16,6 +16,7 @@ import { initialPlayback, selectCanToggle, usePlayback, type PlaybackStore } fro
 import { useSession } from '../store/session'
 import { notify, openDevices, closeDevices } from '../store/ui'
 import * as api from './api'
+import { addToIndex, type LibraryIndex, type LibraryPlaylist, type LibraryTrack } from '../history/library'
 import { hasScope, logout } from './auth'
 import { describeError, SpotifyError } from './errors'
 import {
@@ -23,7 +24,9 @@ import {
   normalizePlayback,
   normalizePlaylist,
   normalizeQueue,
+  normalizePlaylistItems,
   normalizeRecent,
+  normalizeSavedTracks,
   normalizeSearch,
   type MediaItem,
   type PlaybackState,
@@ -400,3 +403,69 @@ export async function saveAsPlaylist(name: string, description: string, uris: st
 }
 
 const normalizeUrl = (url: string | undefined) => (url && url.startsWith('https://open.spotify.com/') ? url : null)
+
+// ── Library scan (Stories, Builder, Transmission) ────────────────────────────
+
+/** Caps keep a scan to a few hundred requests, well inside Spotify's rate limits. */
+const SCAN = { likedPages: 60, playlists: 150, pagesPerPlaylist: 20, gapMs: 120 }
+const pause = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+export interface ScanProgress {
+  phase: 'liked' | 'playlists'
+  done: number
+  total: number
+}
+
+/**
+ * Reads your liked songs and your playlists' contents into one index. Slow on purpose
+ * (a short gap between requests). Playlists Spotify won't open for this app are skipped
+ * and counted. Null when this session lacks the scope (reconnect to fix).
+ */
+export async function scanLibrary(onProgress: (p: ScanProgress) => void, signal?: AbortSignal): Promise<(LibraryIndex & { skipped: number }) | null> {
+  if (!hasScope('user-library-read')) return null
+  const alive = stillCurrent()
+  const map = new Map<string, LibraryTrack>()
+  const playlists: LibraryPlaylist[] = []
+  let skipped = 0
+  const stop = () => signal?.aborted || !alive()
+
+  for (let page = 0, total = 1; page < Math.min(total, SCAN.likedPages); page++) {
+    if (stop()) return null
+    const raw = await api.getSavedTracks(page * 50)
+    total = Math.ceil((raw?.total ?? 0) / 50)
+    for (const t of normalizeSavedTracks(raw)) addToIndex(map, t, { liked: true, addedAt: t.addedAt })
+    onProgress({ phase: 'liked', done: page + 1, total: Math.min(total, SCAN.likedPages) })
+    await pause(SCAN.gapMs)
+  }
+
+  const lists: RawPlaylist[] = []
+  for (let offset = 0, total = 1; offset < Math.min(total, SCAN.playlists); offset += 50) {
+    if (stop()) return null
+    const raw = await api.getMyPlaylists(offset, 50)
+    total = raw?.total ?? 0
+    lists.push(...(raw?.items ?? []).filter((p): p is RawPlaylist => p != null))
+    await pause(SCAN.gapMs)
+  }
+  const picked = lists.slice(0, SCAN.playlists)
+  for (const [i, p] of picked.entries()) {
+    let count = 0
+    try {
+      for (let page = 0, total = 1; page < Math.min(total, SCAN.pagesPerPlaylist); page++) {
+        if (stop()) return null
+        const raw = await api.getPlaylistItems(p.id, page * 50)
+        total = Math.ceil((raw?.total ?? 0) / 50)
+        for (const t of normalizePlaylistItems(raw)) {
+          addToIndex(map, t, { playlist: p.id, addedAt: t.addedAt })
+          count++
+        }
+        await pause(SCAN.gapMs)
+      }
+      playlists.push({ id: p.id, name: p.name, count })
+    } catch (e) {
+      if (e instanceof SpotifyError && (e.status === 401 || e.status === 429)) throw e
+      skipped++ // 403/404: Spotify won't share this playlist's contents with this app
+    }
+    onProgress({ phase: 'playlists', done: i + 1, total: picked.length })
+  }
+  return { tracks: [...map.values()], playlists, scannedAt: Date.now(), skipped }
+}

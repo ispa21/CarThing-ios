@@ -12,7 +12,11 @@ const SAME_PLAY_MS = 4 * 60_000
  */
 export function mergePlays(existing: Play[], incoming: Play[]): Play[] {
   const byUri = new Map<string, number[]>()
-  for (const p of existing) byUri.set(p.uri, [...(byUri.get(p.uri) ?? []), p.ts])
+  for (const p of existing) {
+    const times = byUri.get(p.uri)
+    if (times) times.push(p.ts)
+    else byUri.set(p.uri, [p.ts])
+  }
   const fresh: Play[] = []
   for (const p of incoming) {
     const times = byUri.get(p.uri) ?? []

@@ -261,11 +261,26 @@
 .rail-modes {
   display: flex;
   align-items: center;
-  gap: var(--s-4);
+  gap: 14px;
   min-width: 0;
   overflow-x: auto;
+  padding: 0 12px;
   scrollbar-width: none;
   mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent);
+}
+
+/* A mode's brackets sit in the gap beside it, so seven modes fit without reserving room for them. */
+.rail-mode::before,
+.rail-mode::after {
+  position: absolute;
+}
+
+.rail-mode::before {
+  right: 100%;
+}
+
+.rail-mode::after {
+  left: 100%;
 }
 
 .rail-modes::-webkit-scrollbar {
@@ -273,6 +288,7 @@
 }
 
 .rail-mode {
+  position: relative;
   display: inline-flex;
   align-items: center;
   min-height: var(--tap);

@@ -5,6 +5,7 @@ import { useHistory } from '../store/history'
 import { addToCrate, pruneCrate, removeFromCrate } from './crate'
 import * as db from './db'
 import { mergePlays } from './merge'
+import type { LibraryIndex } from './library'
 import type { Crate, Play, TrackRef } from './types'
 
 const set = useHistory.setState
@@ -14,9 +15,9 @@ let loading: Promise<void> | null = null
 
 export function loadHistory(): Promise<void> {
   loading ??= (async () => {
-    const [plays, crate] = await Promise.all([db.allPlays().catch(() => [] as Play[]), db.getCrate().catch(() => null)])
+    const [plays, crate, library] = await Promise.all([db.allPlays().catch(() => [] as Play[]), db.getCrate().catch(() => null), db.getLibrary().catch(() => null)])
     const pruned = crate ? pruneCrate(crate, Date.now()) : get().crate
-    set({ loaded: true, plays: [...plays, ...get().plays].sort((a, b) => a.ts - b.ts), crate: pruned })
+    set({ loaded: true, plays: [...plays, ...get().plays].sort((a, b) => a.ts - b.ts), crate: pruned, library: get().library ?? library })
     if (crate && pruned !== crate) void db.putCrate(pruned)
   })()
   return loading
@@ -57,9 +58,15 @@ export function crateEmpty() {
   saveCrate({ ...get().crate, items: [], savedAt: null })
 }
 
-/** Disconnect: the log and the crate are Spotify-derived, so they go too. */
+/** Keeps a fresh library scan (replacing the last one). */
+export function saveLibrary(library: LibraryIndex) {
+  set({ library })
+  void db.putLibrary(library).catch(() => {})
+}
+
+/** Disconnect: the log, the crate and the library are Spotify-derived, so they go too. */
 export async function wipeHistory() {
   loading = null
-  set({ loaded: false, plays: [], crate: { name: 'Crate', items: [], savedAt: null } })
+  set({ loaded: false, plays: [], crate: { name: 'Crate', items: [], savedAt: null }, library: null })
   await db.wipe().catch(() => {})
 }

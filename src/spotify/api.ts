@@ -121,7 +121,7 @@ export const addToQueue = (uri: string) => spotify('/me/player/queue', { method:
 export const search = (q: string, signal?: AbortSignal) =>
   spotify<RawSearch>('/search', { query: { q, type: 'track,artist,album,playlist', limit: 10 }, signal })
 
-export const getMyPlaylists = () => spotify<RawPaging<RawPlaylist | null>>('/me/playlists', { query: { limit: 30 } })
+export const getMyPlaylists = (offset = 0, limit = 30) => spotify<RawPaging<RawPlaylist | null>>('/me/playlists', { query: { limit, offset } })
 
 export const getMe = () => spotify<RawUser>('/me')
 

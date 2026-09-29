@@ -37,6 +37,7 @@ export function useShortcuts(route: Route, connected: boolean, enabled = true) {
         }
         case 'Escape':
           if (route === 'lyrics' || route === 'visual' || route === 'mix' || demo) back(source.backTo)
+          else if (route === 'builder') back('/stories')
           return
       }
       if (!connected) return

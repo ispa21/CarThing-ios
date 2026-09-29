@@ -5,6 +5,7 @@ import { Onboarding } from '../onboarding/Onboarding'
 import { Tutorial } from '../onboarding/Tutorial'
 import { Welcome } from '../onboarding/Welcome'
 import { Archive } from '../screens/Archive'
+import { Builder } from '../screens/Builder'
 import { Callback } from '../screens/Callback'
 import { Crate } from '../screens/Crate'
 import { LyricsScreen } from '../screens/Lyrics'
@@ -14,6 +15,8 @@ import { Search } from '../screens/Search'
 import { Mix } from '../screens/Mix'
 import { Screen as ScreenMode } from '../screens/Screen'
 import { Settings } from '../screens/Settings'
+import { Stories } from '../screens/Stories'
+import { Transmission } from '../screens/Transmission'
 import { Visual } from '../screens/Visual'
 import { startRecorder, stopRecorder } from '../history/recorder'
 import { startPlaybackSync, stopPlaybackSync } from '../spotify/playbackService'
@@ -42,10 +45,13 @@ const TITLES: Record<Route, string> = {
   screen: 'Screen · PartyDeck',
   crate: 'Crate · PartyDeck',
   archive: 'Archive · PartyDeck',
+  stories: 'Stories · PartyDeck',
+  builder: 'Session builder · PartyDeck',
+  transmission: 'Transmission · PartyDeck',
 }
 
 /** Full-screen routes without the rail. */
-const IMMERSIVE: Route[] = ['lyrics-demo', 'tutorial', 'visual', 'screen']
+const IMMERSIVE: Route[] = ['lyrics-demo', 'tutorial', 'visual', 'screen', 'builder']
 
 export function App() {
   const route = matchRoute(usePathname())
@@ -192,6 +198,9 @@ function Screen({ route, immersive = false }: { route: Route; immersive?: boolea
       {route === 'screen' && <ScreenMode />}
       {route === 'crate' && <Crate />}
       {route === 'archive' && <Archive />}
+      {route === 'stories' && <Stories />}
+      {route === 'builder' && <Builder />}
+      {route === 'transmission' && <Transmission />}
       {route === 'tutorial' && (
         <Tutorial
           onFinish={() => {

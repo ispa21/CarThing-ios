@@ -13,6 +13,8 @@ export const RAIL_MODES: Array<{ route: Route; label: string }> = [
   { route: 'mix', label: 'mix' },
   { route: 'visual', label: 'visual' },
   { route: 'crate', label: 'crate' },
+  { route: 'transmission', label: 'transmission' },
   { route: 'archive', label: 'archive' },
+  { route: 'stories', label: 'stories' },
   { route: 'screen', label: 'screen' },
 ]

@@ -1,7 +1,7 @@
 // Maps raw Spotify responses to the small, stable shapes the UI renders.
 // Nothing outside src/spotify should need to know Spotify's JSON.
 
-import type { RawDevice, RawImage, RawItem, RawPlayback, RawPlaylist, RawQueue, RawRecent, RawSearch } from './types'
+import type { RawDevice, RawImage, RawItem, RawPaging, RawPlayback, RawPlaylist, RawPlaylistItem, RawQueue, RawRecent, RawSavedTrack, RawSearch } from './types'
 
 export interface PlaybackState {
   trackId: string | null
@@ -314,3 +314,35 @@ export function normalizeRecent(raw: RawRecent | null): RecentPlay[] {
     ]
   })
 }
+
+/** A library track: one saved song or playlist entry. Episodes and local files are dropped. */
+export interface LibraryEntry {
+  uri: string
+  title: string
+  artist: string
+  album: string | null
+  art: string | null
+  durationMs: number
+  addedAt: number | null
+}
+
+function libraryEntry(t: RawItem | null | undefined, addedAt: string | null | undefined): LibraryEntry | null {
+  if (!t || t.type !== 'track' || t.is_local || !t.uri?.startsWith('spotify:track:')) return null
+  const at = addedAt ? Date.parse(addedAt) : NaN
+  return {
+    uri: t.uri,
+    title: t.name,
+    artist: joinArtists(t.artists),
+    album: t.album?.name ?? null,
+    art: pickImage(t.album?.images, 300),
+    durationMs: t.duration_ms,
+    // Very old playlist entries carry 1970 dates; treat those as unknown.
+    addedAt: Number.isNaN(at) || at < Date.UTC(2006, 0) ? null : at,
+  }
+}
+
+export const normalizeSavedTracks = (page: RawPaging<RawSavedTrack> | null) =>
+  (page?.items ?? []).map((i) => libraryEntry(i?.track, i?.added_at)).filter((t): t is LibraryEntry => t !== null)
+
+export const normalizePlaylistItems = (page: RawPaging<RawPlaylistItem> | null) =>
+  (page?.items ?? []).map((i) => libraryEntry(i?.item, i?.added_at)).filter((t): t is LibraryEntry => t !== null)

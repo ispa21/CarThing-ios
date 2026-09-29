@@ -4,6 +4,8 @@ import {
   isSearchEmpty,
   normalizePlayback,
   normalizePlaylist,
+  normalizePlaylistItems,
+  normalizeSavedTracks,
   normalizeQueue,
   normalizeSearch,
   pickImage,
@@ -229,5 +231,24 @@ describe('normalizePlayback: modes and volume', () => {
   it('maps the mode disallows', () => {
     const p = normalizePlayback({ ...base, actions: { disallows: { toggling_shuffle: true, toggling_repeat_track: true } } })
     expect(p.disallows).toMatchObject({ shuffling: true, repeatingTrack: true, repeatingContext: false })
+  })
+})
+
+describe('library pages', () => {
+  it('reads saved tracks and playlist items (Feb 2026 `item`), dropping episodes and local files', () => {
+    const saved = normalizeSavedTracks({ items: [{ added_at: '2024-02-01T00:00:00Z', track: track() }, { added_at: 'x', track: null }], total: 2, next: null })
+    expect(saved).toEqual([
+      { uri: 'spotify:track:t1', title: 'Night Drive', artist: 'Lumen, Harbor', album: 'After Hours Radio', art: 'https://i.scdn.co/300', durationMs: 222_000, addedAt: Date.parse('2024-02-01T00:00:00Z') },
+    ])
+    const items = normalizePlaylistItems({
+      items: [
+        { added_at: '1970-01-01T00:00:00Z', item: track() },
+        { added_at: null, item: episode },
+        { added_at: null, item: track({ is_local: true, uri: 'spotify:local:x' }) },
+      ],
+      total: 3,
+      next: null,
+    })
+    expect(items.map((t) => [t.uri, t.addedAt])).toEqual([['spotify:track:t1', null]])
   })
 })
