@@ -3,6 +3,7 @@
 // If IndexedDB is unavailable (private mode in some browsers), everything lives in
 // memory for the session and says so nowhere else — the features still work.
 
+import type { Capsule } from '../stories/archive'
 import type { LibraryIndex } from './library'
 import type { Crate, Play } from './types'
 
@@ -95,6 +96,8 @@ export const getCrate = () => getKv<Crate>('crate')
 export const putCrate = (crate: Crate) => putKv('crate', crate)
 export const getLibrary = () => getKv<LibraryIndex>('library')
 export const putLibrary = (library: LibraryIndex) => putKv('library', library)
+export const getCapsules = () => getKv<Capsule[]>('capsules')
+export const putCapsules = (capsules: Capsule[]) => putKv('capsules', capsules)
 
 /** Disconnect: forget the log and the crate. */
 export async function wipe() {

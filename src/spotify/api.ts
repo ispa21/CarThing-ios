@@ -6,6 +6,7 @@ import { createCooldown, parseRetryAfter, SpotifyError } from './errors'
 import type {
   RawCreatedPlaylist,
   RawDevice,
+  RawFollowedArtists,
   RawPaging,
   RawPlayback,
   RawPlaylist,
@@ -134,6 +135,9 @@ export const getSavedTracks = (offset = 0) => spotify<RawPaging<RawSavedTrack>>(
 /** Scope playlist-read-private. Feb 2026: `/tracks` became `/items`, and each entry's `track` became `item`. */
 export const getPlaylistItems = (id: string, offset = 0) =>
   spotify<RawPaging<RawPlaylistItem>>(`/playlists/${encodeURIComponent(id)}/items`, { query: { limit: 50, offset } })
+
+/** Scope user-follow-read. Artists you follow, 50 at a time, by cursor. */
+export const getFollowedArtists = (after?: string) => spotify<RawFollowedArtists>('/me/following', { query: { type: 'artist', limit: 50, after } })
 
 /** Scope playlist-modify-private. Feb 2026: replaces POST /users/{id}/playlists. Private by default. */
 export const createPlaylist = (name: string, description: string) =>

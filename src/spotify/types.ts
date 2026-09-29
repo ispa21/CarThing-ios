@@ -156,3 +156,8 @@ export interface RawCreatedPlaylist {
   name: string
   external_urls?: RawExternalUrls
 }
+
+/** GET /me/following?type=artist — cursor-paged. */
+export interface RawFollowedArtists {
+  artists: { items: Array<RawArtist | null>; next: string | null; cursors?: { after?: string | null } | null; total?: number }
+}

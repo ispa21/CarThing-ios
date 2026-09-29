@@ -1,17 +1,20 @@
-import { useMemo, type CSSProperties, type ReactNode } from 'react'
+import { useState, type CSSProperties, type ReactNode } from 'react'
 import { tickLink } from '../app/router'
 import { crateAdd } from '../history/service'
 import type { TrackRef } from '../history/types'
 import { feedback } from '../sensory/feedback'
 import { playUris } from '../spotify/playbackService'
-import { stories, type Story } from '../stories/engine'
+import { NEXT_MINUTES, type FeedView } from '../stories/brain'
+import type { Card, Job } from '../stories/cards'
+import type { Story } from '../stories/engine'
 import { notify } from '../store/ui'
 import { Artwork } from '../ui/Artwork'
 import { Icon } from '../ui/Icon'
 import { LibraryFeed } from '../ui/LibraryFeed'
 import { PressKey } from '../ui/PressKey'
 import { SaveKey } from '../ui/SaveKey'
-import { useStoryInputs } from '../ui/useStoryInputs'
+import { CardView, Drop, Rooms } from '../ui/StoryCard'
+import { useFeed } from '../ui/useFeed'
 
 type Of<K extends Story['id']> = Extract<Story, { id: K }>
 
@@ -72,20 +75,43 @@ function Depth({ name, children }: { name: string; children: ReactNode }) {
   )
 }
 
-function Next30({ s, now }: { s: Of<'next30'>; now: number }) {
+function Lead({ next, now }: { next: FeedView['next']; now: number }) {
+  const [mins, setMins] = useState(30)
+  const s = next[mins]
+  if (!s || s.tracks.length < 3) return null
   const when = new Date(now)
-  const unheard = s.counts.forgotten + s.counts.never
+  const c = s.counts
+  const known = c.core + c.familiar
+  const fresh = c.adjacent + c.experiment + c.wild
+  const total = minutes(s.tracks)
   return (
-    <section className="sto-lead" aria-label={`Your next ${s.minutes} minutes`}>
+    <section className="sto-lead" aria-label={`Your next ${mins} minutes`}>
       <span className="readout">
         {when.toLocaleDateString('en', { weekday: 'long' }).toLowerCase()}, {when.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })} · for right now
       </span>
       <p className="display sto-lead-title">
         You have
         <br />
-        {s.minutes} minutes.
+        {mins} minutes.
       </p>
-      <p className="serif sto-lead-lede">{unheard ? "Here's something you haven't heard in a while." : 'Here’s what you keep coming back to.'}</p>
+      <div className="sto-mins" role="radiogroup" aria-label="How long you have">
+        {NEXT_MINUTES.map((n) => (
+          <button
+            key={n}
+            type="button"
+            role="radio"
+            aria-checked={n === mins}
+            className="readout sto-min"
+            onClick={() => {
+              feedback.play('select')
+              setMins(n)
+            }}
+          >
+            {n === mins ? `( ${n} )` : n}
+          </button>
+        ))}
+      </div>
+      <p className="serif sto-lead-lede">{c.rediscovery + fresh ? "Here's something you haven't heard in a while." : 'Here’s what you keep coming back to.'}</p>
       <div className="sto-covers">
         {s.tracks.slice(0, 8).map((t, i) => (
           <Artwork key={t.uri} src={t.art} alt={i === 0 ? `${t.title}, first up` : ''} className={i === 0 ? 'sto-cover-first' : ''} />
@@ -94,19 +120,20 @@ function Next30({ s, now }: { s: Of<'next30'>; now: number }) {
       <div className="sto-lead-foot">
         <div className="sto-lead-meta">
           <span className="readout">
-            {s.artists[0]?.toLowerCase()} · {plural(s.tracks.length, 'record')} · {s.minutes} min
+            {s.artists[0]?.toLowerCase() ?? 'your library'} · {plural(s.tracks.length, 'record')} · {total} min
           </span>
           <span className="readout sto-quiet">
-            {s.counts.familiar} familiar · {s.counts.forgotten} forgotten · {s.counts.never} never played
+            {known} familiar · {c.rediscovery} forgotten · {fresh} never played
           </span>
         </div>
         <p className="serif sto-why">
-          <span className="label">why</span> You play {s.artists.slice(0, 2).join(' and ')} all the time
-          {s.counts.never ? `, but you've never once played ${word(s.counts.never)} of these.` : '. These are the ones you’ve let slip.'}
+          <span className="label">why</span>{' '}
+          {s.artists.length ? `You play ${s.artists.slice(0, 2).join(' and ')} all the time` : 'Built from your library'}
+          {fresh ? `, but you've never once played ${word(fresh)} of these. It opens on something you know and lands on a favourite.` : '. It opens on something you know and lands on a favourite.'}
         </p>
         <div className="sto-keys">
-          <PlayKey tracks={s.tracks} label="Play session" name="your next 30" />
-          <a className="btn" href="/stories/build" onClick={tickLink}>
+          <PlayKey tracks={s.tracks} label="Play session" name={`your next ${mins}`} />
+          <a className="btn" href={`/stories/build?minutes=${mins}`} onClick={tickLink}>
             Tune it
           </a>
         </div>
@@ -256,25 +283,42 @@ function LongHaul({ s }: { s: Of<'longhaul'> }) {
   )
 }
 
+const JOBS: Array<Job | 'all'> = ['all', 'discover', 'curate', 'understand', 'explore']
+const LEGACY_JOB: Record<Story['id'], Job> = { next30: 'curate', forgotten: 'discover', deepcuts: 'discover', almosts: 'discover', ghosts: 'discover', three: 'understand', skip: 'understand', longhaul: 'understand' }
+
 /**
- * STORIES: what your listening says, in three depths — now (act on it tonight),
- * signals (things PartyDeck noticed), archive (worth looking back on). Every story
- * ends in something to play or keep, and a story without enough data isn't told.
+ * STORIES: PartyDeck's intelligence layer. It notices something, explains it, and lets
+ * you do something with it. Three depths — now (act on it tonight), signals (what
+ * PartyDeck noticed), archive (worth looking back on) — filtered by job, with the day's
+ * DROP on top when something genuinely surprising turned up.
  */
 export function Stories() {
-  const { loaded, inputs, now, seed } = useStoryInputs()
-  const list = useMemo(() => stories(inputs, seed), [inputs, seed])
-  const get = <K extends Story['id']>(id: K) => list.find((s): s is Of<K> => s.id === id)
-  const lead = get('next30')
-  const nowRow = [get('forgotten'), get('deepcuts')].filter(Boolean)
-  const signals = [get('almosts'), get('ghosts'), get('three'), get('skip')].filter(Boolean)
-  const long = get('longhaul')
+  const { loaded, view, thinking, now, dismiss } = useFeed()
+  const [job, setJob] = useState<Job | 'all'>('all')
+  const show = (j: Job) => job === 'all' || job === j
+  const legacy = view?.legacy ?? []
+  const get = <K extends Story['id']>(id: K) => legacy.find((s): s is Of<K> => s.id === id && show(LEGACY_JOB[id]))
+  const cards = (view?.cards ?? []).filter((c) => show(c.job))
+  const of = (d: Card['depth']) => cards.filter((c) => c.depth === d && c.id !== view?.drop?.id)
+  const nowCards = of('now')
+  const signalCards = of('signals')
+  const archiveCards = of('archive')
+  const anyNow = get('forgotten') || get('deepcuts') || nowCards.length
+  const anySignals = get('almosts') || get('ghosts') || get('three') || get('skip') || signalCards.length
+  const anyArchive = get('longhaul') || archiveCards.length
+  const empty = loaded && view && !view.cards.length && !view.legacy.length
 
   return (
     <div className="stories">
       <h1 className="sr-only">Stories</h1>
-      {lead && <Next30 s={lead} now={now} />}
-      {loaded && !list.length && (
+      {thinking && (
+        <p className="readout sto-thinking" role="status">
+          ( thinking ) {view ? 'updating your stories…' : 'reading your music…'}
+        </p>
+      )}
+      {view?.drop && show(view.drop.job) && <Drop card={view.drop} />}
+      {view && <Lead next={view.next} now={now} />}
+      {empty && (
         <section className="sto-lead" aria-label="No stories yet">
           <span className="readout">stories · nothing to tell yet</span>
           <p className="display sto-lead-title">
@@ -286,16 +330,41 @@ export function Stories() {
         </section>
       )}
 
-      {nowRow.length > 0 && (
+      {view && (view.cards.length > 0 || view.legacy.length > 0) && (
+        <nav className="sto-jobs" aria-label="What do you want to do">
+          {JOBS.map((j) => (
+            <button
+              key={j}
+              type="button"
+              className="readout sto-job"
+              aria-pressed={job === j}
+              onClick={() => {
+                feedback.play('select')
+                setJob(j)
+              }}
+            >
+              {job === j ? `( ${j} )` : j}
+            </button>
+          ))}
+        </nav>
+      )}
+
+      {anyNow ? (
         <>
           <Depth name="now">things you can act on tonight</Depth>
-          <div className="sto-grid sto-grid-now">
+          <div className="sto-grid">
             {get('forgotten') && <Forgotten s={get('forgotten')!} />}
             {get('deepcuts') && <DeepCuts s={get('deepcuts')!} />}
+            {nowCards.map((c) => (
+              <CardView key={c.id} card={c} onDismiss={dismiss} />
+            ))}
           </div>
         </>
-      )}
-      {signals.length > 0 && (
+      ) : null}
+
+      {view && view.rooms.length > 0 && (job === 'all' || job === 'explore' || job === 'discover') && <Rooms rooms={view.rooms} stations={view.stations} />}
+
+      {anySignals ? (
         <>
           <Depth name="signals">things PartyDeck noticed</Depth>
           <div className="sto-grid">
@@ -303,15 +372,24 @@ export function Stories() {
             {get('ghosts') && <Ghosts s={get('ghosts')!} />}
             {get('three') && <Three s={get('three')!} />}
             {get('skip') && <Skip s={get('skip')!} />}
+            {signalCards.map((c) => (
+              <CardView key={c.id} card={c} onDismiss={dismiss} />
+            ))}
           </div>
         </>
-      )}
-      {long && (
+      ) : null}
+
+      {anyArchive ? (
         <>
           <Depth name="archive">worth looking back on</Depth>
-          <LongHaul s={long} />
+          {get('longhaul') && <LongHaul s={get('longhaul')!} />}
+          <div className="sto-grid">
+            {archiveCards.map((c) => (
+              <CardView key={c.id} card={c} onDismiss={dismiss} />
+            ))}
+          </div>
         </>
-      )}
+      ) : null}
       <LibraryFeed />
     </div>
   )

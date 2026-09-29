@@ -6,6 +6,7 @@
 
 .stories {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--s-7);
   padding: var(--s-6) var(--pad-r) calc(var(--safe-b) + var(--s-8)) var(--pad-l);
 }
@@ -979,4 +980,305 @@
 .tx.tx-empty {
   grid-template-columns: minmax(0, 1fr);
   grid-template-areas: none;
+}
+
+/* ── The intelligence layer: drop, time presets, jobs, generic figures, rooms ── */
+
+.sto-thinking {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.tx-thinking {
+  padding: var(--s-6) var(--pad-r) 0 var(--pad-l);
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.sto-mins,
+.sto-jobs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--s-4);
+}
+
+.sto-min,
+.sto-job,
+.sto-whykey {
+  min-height: var(--tap);
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: var(--ink-3);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.sto-min[aria-checked='true'],
+.sto-job[aria-pressed='true'] {
+  color: var(--ink);
+}
+
+.sto-whykey {
+  font-size: 12px;
+  justify-self: start;
+}
+
+.sto-jobs {
+  padding: var(--s-2) 0;
+  border-top: 1px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+}
+
+/* The DROP: the one story worth interrupting you with. A frame, not a banner. */
+.sto-drop {
+  display: grid;
+  gap: var(--s-3);
+  padding: var(--s-5);
+  border: 2px solid var(--ink);
+  border-radius: var(--r-m);
+  background: var(--plate-hi);
+  box-shadow: 0 6px 0 var(--ink);
+}
+
+.sto-drop-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin: 0;
+  font-size: 10px;
+}
+
+.sto-meter {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sto-meter li {
+  display: grid;
+  grid-template-columns: minmax(90px, 34%) minmax(0, 1fr) auto;
+  gap: var(--s-3);
+  align-items: center;
+}
+
+.sto-meter-label,
+.sto-meter-value {
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sto-meter-track {
+  position: relative;
+  height: 12px;
+  border-bottom: 2px solid var(--ink);
+}
+
+.sto-meter-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 100%;
+  background: var(--ink);
+  transform: scaleX(var(--v));
+  transform-origin: left;
+}
+
+.sto-meter [data-hot] .sto-meter-fill {
+  background: var(--record-deep);
+}
+
+.sto-path {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sto-path li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px var(--s-3);
+  padding: 6px 0 6px 22px;
+  position: relative;
+}
+
+.sto-path li::before {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--ink);
+}
+
+.sto-path li::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: calc(50% - 6px);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--ink);
+  background: var(--plate);
+}
+
+.sto-path li:first-child::before {
+  top: 50%;
+}
+
+.sto-path li:last-child::before {
+  bottom: 50%;
+}
+
+.sto-path li:last-child::after {
+  background: var(--record-deep);
+}
+
+.sto-path-label {
+  font-weight: 650;
+}
+
+.sto-tally {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-6);
+}
+
+.sto-tally-item {
+  display: grid;
+  gap: 4px;
+}
+
+.sto-tally-item .display {
+  font-size: clamp(2.5rem, 1.5rem + 3vw, 4.5rem);
+}
+
+.sto-tally-item .readout {
+  font-size: 11px;
+  max-width: 18ch;
+}
+
+.sto-formula {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 6px;
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.sto-formula-part {
+  font-weight: 650;
+}
+
+.sto-plus {
+  color: var(--ink-3);
+}
+
+.sto-formula-result {
+  font-size: 2rem;
+  overflow-wrap: anywhere;
+}
+
+.sto-rooms {
+  display: grid;
+  gap: var(--s-4);
+}
+
+.sto-room-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.sto-room {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: 'name keys' 'artists keys' 'meta keys';
+  gap: 2px var(--s-4);
+  align-items: center;
+  padding: var(--s-3) 0;
+  border-top: 1px solid var(--rule-soft);
+}
+
+.sto-room-name {
+  grid-area: name;
+  font-size: clamp(1.75rem, 1rem + 2.5vw, 2.75rem);
+}
+
+.sto-room-artists {
+  grid-area: artists;
+  font-size: 1.125rem;
+  color: var(--ink-3);
+}
+
+.sto-room-meta {
+  grid-area: meta;
+  font-size: 11px;
+}
+
+.sto-room-keys {
+  grid-area: keys;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  justify-content: flex-end;
+}
+
+.sto-room-keys a {
+  text-decoration: none;
+}
+
+@media (max-width: 599px) {
+  .sto-room {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'name' 'artists' 'meta' 'keys';
+  }
+
+  .sto-room-keys {
+    justify-content: flex-start;
+    margin-top: var(--s-2);
+  }
+
+  .sto-drop {
+    padding: var(--s-4);
+  }
+}
+
+/* Narrow plates: long key labels wrap, meters drop their notes, formulas break anywhere. */
+.stories .sto-keys .btn,
+.feed-actions .btn,
+.bld-keys .btn {
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.25;
+}
+
+.sto-formula > span,
+.sto-formula-part {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 599px) {
+  .sto-meter li {
+    grid-template-columns: minmax(0, 40%) minmax(0, 1fr) auto;
+  }
+
+  .sto-meter-value .sto-quiet {
+    display: none;
+  }
 }

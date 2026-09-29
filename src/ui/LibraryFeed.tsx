@@ -44,7 +44,7 @@ export function LibraryFeed() {
       saveLibrary(index)
       feedback.play('success')
       setStatus(
-        `Read ${index.tracks.length.toLocaleString()} tracks from your liked songs and ${index.playlists.length} playlists.` +
+        `Read ${index.tracks.length.toLocaleString()} tracks from your liked songs and ${index.playlists.length} playlists${index.followed?.length ? `, and ${index.followed.length} artists you follow` : ''}.` +
           (skipped ? ` Spotify wouldn't open ${skipped === 1 ? 'one playlist' : `${skipped} playlists`} for this app (it only opens playlists you own or collaborate on).` : '') +
           trouble,
       )
@@ -83,6 +83,7 @@ export function LibraryFeed() {
   }
 
   const canScan = hasScope('user-library-read')
+  const followScope = hasScope('user-follow-read')
   return (
     <section className="feed" aria-label="What stories are made from">
       <div className="feed-sources">
@@ -115,6 +116,7 @@ export function LibraryFeed() {
         ) : (
           <ReconnectButton label="Reconnect to read your library" />
         )}
+        {canScan && !followScope && <ReconnectButton label="Reconnect to include followed artists" />}
         <label className="btn feed-file" onClick={() => feedback.play('select')}>
           Import streaming history
           <input type="file" accept=".json,application/json" multiple className="sr-only" onChange={(e) => {
