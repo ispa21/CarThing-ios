@@ -44,14 +44,12 @@ export function plainLines(text: string): LyricLine[] {
 /** The record's lyrics, synced when it has them. Null for instrumentals and empty records. */
 export function toResolved(r: LrclibRecord): ResolvedLyrics | null {
   if (r.instrumental) return null
+  const plain = r.plainLyrics ? plainLines(r.plainLyrics) : []
   if (r.syncedLyrics) {
     const lines = parseLRC(r.syncedLyrics)
-    if (lines.some((l) => l.text)) return { lines, synced: true, providerName: NAME }
+    if (lines.some((l) => l.text)) return { lines, synced: true, providerName: NAME, ...(plain.length ? { plain } : {}) }
   }
-  if (r.plainLyrics) {
-    const lines = plainLines(r.plainLyrics)
-    if (lines.length) return { lines, synced: false, providerName: NAME }
-  }
+  if (plain.length) return { lines: plain, synced: false, providerName: NAME }
   return null
 }
 

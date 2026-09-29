@@ -109,13 +109,28 @@
     scale 480ms var(--ease-expo);
 }
 
-/* Stepped indents: the reading column walks inward, then starts again. */
-.lyrics-lines li:nth-child(3n + 2) {
+/* Stepped indents (timed demo): the reading column walks inward, then starts again. */
+.lyrics-lines[data-timed] li:nth-child(3n + 2) {
   padding-left: var(--step);
 }
 
-.lyrics-lines li:nth-child(3n) {
+.lyrics-lines[data-timed] li:nth-child(3n) {
   padding-left: calc(var(--step) * 2);
+}
+
+/* Untimed (every Spotify song): a real song's lines, read top to bottom. Each line
+   starts flush and its wraps hang indented, lines sit apart from their own wraps,
+   and verses sit apart from each other. */
+.lyrics-lines:not([data-timed]) li {
+  max-width: 22ch;
+  margin-bottom: 0.3em;
+  padding-left: 0.5em;
+  text-indent: -0.5em;
+  text-wrap: balance;
+}
+
+.lyrics-lines:not([data-timed]) li.gap {
+  height: 0.45em;
 }
 
 /* Timed (the demo only — timed lyrics are off for Spotify, lyrics/policy.ts):

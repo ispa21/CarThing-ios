@@ -40,6 +40,10 @@ describe('toResolved', () => {
       ],
       synced: true,
       providerName: 'LRCLIB, user-contributed',
+      plain: [
+        { startMs: 0, text: 'one' },
+        { startMs: 0, text: 'two' },
+      ],
     })
   })
 
