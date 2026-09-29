@@ -15,15 +15,26 @@ const memory = { plays: [] as Play[], kv: new Map<string, unknown>() }
 function open(): Promise<IDBDatabase | null> {
   opening ??= new Promise((resolve) => {
     if (typeof indexedDB === 'undefined') return resolve(null)
+    // Some installed-app browsers never answer an open; fall back to memory rather than wait forever.
+    const giveUp = setTimeout(() => resolve(null), 4000)
     const req = indexedDB.open(NAME, VERSION)
     req.onupgradeneeded = () => {
       const db = req.result
       if (!db.objectStoreNames.contains('plays')) db.createObjectStore('plays', { autoIncrement: true }).createIndex('ts', 'ts')
       if (!db.objectStoreNames.contains('kv')) db.createObjectStore('kv')
     }
-    req.onsuccess = () => resolve(req.result)
-    req.onerror = () => resolve(null)
-    req.onblocked = () => resolve(null)
+    req.onsuccess = () => {
+      clearTimeout(giveUp)
+      resolve(req.result)
+    }
+    req.onerror = () => {
+      clearTimeout(giveUp)
+      resolve(null)
+    }
+    req.onblocked = () => {
+      clearTimeout(giveUp)
+      resolve(null)
+    }
   })
   return opening
 }

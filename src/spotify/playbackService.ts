@@ -406,66 +406,124 @@ const normalizeUrl = (url: string | undefined) => (url && url.startsWith('https:
 
 // ── Library scan (Stories, Builder, Transmission) ────────────────────────────
 
-/** Caps keep a scan to a few hundred requests, well inside Spotify's rate limits. */
-const SCAN = { likedPages: 60, playlists: 150, pagesPerPlaylist: 20, gapMs: 120 }
-const pause = (ms: number) => new Promise((r) => setTimeout(r, ms))
+/**
+ * Caps keep a scan to a few hundred requests. The gap is generous because Development
+ * Mode apps get a small rate limit, shared with the playback poll that keeps running.
+ */
+const SCAN = { likedPages: 60, playlists: 150, pagesPerPlaylist: 20, gapMs: 250, maxWaits: 8 }
+const pause = (ms: number, signal?: AbortSignal) =>
+  new Promise<void>((resolve) => {
+    const t = setTimeout(resolve, ms)
+    signal?.addEventListener('abort', () => (clearTimeout(t), resolve()), { once: true })
+  })
 
 export interface ScanProgress {
-  phase: 'liked' | 'playlists'
+  phase: 'liked' | 'playlists' | 'waiting'
   done: number
   total: number
+  /** While waiting: seconds until the scan carries on. */
+  waitS?: number
 }
 
+export interface ScanResult extends LibraryIndex {
+  /** Playlists Spotify wouldn't open for this app. */
+  skipped: number
+  /** What went wrong along the way, in Spotify's words. The scan kept what it could. */
+  problems: string[]
+}
+
+const said = (e: unknown) => (e instanceof SpotifyError ? `${e.status || 'network'} ${e.message}`.trim() : String(e))
+
 /**
- * Reads your liked songs and your playlists' contents into one index. Slow on purpose
- * (a short gap between requests). Playlists Spotify won't open for this app are skipped
- * and counted. Null when this session lacks the scope (reconnect to fix).
+ * Reads your liked songs and your playlists' contents into one index. Slow on purpose.
+ * When Spotify asks it to slow down it waits and carries on; a part that fails (liked
+ * songs, one playlist) is noted and skipped, and whatever was read is kept.
+ * Null when this session lacks the scope (reconnect to fix) or the scan was abandoned.
  */
-export async function scanLibrary(onProgress: (p: ScanProgress) => void, signal?: AbortSignal): Promise<(LibraryIndex & { skipped: number }) | null> {
+export async function scanLibrary(onProgress: (p: ScanProgress) => void, signal?: AbortSignal): Promise<ScanResult | null> {
   if (!hasScope('user-library-read')) return null
   const alive = stillCurrent()
   const map = new Map<string, LibraryTrack>()
   const playlists: LibraryPlaylist[] = []
+  const problems: string[] = []
   let skipped = 0
-  const stop = () => signal?.aborted || !alive()
+  const stop = () => Boolean(signal?.aborted) || !alive()
 
-  for (let page = 0, total = 1; page < Math.min(total, SCAN.likedPages); page++) {
-    if (stop()) return null
-    const raw = await api.getSavedTracks(page * 50)
-    total = Math.ceil((raw?.total ?? 0) / 50)
-    for (const t of normalizeSavedTracks(raw)) addToIndex(map, t, { liked: true, addedAt: t.addedAt })
-    onProgress({ phase: 'liked', done: page + 1, total: Math.min(total, SCAN.likedPages) })
-    await pause(SCAN.gapMs)
-  }
-
-  const lists: RawPlaylist[] = []
-  for (let offset = 0, total = 1; offset < Math.min(total, SCAN.playlists); offset += 50) {
-    if (stop()) return null
-    const raw = await api.getMyPlaylists(offset, 50)
-    total = raw?.total ?? 0
-    lists.push(...(raw?.items ?? []).filter((p): p is RawPlaylist => p != null))
-    await pause(SCAN.gapMs)
-  }
-  const picked = lists.slice(0, SCAN.playlists)
-  for (const [i, p] of picked.entries()) {
-    let count = 0
-    try {
-      for (let page = 0, total = 1; page < Math.min(total, SCAN.pagesPerPlaylist); page++) {
-        if (stop()) return null
-        const raw = await api.getPlaylistItems(p.id, page * 50)
-        total = Math.ceil((raw?.total ?? 0) / 50)
-        for (const t of normalizePlaylistItems(raw)) {
-          addToIndex(map, t, { playlist: p.id, addedAt: t.addedAt })
-          count++
-        }
-        await pause(SCAN.gapMs)
+  /** One request, waiting out rate limits. Other errors are the caller's. */
+  async function call<T>(fn: () => Promise<T>, resume: ScanProgress): Promise<T> {
+    for (let waits = 0; ; waits++) {
+      try {
+        const r = await fn()
+        await pause(SCAN.gapMs, signal)
+        return r
+      } catch (e) {
+        if (!(e instanceof SpotifyError) || e.status !== 429 || waits >= SCAN.maxWaits) throw e
+        const ms = Math.min(Math.max(e.retryAfterMs ?? 5000, 2000), 60_000)
+        onProgress({ phase: 'waiting', done: resume.done, total: resume.total, waitS: Math.ceil(ms / 1000) })
+        await pause(ms + 250, signal)
+        if (stop()) throw new DOMException('Scan abandoned', 'AbortError')
+        onProgress(resume)
       }
-      playlists.push({ id: p.id, name: p.name, count })
-    } catch (e) {
-      if (e instanceof SpotifyError && (e.status === 401 || e.status === 429)) throw e
-      skipped++ // 403/404: Spotify won't share this playlist's contents with this app
     }
-    onProgress({ phase: 'playlists', done: i + 1, total: picked.length })
   }
-  return { tracks: [...map.values()], playlists, scannedAt: Date.now(), skipped }
+
+  try {
+    try {
+      for (let page = 0, total = 1; page < Math.min(total, SCAN.likedPages); page++) {
+        if (stop()) return null
+        const at = { phase: 'liked' as const, done: page, total: Math.max(1, Math.min(total, SCAN.likedPages)) }
+        const raw = await call(() => api.getSavedTracks(page * 50), at)
+        total = Math.ceil((raw?.total ?? 0) / 50)
+        for (const t of normalizeSavedTracks(raw)) addToIndex(map, t, { liked: true, addedAt: t.addedAt })
+        onProgress({ phase: 'liked', done: page + 1, total: Math.max(1, Math.min(total, SCAN.likedPages)) })
+      }
+    } catch (e) {
+      if (e instanceof SpotifyError && e.status === 401) throw e
+      if (e instanceof DOMException) throw e
+      problems.push(`liked songs: ${said(e)}`)
+    }
+
+    const lists: RawPlaylist[] = []
+    try {
+      for (let offset = 0, total = 1; offset < Math.min(total, SCAN.playlists); offset += 50) {
+        if (stop()) return null
+        const raw = await call(() => api.getMyPlaylists(offset, 50), { phase: 'playlists', done: 0, total: 1 })
+        total = raw?.total ?? 0
+        lists.push(...(raw?.items ?? []).filter((p): p is RawPlaylist => p != null))
+      }
+    } catch (e) {
+      if (e instanceof SpotifyError && e.status === 401) throw e
+      if (e instanceof DOMException) throw e
+      problems.push(`your playlists: ${said(e)}`)
+    }
+
+    const picked = lists.slice(0, SCAN.playlists)
+    for (const [i, p] of picked.entries()) {
+      let count = 0
+      try {
+        for (let page = 0, total = 1; page < Math.min(total, SCAN.pagesPerPlaylist); page++) {
+          if (stop()) return null
+          const raw = await call(() => api.getPlaylistItems(p.id, page * 50), { phase: 'playlists', done: i, total: picked.length })
+          total = Math.ceil((raw?.total ?? 0) / 50)
+          for (const t of normalizePlaylistItems(raw)) {
+            addToIndex(map, t, { playlist: p.id, addedAt: t.addedAt })
+            count++
+          }
+        }
+        playlists.push({ id: p.id, name: p.name, count })
+      } catch (e) {
+        if (e instanceof SpotifyError && e.status === 401) throw e
+        if (e instanceof DOMException) throw e
+        skipped++ // usually 403: Spotify only opens playlists you own or collaborate on to Development Mode apps
+        if (count) playlists.push({ id: p.id, name: p.name, count })
+        if (!(e instanceof SpotifyError && (e.status === 403 || e.status === 404))) problems.push(`${p.name}: ${said(e)}`)
+      }
+      onProgress({ phase: 'playlists', done: i + 1, total: picked.length })
+    }
+  } catch (e) {
+    if (e instanceof DOMException && e.name === 'AbortError') return null
+    // Signed out, or out of patience with the rate limit: keep what was read.
+    problems.push(said(e))
+  }
+  return { tracks: [...map.values()], playlists, scannedAt: Date.now(), skipped, problems }
 }

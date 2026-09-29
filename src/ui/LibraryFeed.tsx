@@ -34,16 +34,23 @@ export function LibraryFeed() {
     try {
       const r = await scanLibrary(setScan, abort.current.signal)
       if (!r) return
-      const { skipped, ...index } = r
+      const { skipped, problems, ...index } = r
+      const trouble = problems.length ? ` Spotify said: ${problems.slice(0, 3).join(' · ')}.` : ''
+      if (!index.tracks.length) {
+        // Nothing read: keep the library you had, and say why.
+        setStatus(`Couldn't read your library.${trouble || ' Spotify returned no tracks.'}`)
+        return
+      }
       saveLibrary(index)
       feedback.play('success')
       setStatus(
         `Read ${index.tracks.length.toLocaleString()} tracks from your liked songs and ${index.playlists.length} playlists.` +
-          (skipped ? ` Spotify wouldn't open ${skipped === 1 ? 'one playlist' : `${skipped} playlists`} for this app.` : ''),
+          (skipped ? ` Spotify wouldn't open ${skipped === 1 ? 'one playlist' : `${skipped} playlists`} for this app (it only opens playlists you own or collaborate on).` : '') +
+          trouble,
       )
     } catch (e) {
       explainError(e)
-      setStatus('The scan stopped. What was read before it stopped was not kept.')
+      setStatus(`The scan stopped: ${e instanceof Error ? e.message : String(e)}.`)
     } finally {
       setScan(null)
     }
@@ -97,7 +104,13 @@ export function LibraryFeed() {
               void runScan()
             }}
           >
-            {scan ? `Reading ${scan.phase === 'liked' ? 'liked songs' : 'playlists'} ${scan.done}/${scan.total}` : library ? 'Read my library again' : 'Read my library'}
+            {scan
+              ? scan.phase === 'waiting'
+                ? `Spotify says slow down · ${scan.waitS}s`
+                : `Reading ${scan.phase === 'liked' ? 'liked songs' : 'playlists'} ${scan.done}/${scan.total}`
+              : library
+                ? 'Read my library again'
+                : 'Read my library'}
           </PressKey>
         ) : (
           <ReconnectButton label="Reconnect to read your library" />
