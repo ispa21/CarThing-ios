@@ -2,7 +2,7 @@
 // Providers: the bundled demo library, then LRCLIB (lyrics/lrclib.ts).
 
 import { DEMO_LRC, DEMO_TRACK } from './demo'
-import { lrclibProvider } from './lrclib'
+import { LRCLIB_ENABLED, lrclibProvider } from './lrclib'
 import { matchKey } from './match'
 import { parseLRC, type LyricLine } from './lrc'
 
@@ -47,7 +47,9 @@ export function createMockProvider(library: Array<{ title: string; artist: strin
 
 export const mockProvider = createMockProvider([{ ...DEMO_TRACK, lrc: DEMO_LRC }])
 
-export async function resolveLyrics(query: TrackQuery, providers: LyricsProvider[] = [mockProvider, lrclibProvider]) {
+const PROVIDERS = LRCLIB_ENABLED ? [mockProvider, lrclibProvider] : [mockProvider]
+
+export async function resolveLyrics(query: TrackQuery, providers: LyricsProvider[] = PROVIDERS) {
   for (const p of providers) {
     try {
       const found = await p.find(query)

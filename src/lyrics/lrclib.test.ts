@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createLrclibProvider, pickRecord, plainLines, searchTitle, toResolved, type LrclibRecord } from './lrclib'
+import { createLrclibProvider, LRCLIB_ENABLED, pickRecord, plainLines, searchTitle, toResolved, type LrclibRecord } from './lrclib'
 
 const record = (over: Partial<LrclibRecord> = {}): LrclibRecord => ({
   trackName: 'Night Drive',
@@ -39,7 +39,7 @@ describe('toResolved', () => {
         { startMs: 2500, text: 'two' },
       ],
       synced: true,
-      providerName: 'LRCLIB',
+      providerName: 'LRCLIB, user-contributed',
     })
   })
 
@@ -82,7 +82,7 @@ describe('createLrclibProvider', () => {
   it('searches by cleaned title and first artist', async () => {
     const f = respond([record()])
     const r = await createLrclibProvider(f).find({ ...query, title: 'Night Drive - Remastered' })
-    expect(r?.providerName).toBe('LRCLIB')
+    expect(r?.providerName).toBe('LRCLIB, user-contributed')
     const url = new URL(String(f.mock.calls[0][0]))
     expect(url.origin + url.pathname).toBe('https://lrclib.net/api/search')
     expect(url.searchParams.get('track_name')).toBe('Night Drive')
@@ -114,5 +114,11 @@ describe('createLrclibProvider', () => {
     const f = respond([record()])
     expect(await createLrclibProvider(f).find({ title: '', artist: 'X' })).toBeNull()
     expect(f).not.toHaveBeenCalled()
+  })
+})
+
+describe('LRCLIB_ENABLED', () => {
+  it('is on unless VITE_LYRICS_LRCLIB=off', () => {
+    expect(LRCLIB_ENABLED).toBe(import.meta.env.VITE_LYRICS_LRCLIB?.trim().toLowerCase() !== 'off')
   })
 })

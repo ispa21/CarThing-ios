@@ -9,6 +9,9 @@ import type { LyricsProvider, ResolvedLyrics, TrackQuery } from './resolver'
 
 export const LRCLIB_API = 'https://lrclib.net/api'
 
+/** The kill switch: VITE_LYRICS_LRCLIB=off turns LRCLIB lyrics off for every user. */
+export const LRCLIB_ENABLED = (import.meta.env.VITE_LYRICS_LRCLIB ?? '').trim().toLowerCase() !== 'off'
+
 /** One record from /api/search (the fields we read). */
 export interface LrclibRecord {
   trackName?: string
@@ -22,7 +25,7 @@ export interface LrclibRecord {
 /** LRCLIB's own matching tolerance for duration. */
 const DURATION_SLACK_S = 2
 const TIMEOUT_MS = 8000
-const NAME = 'LRCLIB'
+const NAME = 'LRCLIB, user-contributed'
 
 /** Plain lyrics → untimed lines. Blank lines between verses become gaps. */
 export function plainLines(text: string): LyricLine[] {
