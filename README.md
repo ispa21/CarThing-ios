@@ -165,7 +165,7 @@ Each scope was checked against the OpenAPI schema.
 
 Sessions connected before these scopes were added must reconnect; the screens that need them offer a Reconnect button.
 
-Importing your Spotify export: drop `my_spotify_data.zip` (or its JSON files) on Stories. The extended history (Streaming_History_Audio_….json) has track links and all-time plays; the quick "account data" export (StreamingHistory_music_….json) has names only and the last year, and is matched to your library by artist and title. Plays imported by name only are used for statistics and are never sent to Spotify.
+Importing your Spotify export: drop `my_spotify_data.zip` (or its JSON files) on Stories. The extended history (Streaming_History_Audio_….json) has track links and all-time plays; the quick "account data" export (StreamingHistory_music_….json) has names only and the last year, and is matched to your library by artist and title. The account-data ZIP also holds your whole library — every playlist you made with track links and the day each track was added (Playlist1…N.json) and your liked songs and followed artists (YourLibrary.json) — which PartyDeck reads too, with no Spotify rate limits; other files in the ZIP (Userdata, search history, …) are never opened. Plays imported by name only are used for statistics and are never sent to Spotify.
 
 The listening log, crate and library index live on the device in IndexedDB (`partydeck`), never uploaded, and are wiped on Disconnect. The optional streaming-history import reads only track, artist, album, time, ms played and skip fields.
 

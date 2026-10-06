@@ -6,6 +6,9 @@ import { strFromU8, unzipSync } from 'fflate'
 
 /** The history files inside Spotify's export; everything else in the ZIP is ignored. */
 export const HISTORY_FILE = /(^|\/)(Streaming_History[^/]*|StreamingHistory[^/]*|endsong[^/]*)\.json$/i
+/** The library files: your liked songs and your playlists. (Userdata, search history, etc. are never opened.) */
+export const LIBRARY_FILE = /(^|\/)(YourLibrary|Playlist\d*)\.json$/i
+const WANTED = (name: string) => HISTORY_FILE.test(name) || LIBRARY_FILE.test(name)
 
 export interface ExportText {
   name: string
@@ -13,7 +16,7 @@ export interface ExportText {
 }
 
 export function unzipHistory(bytes: Uint8Array): ExportText[] {
-  const files = unzipSync(bytes, { filter: (f) => HISTORY_FILE.test(f.name) })
+  const files = unzipSync(bytes, { filter: (f) => WANTED(f.name) })
   return Object.entries(files).map(([name, data]) => ({ name, text: strFromU8(data) }))
 }
 

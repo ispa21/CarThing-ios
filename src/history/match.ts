@@ -58,7 +58,7 @@ export function resolveNamed(named: NamedPlay[], known: Map<string, TrackRef>, s
       playedMs: n.playedMs,
       // Spotify's basic export has no skip flag: a very short play is a skip.
       skipped: n.playedMs < skippedBelowMs,
-      source: 'import',
+      source: 'basic',
     })
   }
   return { plays, matched }

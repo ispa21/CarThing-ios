@@ -16,6 +16,7 @@ import { initialPlayback, selectCanToggle, usePlayback, type PlaybackStore } fro
 import { useSession } from '../store/session'
 import { notify, openDevices, closeDevices } from '../store/ui'
 import * as api from './api'
+import { isExportPlaylist, near } from '../history/exportLibrary'
 import { isSpotifyUri } from '../history/match'
 import { addToIndex, type LibraryIndex, type LibraryPlaylist, type LibraryTrack } from '../history/library'
 import { hasScope, logout } from './auth'
@@ -440,6 +441,8 @@ export async function scanLibrary(
   const stop = () => Boolean(signal?.aborted) || !alive()
   const map = new Map<string, LibraryTrack>((prev?.tracks ?? []).map((t) => [t.uri, { ...t, playlists: [...t.playlists] }]))
   const lists = new Map<string, LibraryPlaylist>()
+  // Playlists that came from an export stay until the API reads the same playlist itself.
+  for (const x of prev?.playlists ?? []) if (isExportPlaylist(x.id)) lists.set(x.id, x)
   const problems: string[] = []
   const delta = { newLiked: 0, changed: 0, unchanged: 0, fullLiked: !prev }
   let skipped = 0
@@ -534,6 +537,8 @@ export async function scanLibrary(
         continue
       }
       if (old) strip(p.id)
+      const size = p.items?.total ?? p.tracks?.total ?? 0
+      const twin = prev?.playlists.find((x) => isExportPlaylist(x.id) && lists.has(x.id) && x.name === p.name && near(x.count, size))
       let count = 0
       try {
         for (let page = 0, total = 1; page < total; page++) {
@@ -549,6 +554,11 @@ export async function scanLibrary(
         }
         lists.set(p.id, { id: p.id, name: p.name, count, snapshot: snapshot ?? undefined, readable: true, checkedAt: Date.now() })
         delta.changed++
+        if (twin) {
+          // The same playlist, now read from Spotify itself (with its covers): drop the export's copy.
+          strip(twin.id)
+          lists.delete(twin.id)
+        }
       } catch (e) {
         if (fatal(e)) throw e
         skipped++ // usually 403: Spotify only opens playlists you own or collaborate on to Development Mode apps

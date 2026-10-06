@@ -111,7 +111,9 @@ describe('mergePlays', () => {
     // …but the same export dropped in twice adds nothing
     expect(mergePlays([imp(0), imp(2 * 60_000)], [imp(0), imp(2 * 60_000)])).toHaveLength(0)
     // …and the quick export (minute-rounded) beside the extended one is one play, not two
-    expect(mergePlays([imp(10_000)], [imp(40_000)])).toHaveLength(0)
+    expect(mergePlays([imp(10_000)], [play('a', 40_000, 90_000, false, 'basic')])).toHaveLength(0)
+    // …but two plays a minute apart in one export are two plays
+    expect(mergePlays([], [imp(0), imp(50_000)])).toHaveLength(2)
   })
 
   it('stays fast for a favourite played tens of thousands of times', () => {

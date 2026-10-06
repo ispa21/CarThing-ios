@@ -5,11 +5,10 @@ import type { Play } from './types'
 /** The same track from two different sources (live, recently-played, an import) within this window is one play. */
 const SAME_PLAY_MS = 4 * 60_000
 /**
- * From the same source, only a start within a minute counts as a repeat of the row (the
- * same export dropped in twice, or the quick export beside the extended one, whose times
- * are rounded to the minute). A song played again a few minutes later is a new play.
+ * From the same source, only a start within two seconds is the same row (the same export
+ * dropped in twice). A song played again, even a minute later, is a new play.
  */
-const SAME_SOURCE_MS = 61_000
+const SAME_SOURCE_MS = 2_000
 const BUCKET = 60_000
 
 /**

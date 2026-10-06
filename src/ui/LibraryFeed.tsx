@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { readExportFiles, type ExportText } from '../history/exportFiles'
 import { describeImport, importAll } from '../history/importAll'
-import { addPlays } from '../history/service'
+import { mergeExportLibrary } from '../history/exportLibrary'
+import { addPlays, saveLibrary } from '../history/service'
 import { feedback } from '../sensory/feedback'
 import { hasScope } from '../spotify/auth'
 import { useHistory } from '../store/history'
@@ -41,7 +42,14 @@ export function LibraryFeed() {
       return
     }
     const { library: lib, plays: logged } = useHistory.getState()
-    const { plays, files: reports } = await importAll(texts, lib?.tracks ?? [], logged, (done, total, name) => setStatus(done < total ? `Reading ${done + 1} of ${total}${name ? ` · ${name}` : ''}…` : 'Saving…'))
+    const { plays, files: reports, library: found } = await importAll(texts, lib?.tracks ?? [], logged, (done, total, name) => setStatus(done < total ? `Reading ${done + 1} of ${total}${name ? ` · ${name}` : ''}…` : 'Saving…'))
+    // The library in the export (liked songs, every playlist) joins the one on the device.
+    let libInfo: { tracks: number; playlists: number; liked: number; covered: number } | undefined
+    if (found.map.size) {
+      const { index, covered } = mergeExportLibrary(useHistory.getState().library, found)
+      saveLibrary(index)
+      libInfo = { tracks: found.map.size, playlists: found.playlists.length, liked: found.liked, covered }
+    }
     let added = 0
     let kept = true
     try {
@@ -51,7 +59,7 @@ export function LibraryFeed() {
       kept = false
     }
     if (added) feedback.play('success')
-    setStatus(describeImport(reports, added, plays.length) + (kept ? '' : ' They’re in this visit only: this browser wouldn’t let PartyDeck save them on the device.'))
+    setStatus(describeImport(reports, added, plays.length, libInfo) + (kept ? '' : ' They’re in this visit only: this browser wouldn’t let PartyDeck save them on the device.'))
   }
 
   const canScan = hasScope('user-library-read')
@@ -61,7 +69,7 @@ export function LibraryFeed() {
       <div className="feed-sources">
         <span className="label">library</span>
         <span className="readout">
-          {library ? `${library.tracks.length.toLocaleString()} tracks · ${library.playlists.length} playlists · read ${ago(library.scannedAt, now)}` : 'not read yet'}
+          {library ? `${library.tracks.length.toLocaleString()} tracks · ${library.playlists.length} playlists · ${library.scannedAt ? `read ${ago(library.scannedAt, now)}` : 'from your export (Spotify not read yet)'}` : 'not read yet'}
         </span>
         <span className="label">log</span>
         <span className="readout">{plays.toLocaleString()} plays on this device</span>

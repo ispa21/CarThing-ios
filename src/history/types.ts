@@ -17,8 +17,8 @@ export interface Play extends TrackRef {
   playedMs: number
   /** Left well before the end. */
   skipped: boolean
-  /** live: logged while PartyDeck was open. recent: Spotify's last-50 list. import: your streaming-history export. */
-  source: 'live' | 'recent' | 'import'
+  /** live: logged while PartyDeck was open. recent: Spotify's last-50 list. import: your extended streaming-history export. basic: the quick export (names only, matched to your library). */
+  source: 'live' | 'recent' | 'import' | 'basic'
 }
 
 /** Plays with no gap longer than SESSION_GAP_MS between them. */

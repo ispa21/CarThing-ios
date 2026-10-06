@@ -26,7 +26,7 @@ export interface Inputs {
   now: number
 }
 
-const minutesOf = (tracks: TrackRef[]) => Math.round(tracks.reduce((s, t) => s + t.durationMs, 0) / 60_000)
+const minutesOf = (tracks: TrackRef[]) => Math.max(1, Math.round(tracks.reduce((s, t) => s + (t.durationMs || 210_000), 0) / 60_000))
 
 export function prepare({ plays, library }: Inputs) {
   // These stories end in "play": only tracks that can be played take part.
@@ -69,7 +69,7 @@ export function buildSession(inputs: Inputs, o: BuildOptions): Pick[] {
   const pools: Record<Pick['kind'], TrackRef[]> = { familiar: [], forgotten: [], never: [] }
   const seen = new Set<string>()
   for (const t of inputs.library) {
-    if (!allowed(t) || !t.durationMs) continue
+    if (!allowed(t)) continue
     const s = stats.get(t.uri)
     const kind: Pick['kind'] = !s || !s.listens ? 'never' : s.listens >= 3 && inputs.now - s.last < 90 * DAY ? 'familiar' : 'forgotten'
     pools[kind].push(t)
@@ -81,7 +81,7 @@ export function buildSession(inputs: Inputs, o: BuildOptions): Pick[] {
     for (const s of stats.values()) {
       if (seen.has(s.track.uri) || (room ? !room.has(s.track.uri) || !s.listens : s.listens < 3) || (o.artists?.length && !o.artists.includes(s.track.artist))) continue
       const t = describe(s.track.uri, lib, stats)
-      if (t?.durationMs) pools[inputs.now - s.last < 90 * DAY ? 'familiar' : 'forgotten'].push(t)
+      if (t) pools[inputs.now - s.last < 90 * DAY ? 'familiar' : 'forgotten'].push(t)
     }
   }
   const rand = rng(o.seed)
@@ -99,7 +99,7 @@ export function buildSession(inputs: Inputs, o: BuildOptions): Pick[] {
     const kind = kinds.sort((a, b) => used[a] / n - shares[a] - (used[b] / n - shares[b]))[0]
     const t = shuffled[kind][used[kind]++]
     out.push({ ...t, kind })
-    total += t.durationMs
+    total += t.durationMs || 210_000
   }
   return out
 }

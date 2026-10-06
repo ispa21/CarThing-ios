@@ -69,10 +69,33 @@ describe('importing a whole export', () => {
       'Spotify Extended Streaming History/Streaming_History_Audio_2022-2023_0.json',
       'Spotify Extended Streaming History/Streaming_History_Audio_2023-2024_1.json',
       'Spotify Extended Streaming History/Streaming_History_Video_2023_0.json',
-    ])
+      'Spotify Account Data/Playlist1.json',
+    ].sort())
     const out = await importAll(texts, [], [])
     expect(out.plays).toHaveLength(100)
     expect(JSON.stringify(out.plays)).not.toContain('203.0.113.5') // nothing but listening is kept
+    expect(JSON.stringify(out)).not.toContain('nope@example.com') // Userdata.json is never even opened
+  })
+
+  it('matches the quick export’s plays to the library inside the same ZIP', async () => {
+    const uri = (c: string) => `spotify:track:${c.repeat(22)}`
+    const lib = { playlists: [{ name: 'Night Drive', lastModifiedDate: '2025-02-01', items: [{ track: { trackName: 'Song 3', artistName: 'Artist 3', albumName: 'LP', trackUri: uri('q') }, addedDate: '2024-04-04' }] }] }
+    const yourLibrary = { tracks: [{ artist: 'Artist 4', album: 'LP', track: 'Song 4', uri: uri('r') }], artists: [{ name: 'Artist 4', uri: 'spotify:artist:1' }] }
+    const out = await importAll(
+      [
+        { name: 'Spotify Account Data/StreamingHistory_music_0.json', text: JSON.stringify([basic(3), basic(4), basic(6)].map((r, i) => ({ ...r, artistName: ['Artist 3', 'Artist 4', 'Nobody'][i], trackName: ['Song 3', 'Song 4', 'Song 9'][i] }))) },
+        { name: 'Spotify Account Data/Playlist1.json', text: JSON.stringify(lib) },
+        { name: 'Spotify Account Data/YourLibrary.json', text: JSON.stringify(yourLibrary) },
+      ],
+      [],
+      [],
+    )
+    expect(out.library.map.size).toBe(2)
+    expect(out.library.liked).toBe(1)
+    expect(out.library.followed).toEqual(['Artist 4'])
+    expect(out.plays.map((p) => p.uri)).toEqual([uri('q'), uri('r'), expect.stringMatching(/^name:/)])
+    expect(out.files.filter((f) => f.kind === 'playlists' || f.kind === 'library')).toHaveLength(2)
+    expect(describeImport(out.files, 3, 3, { tracks: 2, playlists: 1, liked: 1, covered: 0 })).toContain('Library: 2 tracks from 1 playlists and 1 liked songs.')
   })
 
   it('says what happened to each kind of file', () => {
