@@ -13,6 +13,7 @@ import { Icon } from '../ui/Icon'
 import { PressKey } from '../ui/PressKey'
 import { practice, practiceClock, PRACTICE_TRACKS, usePracticeDeck, type PracticeTrack } from './practiceDeck'
 import { advanceTutorial, isTutorialComplete, TUTORIAL_STEPS, type TutorialAction } from './tutorialSteps'
+import { TapKey } from '../ui/TapKey'
 
 type Panel = 'queue' | 'lyrics' | null
 
@@ -78,9 +79,9 @@ export function Tutorial({ onFinish }: { onFinish: () => void }) {
   // The fullscreen step's own action lives in the instruction line, so no panel can hide it.
   const fullscreenAction =
     coach !== 'fullscreen' ? null : (
-      <button className={`btn btn-small ${alreadyFullscreen ? '' : 'btn-quiet'}`} onClick={acknowledge}>
+      <TapKey className={`btn btn-small ${alreadyFullscreen ? '' : 'btn-quiet'}`} onClick={acknowledge}>
         {alreadyFullscreen ? 'Continue' : fullscreenKey ? 'Not now' : 'Got it'}
-      </button>
+      </TapKey>
     )
   const fullscreenHint = alreadyFullscreen
     ? "You're already using the whole screen."
@@ -100,9 +101,9 @@ export function Tutorial({ onFinish }: { onFinish: () => void }) {
           ))}
         </ol>
         {!complete && (
-          <button className="btn btn-quiet btn-small" onClick={() => end('back')}>
+          <TapKey className="btn btn-quiet btn-small" onClick={() => end('back')}>
             Skip
-          </button>
+          </TapKey>
         )}
       </header>
 
@@ -162,10 +163,10 @@ export function Tutorial({ onFinish }: { onFinish: () => void }) {
         <div className="rail-deck" />
         <ul className="rail-tabs">
           <li>
-            <button className="rail-tab" data-coach={coach === 'home' || undefined} onClick={home} aria-current={!panel ? 'page' : undefined}>
+            <TapKey className="rail-tab" data-coach={coach === 'home' || undefined} onClick={home} aria-current={!panel ? 'page' : undefined}>
               <Icon name="deck" />
               <span>Deck</span>
-            </button>
+            </TapKey>
           </li>
           <li>
             {/* Search needs Spotify, so it isn't part of practice — shown so the layout matches. */}
@@ -176,16 +177,16 @@ export function Tutorial({ onFinish }: { onFinish: () => void }) {
             </span>
           </li>
           <li>
-            <button className="rail-tab" data-coach={coach === 'queue' || undefined} onClick={() => open('queue')} aria-current={panel === 'queue' ? 'page' : undefined}>
+            <TapKey className="rail-tab" data-coach={coach === 'queue' || undefined} onClick={() => open('queue')} aria-current={panel === 'queue' ? 'page' : undefined}>
               <Icon name="queue" />
               <span>Queue</span>
-            </button>
+            </TapKey>
           </li>
           <li>
-            <button className="rail-tab" data-coach={coach === 'lyrics' || undefined} onClick={() => open('lyrics')} aria-current={panel === 'lyrics' ? 'page' : undefined}>
+            <TapKey className="rail-tab" data-coach={coach === 'lyrics' || undefined} onClick={() => open('lyrics')} aria-current={panel === 'lyrics' ? 'page' : undefined}>
               <Icon name="lyrics" />
               <span>Lyrics</span>
-            </button>
+            </TapKey>
           </li>
         </ul>
         <div className="rail-tools">
@@ -255,9 +256,9 @@ function PanelHead({ title, onClose }: { title: string; onClose: () => void }) {
   return (
     <header className="practice-panel-head">
       <h2>{title}</h2>
-      <button className="icon-btn" onClick={onClose} aria-label="Close">
+      <TapKey className="icon-btn" onClick={onClose} aria-label="Close">
         <Icon name="close" />
-      </button>
+      </TapKey>
     </header>
   )
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type MouseEvent } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { feedback } from '../sensory/feedback'
 import { togglePlay } from '../spotify/playbackService'
@@ -9,12 +9,13 @@ import { Icon } from '../ui/Icon'
 import { PressKey } from '../ui/PressKey'
 import { ModesSheet } from './ModesSheet'
 import { RAIL_MODES, RAIL_TABS } from './nav'
-import { linkHandler, PATHS, tickLink, type Route } from './router'
+import { navigate, PATHS, tickLink, type Route } from './router'
+import { TapKey } from '../ui/TapKey'
 
-/** Opening the reader is its own (same-sounding) event, so it can diverge later. */
-const openLyrics = (e: MouseEvent<HTMLAnchorElement>) => {
-  feedback.play('lyrics-open')
-  linkHandler(e)
+/** The keys are buttons, not links, so a tap can tick on iPhone (HapticSwitch can't live in a link). */
+const go = (route: Route) => {
+  feedback.play(route === 'lyrics' ? 'lyrics-open' : 'select')
+  navigate(PATHS[route])
 }
 
 /**
@@ -45,19 +46,14 @@ export function Rail({ route }: { route: Route }) {
         <ul className="rail-tabs">
           {RAIL_TABS.map((t) => (
             <li key={t.route}>
-              <a
-                className="rail-tab"
-                href={PATHS[t.route]}
-                onClick={t.route === 'lyrics' ? openLyrics : tickLink}
-                aria-current={route === t.route ? 'page' : undefined}
-              >
+              <TapKey className="rail-tab" onClick={() => go(t.route)} aria-current={route === t.route ? 'page' : undefined}>
                 {t.label}
-              </a>
+              </TapKey>
             </li>
           ))}
           {/* Phones: the fifth key. It names the mode you're in, and opens all of them. */}
           <li className="rail-more-item">
-            <button
+            <TapKey
               className="rail-tab rail-more"
               aria-haspopup="dialog"
               aria-expanded={modesOpen}
@@ -69,16 +65,16 @@ export function Rail({ route }: { route: Route }) {
               }}
             >
               {mode ? (mode.short ?? mode.label) : route === 'settings' ? 'settings' : 'modes'}
-            </button>
+            </TapKey>
           </li>
         </ul>
         {RAIL_MODES.length > 0 && (
           <ul ref={modesRef} className="rail-modes" aria-label="Modes">
             {RAIL_MODES.map((m) => (
               <li key={m.route}>
-                <a className="rail-mode" href={PATHS[m.route]} onClick={tickLink} aria-current={route === m.route ? 'page' : undefined}>
+                <TapKey className="rail-mode" onClick={() => go(m.route)} aria-current={route === m.route ? 'page' : undefined}>
                   {m.label}
-                </a>
+                </TapKey>
               </li>
             ))}
           </ul>
@@ -88,9 +84,9 @@ export function Rail({ route }: { route: Route }) {
         {route !== 'now' && <NowLine />}
         <RouteButton />
         <FullscreenButton />
-        <a className="icon-btn" href={PATHS.settings} onClick={tickLink} aria-label="Settings" aria-current={route === 'settings' ? 'page' : undefined}>
+        <TapKey className="icon-btn" onClick={() => go('settings')} aria-label="Settings" aria-current={route === 'settings' ? 'page' : undefined}>
           <Icon name="trim" />
-        </a>
+        </TapKey>
       </div>
       <ModesSheet open={modesOpen} onClose={() => setModesOpen(false)} route={route} device={device} />
     </header>
@@ -101,7 +97,7 @@ export function Rail({ route }: { route: Route }) {
 function RouteButton() {
   const s = usePlayback(useShallow((s) => ({ has: s.hasPlayback, name: s.playback.deviceName, playing: s.playback.isPlaying })))
   return (
-    <button
+    <TapKey
       className="rail-route"
       onClick={() => {
         feedback.play('select')
@@ -111,7 +107,7 @@ function RouteButton() {
     >
       <span className="lamp" data-live={(s.has && s.playing) || undefined} aria-hidden="true" />
       <span className="rail-route-name readout">{s.name ? s.name.toLowerCase() : 'no device'}</span>
-    </button>
+    </TapKey>
   )
 }
 

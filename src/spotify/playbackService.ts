@@ -16,6 +16,7 @@ import { initialPlayback, selectCanToggle, usePlayback, type PlaybackStore } fro
 import { useSession } from '../store/session'
 import { notify, openDevices, closeDevices } from '../store/ui'
 import * as api from './api'
+import { isSpotifyUri } from '../history/match'
 import { addToIndex, type LibraryIndex, type LibraryPlaylist, type LibraryTrack } from '../history/library'
 import { hasScope, logout } from './auth'
 import { describeError, SpotifyError } from './errors'
@@ -349,7 +350,8 @@ export async function fetchRecentPlays() {
 }
 
 /** Plays a list of tracks from the top (a crate, a session, a story's set). */
-export async function playUris(uris: string[], label: string, { silent = false }: { silent?: boolean } = {}) {
+export async function playUris(all: string[], label: string, { silent = false }: { silent?: boolean } = {}) {
+  const uris = all.filter(isSpotifyUri) // imported-by-name plays have no Spotify link and are never sent
   if (!uris.length) return false
   if (!silent) feedback.play('primary-press') // silent: the caller already played it in the gesture
   const ok = await command(() => api.startPlayback({ uris: uris.slice(0, 100) }))
@@ -361,14 +363,15 @@ export async function playUris(uris: string[], label: string, { silent = false }
  * Saves a list of tracks as a new private playlist (needs playlist-modify-private).
  * Resolves to the playlist's Spotify link, or null if it failed (the error is announced).
  */
-export async function saveAsPlaylist(name: string, description: string, uris: string[]) {
+export async function saveAsPlaylist(name: string, description: string, all: string[]) {
+  const uris = all.filter(isSpotifyUri)
   if (!uris.length) return null
   feedback.play('select') // the press; the confirmation follows once Spotify has it
   try {
     const created = await api.createPlaylist(name, description)
     if (!created?.id) throw new SpotifyError(0, 'No playlist returned')
     for (let i = 0; i < uris.length; i += 100) await api.addPlaylistItems(created.id, uris.slice(i, i + 100))
-    feedback.play('queue-add')
+    feedback.play('saved')
     notify(`Saved “${name}” to your Spotify playlists`)
     return { uri: created.uri, url: normalizeUrl(created.external_urls?.spotify) }
   } catch (e) {

@@ -518,3 +518,10 @@
     margin-top: var(--s-3);
   }
 }
+
+button.modes-tile {
+  width: 100%;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}

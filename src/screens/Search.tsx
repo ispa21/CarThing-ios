@@ -9,6 +9,7 @@ import { EmptyState, ErrorState, SkeletonRows } from '../ui/Feedback'
 import { MediaRow } from '../ui/MediaRow'
 import { useCrate } from '../ui/useCrate'
 import { PlaylistShelf } from './PlaylistShelf'
+import { TapKey } from '../ui/TapKey'
 
 type State =
   | { status: 'idle' }
@@ -105,7 +106,7 @@ export function Search() {
         </form>
         <div className="lib-kinds" role="tablist" aria-label="Result type">
           {KINDS.map((k) => (
-            <button
+            <TapKey
               key={k.key}
               type="button"
               role="tab"
@@ -118,7 +119,7 @@ export function Search() {
             >
               {k.title}
               {results ? <span className="lib-count"> ({results[k.key].length})</span> : null}
-            </button>
+            </TapKey>
           ))}
         </div>
         <p className="lib-hint serif">
@@ -134,7 +135,7 @@ export function Search() {
         {state.status === 'searching' && !results && <SkeletonRows count={6} />}
         {state.status === 'empty' && (
           <EmptyState title={`Nothing found for “${state.query}”`} detail="Check the spelling or try fewer words.">
-            <button
+            <TapKey
               className="btn"
               onClick={() => {
                 feedback.play('back')
@@ -143,7 +144,7 @@ export function Search() {
               }}
             >
               Clear search
-            </button>
+            </TapKey>
           </EmptyState>
         )}
         {state.status === 'error' && <ErrorState error={state.error} onRetry={() => onChange(query)} />}

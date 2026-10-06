@@ -12,6 +12,7 @@ import { EmptyState } from '../ui/Feedback'
 import { PressKey } from '../ui/PressKey'
 import { ReconnectButton } from '../ui/ReconnectButton'
 import { SpotifyLink } from '../ui/SpotifyLink'
+import { TapKey } from '../ui/TapKey'
 
 const HOUR = 3600_000
 /** The day runs 06:00 to 04:00: nights belong to the day they started. */
@@ -135,7 +136,7 @@ export function Archive() {
 
           <div className="arc-sessions" role="radiogroup" aria-label="Sessions">
             {daySessions.map((s) => (
-              <button
+              <TapKey
                 key={s.n}
                 className="arc-session readout"
                 role="radio"
@@ -150,7 +151,7 @@ export function Archive() {
                 <span className="arc-session-span">
                   {clock(s.start)} — {clock(s.end)}
                 </span>
-              </button>
+              </TapKey>
             ))}
           </div>
 
@@ -158,7 +159,7 @@ export function Archive() {
             {session && <SessionDetail session={session} />}
             <aside className="arc-days" aria-label="Earlier days">
               {days.slice(0, 7).map(([k, list]) => (
-                <button
+                <TapKey
                   key={k}
                   className="arc-dayrow"
                   aria-current={k === day || undefined}
@@ -177,7 +178,7 @@ export function Archive() {
                       <span key={p.ts} style={{ '--x': (p.ts - k) / (DAY_SPAN_H * HOUR) } as CSSProperties} />
                     ))}
                   </span>
-                </button>
+                </TapKey>
               ))}
               <p className="serif arc-source">
                 Logged on this device while PartyDeck is open{recent === 'no-scope' ? '' : ', plus Spotify’s last 50 plays'}. Import your

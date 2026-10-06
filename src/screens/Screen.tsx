@@ -6,6 +6,7 @@ import { usePlayback } from '../store/playback'
 import { Artwork } from '../ui/Artwork'
 import { spotifyClock, useClockPainter } from '../ui/clock'
 import { Visual } from './Visual'
+import { TapKey } from '../ui/TapKey'
 
 const MODES = ['artwork', 'lyrics', 'visual', 'clock', 'now playing'] as const
 type Mode = (typeof MODES)[number]
@@ -141,7 +142,7 @@ export function Screen() {
 
       <div className="tv-modes" role="group" aria-label="Screen mode">
         {MODES.map((m) => (
-          <button
+          <TapKey
             key={m}
             className="tv-mode readout"
             aria-pressed={mode === m}
@@ -153,7 +154,7 @@ export function Screen() {
             onFocus={() => setIdle(false)}
           >
             {m}
-          </button>
+          </TapKey>
         ))}
       </div>
     </div>

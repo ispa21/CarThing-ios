@@ -28,7 +28,8 @@ describe('interaction map', () => {
   it('keeps the vocabulary small (consistency over variety)', () => {
     const haptics = new Set(events.map((e) => INTERACTIONS[e].haptic).filter(Boolean))
     const cues = new Set(events.map((e) => INTERACTIONS[e].sound).filter(Boolean))
-    expect(haptics.size).toBeLessThanOrEqual(7)
+    // Rhythms tell actions apart by feel (play, pause, skip, crate, save, end stop), still a small set.
+    expect(haptics.size).toBeLessThanOrEqual(12)
     expect(cues.size).toBeLessThanOrEqual(11)
   })
 
@@ -49,7 +50,7 @@ describe('feedback.play', () => {
   it('fires the mapped haptic and sound', () => {
     const { fb, haptic, sound } = setup()
     fb.play('next-track')
-    expect(haptic).toHaveBeenCalledWith('medium')
+    expect(haptic).toHaveBeenCalledWith('skip')
     expect(sound).toHaveBeenCalledWith('page')
   })
 

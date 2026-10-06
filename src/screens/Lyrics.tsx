@@ -19,6 +19,8 @@ import { Artwork } from '../ui/Artwork'
 import { EmptyState } from '../ui/Feedback'
 import { Icon } from '../ui/Icon'
 import { Scrubber } from '../ui/Scrubber'
+import { TapKey } from '../ui/TapKey'
+import { useScrollDetents } from '../ui/useScrollDetents'
 
 type LyricsState = { status: 'loading' } | { status: 'none' } | { status: 'ready'; lyrics: ResolvedLyrics }
 
@@ -142,6 +144,8 @@ export function LyricsScreen({ source }: { source: PlaybackSource }) {
   const reduceMotion = useReducedMotion()
 
   useEffect(() => dispatch({ type: 'trackChange' }), [track.id])
+  // Android: once you've scrolled away from following, a detent as each line passes the reading line.
+  useScrollDetents(scrollerRef, '.lyrics-lines > li:not(.gap)', { line: FOCUS_LINE, enabled: mode !== 'following' })
 
   const scrollToCurrent = useCallback(
     (smooth: boolean) => {
@@ -247,7 +251,7 @@ export function LyricsScreen({ source }: { source: PlaybackSource }) {
         {controls && (
           <m.aside key="aside" className="lyrics-aside" aria-label="Reader" {...fade}>
             {demo && (
-              <button
+              <TapKey
                 className="btn btn-small"
                 onClick={() => {
                   feedback.play('back')
@@ -255,14 +259,14 @@ export function LyricsScreen({ source }: { source: PlaybackSource }) {
                 }}
               >
                 Back
-              </button>
+              </TapKey>
             )}
             <span className="label">text size</span>
             <div className="lyrics-sizes" role="radiogroup" aria-label="Text size">
               {LYRIC_SIZES.map((z, i) => (
-                <button key={z.label} className="key lyrics-size" role="radio" aria-checked={i === sizeIndex} aria-label={z.label} onClick={() => pickSize(i)}>
+                <TapKey key={z.label} className="key lyrics-size" role="radio" aria-checked={i === sizeIndex} aria-label={z.label} onClick={() => pickSize(i)}>
                   <span className="readout">{['s', 'm', 'l', 'xl'][i]}</span>
-                </button>
+                </TapKey>
               ))}
             </div>
             <span className="lyrics-aside-rule" aria-hidden="true" />

@@ -4,6 +4,7 @@
 // username; no login). Plays are matched to Spotify tracks already in your library;
 // unmatched ones still count for artists and patterns but are never sent to Spotify.
 
+import { songKey } from './match'
 import type { Play } from './types'
 
 export interface Scrobble {
@@ -43,17 +44,7 @@ export function readScrobbles(raw: RawRecentTracks): { scrobbles: Scrobble[]; pa
   return { scrobbles: scrobbles.reverse(), page: Number(attr?.page ?? 1), pages: Number(attr?.totalPages ?? 1), total: Number(attr?.total ?? scrobbles.length) }
 }
 
-/** A loose key for matching the same song across services. */
-export const songKey = (artist: string, title: string) => {
-  const clean = (s: string) =>
-    s
-      .toLowerCase()
-      .replace(/\s*[([].*?(feat|ft\.|with|remaster|version|edit|from|live).*?[)\]]/g, '')
-      .replace(/\s+-\s+.*(remaster|version|edit|mix).*$/g, '')
-      .replace(/[^\p{L}\p{N}]+/gu, ' ')
-      .trim()
-  return `${clean(artist.split(/,|&| feat\.? | ft\.? /i)[0] ?? artist)}|${clean(title)}`
-}
+export { songKey }
 
 /**
  * Scrobbles to plays. `known` maps songKey → a Spotify track you have (library or log);

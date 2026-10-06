@@ -11,6 +11,7 @@ import { useSession } from '../store/session'
 import { LYRIC_SIZES, useSettings, type Theme } from '../store/settings'
 import { useUi } from '../store/ui'
 import { Icon } from '../ui/Icon'
+import { TapKey } from '../ui/TapKey'
 
 const THEMES: Array<{ value: Theme; label: string }> = [
   { value: 'plate', label: 'Plate' },
@@ -33,7 +34,7 @@ export function Settings() {
   return (
     <div className="page page-narrow">
       <header className="page-head">
-        <button
+        <TapKey
           className="icon-btn"
           onClick={() => {
             feedback.play('back')
@@ -42,7 +43,7 @@ export function Settings() {
           aria-label="Back"
         >
           <Icon name="back" />
-        </button>
+        </TapKey>
         <h1 className="page-title">Settings</h1>
         <span className="icon-btn-spacer" />
       </header>
@@ -135,7 +136,7 @@ export function Settings() {
               Tutorial
               <span className="group-detail">A 20-second walkthrough on a silent practice deck.</span>
             </span>
-            <button
+            <TapKey
               className="btn btn-small"
               onClick={() => {
                 feedback.play('select')
@@ -143,7 +144,7 @@ export function Settings() {
               }}
             >
               Replay
-            </button>
+            </TapKey>
           </div>
         </div>
       </section>
@@ -193,7 +194,7 @@ function DisconnectButton() {
     return () => clearTimeout(t)
   }, [armed])
   return (
-    <button
+    <TapKey
       className="btn btn-small btn-danger"
       data-armed={armed || undefined}
       aria-live="polite"
@@ -209,7 +210,7 @@ function DisconnectButton() {
       }}
     >
       {armed ? 'Press again to disconnect' : 'Disconnect'}
-    </button>
+    </TapKey>
   )
 }
 
@@ -284,7 +285,7 @@ function InstallRow() {
           Install PartyDeck
           <span className="group-detail">Opens full screen, without browser controls.</span>
         </span>
-        <button
+        <TapKey
           className="btn btn-small"
           onClick={async () => {
             feedback.play('select')
@@ -294,7 +295,7 @@ function InstallRow() {
           }}
         >
           Install
-        </button>
+        </TapKey>
       </div>
     )
   }

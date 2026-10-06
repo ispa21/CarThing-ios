@@ -25,6 +25,11 @@ export const VIBRATION: Record<HapticName, readonly number[]> = {
   success: [18, 70, 30], // short, then firmer: done
   warning: [30, 110, 30], // two even, slow
   error: [30, 50, 30, 50, 30], // three quick
+  soft: [16], // pause: the play key's quieter twin
+  skip: [14, 45, 14], // two quick: moving on
+  double: [16, 60, 16], // into the crate: a record dropped in
+  rise: [12, 45, 20, 45, 30], // saved as a playlist: three steps up
+  bump: [34], // an end stop: the start or end of the track
 }
 
 export type HapticMechanism = 'vibrate' | 'ios-switch' | null

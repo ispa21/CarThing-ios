@@ -80,7 +80,14 @@ export function Scrubber({ clock, durationMs, onSeek, disabled = false, label = 
     setDrag(msAt(e.clientX))
   }
   const onPointerMove = (e: PointerEvent<HTMLDivElement>) => {
-    if (dragRef.current !== null) setDrag(msAt(e.clientX))
+    const prev = dragRef.current
+    if (prev === null) return
+    const ms = msAt(e.clientX)
+    // Android: a detent at each minute mark, a firmer stop at either end (iPhone can't tick mid-drag).
+    if (ms <= 0 || ms >= durationMs) {
+      if (prev > 0 && prev < durationMs) feedback.play('edge')
+    } else if (Math.floor(ms / 60_000) !== Math.floor(prev / 60_000)) feedback.play('detent')
+    setDrag(ms)
   }
   const onPointerUp = () => {
     const ms = dragRef.current

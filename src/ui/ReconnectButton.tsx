@@ -1,10 +1,11 @@
 import { feedback } from '../sensory/feedback'
 import { beginLogin } from '../spotify/auth'
+import { TapKey } from './TapKey'
 
 /** Newer features need scopes older sessions weren't asked for: say so, and offer the fix. */
 export function ReconnectButton({ label = 'Reconnect Spotify' }: { label?: string }) {
   return (
-    <button
+    <TapKey
       className="btn"
       onClick={() => {
         feedback.play('select')
@@ -12,6 +13,6 @@ export function ReconnectButton({ label = 'Reconnect Spotify' }: { label?: strin
       }}
     >
       {label}
-    </button>
+    </TapKey>
   )
 }

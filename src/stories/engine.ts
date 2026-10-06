@@ -3,6 +3,7 @@
 // without it, the story is simply absent (never padded or invented).
 
 import type { LibraryTrack } from '../history/library'
+import { isSpotifyUri } from '../history/match'
 import { sessionsFrom } from '../history/sessions'
 import type { Play, TrackRef } from '../history/types'
 import { artistListens, DAY, describe, rng, shuffle, topOf, trackStats, type TrackStats } from './stats'
@@ -28,7 +29,8 @@ export interface Inputs {
 const minutesOf = (tracks: TrackRef[]) => Math.round(tracks.reduce((s, t) => s + t.durationMs, 0) / 60_000)
 
 export function prepare({ plays, library }: Inputs) {
-  const stats = trackStats(plays)
+  // These stories end in "play": only tracks that can be played take part.
+  const stats = trackStats(plays.filter((p) => isSpotifyUri(p.uri)))
   const lib = new Map(library.map((t) => [t.uri, t]))
   return { stats, lib }
 }

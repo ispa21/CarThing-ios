@@ -10,6 +10,7 @@ import { EmptyState } from '../ui/Feedback'
 import { useRecordColours } from '../ui/useRecordColours'
 import { VisualWorld } from '../ui/VisualWorld'
 import { WORLDS, type World } from '../visual/worlds'
+import { TapKey } from '../ui/TapKey'
 
 const WORLD_KEY = 'partydeck.world'
 const readWorld = (): World => {
@@ -160,9 +161,9 @@ export function Visual({ embedded = false }: { embedded?: boolean }) {
         </span>
       </div>
       <div className="visual-corner visual-tr">
-        <button className="visual-exit readout" onClick={leave}>
+        <TapKey className="visual-exit readout" onClick={leave}>
           ( esc ) deck
-        </button>
+        </TapKey>
         <span className="serif visual-artist">{s.artist}</span>
         <span className="readout">
           {formatTime(time)} / {formatTime(s.durationMs)}
@@ -170,9 +171,9 @@ export function Visual({ embedded = false }: { embedded?: boolean }) {
       </div>
           <div className="visual-worlds" role="radiogroup" aria-label="World">
             {WORLDS.map((w) => (
-              <button key={w} type="button" role="radio" aria-checked={w === worldKind} className="readout visual-worldkey" onClick={() => pick(w)}>
+              <TapKey key={w} type="button" role="radio" aria-checked={w === worldKind} className="readout visual-worldkey" onClick={() => pick(w)}>
                 {w === worldKind ? `( ${w} )` : w}
-              </button>
+              </TapKey>
             ))}
           </div>
         </>

@@ -12,6 +12,7 @@ import { Icon } from './Icon'
 import { PressKey } from './PressKey'
 import { SaveKey } from './SaveKey'
 import { requestSession } from './useFeed'
+import { TapKey } from './TapKey'
 
 function FigureView({ f }: { f: Figure }) {
   switch (f.kind) {
@@ -132,7 +133,7 @@ function ActionKey({ a, card, onDismiss }: { a: Action; card: Card; onDismiss: (
           className="btn"
           depth={1}
           onClick={() => {
-            feedback.play('queue-add')
+            feedback.play('crate-add')
             a.tracks.forEach(crateAdd)
             notify(`${a.tracks.length} records in the crate`)
           }}
@@ -201,9 +202,14 @@ export function CardView({ card, onDismiss }: { card: Card; onDismiss: (id: stri
         <FigureView key={i} f={f} />
       ))}
       {card.why && (
-        <button type="button" className="readout sto-whykey" aria-expanded={why} onClick={() => setWhy((w) => !w)}>
+        <TapKey type="button" className="readout sto-whykey" aria-expanded={why}
+          onClick={() => {
+            feedback.play('toggle')
+            setWhy((w) => !w)
+          }}
+        >
           {why ? '( why this? )' : 'why this?'}
-        </button>
+        </TapKey>
       )}
       {why && card.why && <p className="serif sto-quiet">{card.why}</p>}
       <div className="sto-keys">

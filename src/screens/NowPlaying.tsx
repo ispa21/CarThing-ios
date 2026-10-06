@@ -17,6 +17,7 @@ import { Sheet } from '../ui/Sheet'
 import { SpotifyLink } from '../ui/SpotifyLink'
 import { useCrate } from '../ui/useCrate'
 import { PlaylistShelf } from './PlaylistShelf'
+import { TapKey } from '../ui/TapKey'
 
 /** The deck — PartyDeck's home screen. */
 export function NowPlaying() {
@@ -48,7 +49,7 @@ export function NowPlaying() {
   }
 
   const more = (
-    <button
+    <TapKey
       className="icon-btn np-more"
       onClick={() => {
         feedback.play('select')
@@ -57,7 +58,7 @@ export function NowPlaying() {
       aria-label="More options"
     >
       <Icon name="more" />
-    </button>
+    </TapKey>
   )
   const onDeck = s.loaded && s.has
 
@@ -109,11 +110,11 @@ export function NowPlaying() {
                 </p>
                 <p className="np-idle-title">Nothing playing.</p>
                 <p className="np-idle-sub">Open a playlist in Spotify, or press ▶ to play it right here.</p>
-                <button className="chip np-device" onClick={chooseDevice}>
+                <TapKey className="chip np-device" onClick={chooseDevice}>
                   <Icon name="speaker" size={18} />
                   <span>Choose device</span>
                   <Icon name="down" size={16} />
-                </button>
+                </TapKey>
               </div>
               <PlaylistShelf />
             </div>
@@ -167,25 +168,25 @@ export function NowPlaying() {
           )}
           {s.uri && s.title && (
             <li>
-              <button
+              <TapKey
                 onClick={() => {
                   crate.toggle({ uri: s.uri!, title: s.title!, subtitle: s.artist ?? '', art: s.art, durationMs: s.durationMs, album: s.album })
                   setMenuOpen(false)
                 }}
               >
                 <Icon name="crate" /> {crate.has(s.uri) ? 'Take it out of the crate' : 'Drop it into the crate'}
-              </button>
+              </TapKey>
             </li>
           )}
           <li>
-            <button
+            <TapKey
               onClick={() => {
                 setMenuOpen(false)
                 chooseDevice()
               }}
             >
               <Icon name="speaker" /> Choose device
-            </button>
+            </TapKey>
           </li>
           <li>
             <a href="/settings" onClick={tickLink}>
@@ -235,7 +236,7 @@ function RotateHint() {
         <Icon name="phone" size={22} />
       </span>
       <span>Turn your phone sideways for the full deck.</span>
-      <button
+      <TapKey
         className="icon-btn"
         aria-label="Dismiss"
         onClick={() => {
@@ -244,7 +245,7 @@ function RotateHint() {
         }}
       >
         <Icon name="close" size={18} />
-      </button>
+      </TapKey>
     </div>
   )
 }

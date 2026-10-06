@@ -25,12 +25,17 @@ export function loadHistory(): Promise<void> {
 }
 
 /** Adds plays from any source, skipping ones already in the log. Returns how many were new. */
-export async function addPlays(incoming: Play[]) {
+export async function addPlays(incoming: Play[], { strict = false }: { strict?: boolean } = {}) {
   await loadHistory()
   const fresh = mergePlays(get().plays, incoming)
   if (!fresh.length) return 0
   set({ plays: [...get().plays, ...fresh].sort((a, b) => a.ts - b.ts) })
-  await db.addPlays(fresh).catch(() => {})
+  try {
+    await db.addPlays(fresh)
+  } catch (e) {
+    // The plays are in this visit's log either way; an import wants to say it couldn't keep them.
+    if (strict) throw e
+  }
   return fresh.length
 }
 

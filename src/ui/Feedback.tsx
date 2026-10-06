@@ -2,6 +2,7 @@ import { useEffect, type ReactNode } from 'react'
 import { feedback } from '../sensory/feedback'
 import type { FriendlyError } from '../spotify/errors'
 import { openDevices, useUi } from '../store/ui'
+import { TapKey } from './TapKey'
 
 export function Toaster() {
   const toast = useUi((s) => s.toast)
@@ -43,7 +44,7 @@ export function ErrorState({ error, onRetry }: { error: FriendlyError; onRetry: 
   return (
     <EmptyState tone="error" title={error.title} detail={error.detail}>
       {error.action === 'retry' && (
-        <button
+        <TapKey
           className="btn"
           onClick={() => {
             feedback.play('select')
@@ -51,10 +52,10 @@ export function ErrorState({ error, onRetry }: { error: FriendlyError; onRetry: 
           }}
         >
           Try again
-        </button>
+        </TapKey>
       )}
       {error.action === 'devices' && (
-        <button
+        <TapKey
           className="btn"
           onClick={() => {
             feedback.play('select')
@@ -62,7 +63,7 @@ export function ErrorState({ error, onRetry }: { error: FriendlyError; onRetry: 
           }}
         >
           Choose device
-        </button>
+        </TapKey>
       )}
     </EmptyState>
   )

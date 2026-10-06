@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { readExportFiles, type ExportText } from '../history/exportFiles'
-import { parseStreamingHistory } from '../history/importer'
+import { describeImport, importAll } from '../history/importAll'
 import { addPlays } from '../history/service'
-import type { Play } from '../history/types'
 import { feedback } from '../sensory/feedback'
 import { hasScope } from '../spotify/auth'
 import { useHistory } from '../store/history'
@@ -28,40 +27,31 @@ export function LibraryFeed() {
 
   async function importFiles(files: FileList | null) {
     if (!files?.length) return
-    setStatus('Opening the export…')
-    const found: Play[] = []
-    let basic = 0
-    let unknown = 0
+    const chosen = [...files] // the input is cleared afterwards: keep our own list
+    setStatus('Opening…')
     let texts: ExportText[] = []
     try {
-      texts = await readExportFiles(files)
-    } catch {
-      setStatus('That ZIP couldn’t be opened. Try the JSON files inside it instead.')
+      texts = await readExportFiles(chosen)
+    } catch (e) {
+      setStatus(`That file couldn’t be opened (${e instanceof Error ? e.message : String(e)}). If it’s the ZIP from Spotify, try unzipping it and choosing the JSON files inside.`)
       return
     }
     if (!texts.length) {
-      setStatus('No listening history in there. Look for files named Streaming_History_Audio_….json.')
+      setStatus(`No listening history in ${chosen.length === 1 ? chosen[0].name : 'those files'}. Spotify’s files are named Streaming_History_Audio_….json (extended) or StreamingHistory_music_….json (basic).`)
       return
     }
-    setStatus(`Reading ${texts.length} ${texts.length === 1 ? 'file' : 'files'}…`)
-    for (const file of texts) {
-      try {
-        const r = parseStreamingHistory(JSON.parse(file.text))
-        if (r.kind === 'extended') found.push(...r.plays)
-        else if (r.kind === 'basic') basic++
-        else unknown++
-      } catch {
-        unknown++
-      }
+    const { library: lib, plays: logged } = useHistory.getState()
+    const { plays, files: reports } = await importAll(texts, lib?.tracks ?? [], logged, (done, total, name) => setStatus(done < total ? `Reading ${done + 1} of ${total}${name ? ` · ${name}` : ''}…` : 'Saving…'))
+    let added = 0
+    let kept = true
+    try {
+      added = await addPlays(plays, { strict: true })
+    } catch {
+      added = plays.length
+      kept = false
     }
-    const added = await addPlays(found)
     if (added) feedback.play('success')
-    const notes = [
-      found.length ? `Added ${added.toLocaleString()} plays${found.length > added ? ` (${(found.length - added).toLocaleString()} were already in the log)` : ''}.` : 'No plays found.',
-      basic ? `${basic === 1 ? 'One file is' : `${basic} files are`} the basic export, which has no track links: request "Extended streaming history" instead.` : '',
-      unknown ? `${unknown === 1 ? 'One file wasn’t' : `${unknown} files weren’t`} a streaming-history export.` : '',
-    ]
-    setStatus(notes.filter(Boolean).join(' '))
+    setStatus(describeImport(reports, added, plays.length) + (kept ? '' : ' They’re in this visit only: this browser wouldn’t let PartyDeck save them on the device.'))
   }
 
   const canScan = hasScope('user-library-read')

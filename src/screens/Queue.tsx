@@ -14,6 +14,7 @@ import { Icon } from '../ui/Icon'
 import { MediaRow } from '../ui/MediaRow'
 import { useCrate } from '../ui/useCrate'
 import { Scrubber } from '../ui/Scrubber'
+import { TapKey } from '../ui/TapKey'
 
 /** "27 min 40" — how much music is ahead. */
 function ahead(ms: number) {
@@ -94,7 +95,7 @@ export function Queue() {
         <header className="qd-head">
           <span className="label">queue{data?.current ? ` (${upNext.length})` : ''}</span>
           {data?.current && totalMs >= 1000 && <span className="serif qd-ahead">{ahead(totalMs)} of music ahead.</span>}
-          <button
+          <TapKey
             className="qd-rescan"
             onClick={() => {
               feedback.play('select')
@@ -106,7 +107,7 @@ export function Queue() {
           >
             <Icon name="refresh" size={18} />
             <span className="label">rescan</span>
-          </button>
+          </TapKey>
         </header>
 
         {!data && loading && <SkeletonRows count={6} />}

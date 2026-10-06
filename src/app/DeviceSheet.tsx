@@ -5,6 +5,7 @@ import { closeDevices, useUi } from '../store/ui'
 import { EmptyState, ErrorState } from '../ui/Feedback'
 import { Icon, type IconName } from '../ui/Icon'
 import { Sheet } from '../ui/Sheet'
+import { TapKey } from '../ui/TapKey'
 
 export function DeviceSheet() {
   const open = useUi((s) => s.devicesOpen)
@@ -36,9 +37,9 @@ function DeviceList() {
   if (!data?.length) {
     return (
       <EmptyState title="No devices found" detail="Open Spotify on your phone, computer or speaker, then refresh.">
-        <button className="btn" onClick={refreshDevices} disabled={loading}>
+        <TapKey className="btn" onClick={refreshDevices} disabled={loading}>
           {loading ? 'Refreshing…' : 'Refresh'}
-        </button>
+        </TapKey>
       </EmptyState>
     )
   }
@@ -47,7 +48,7 @@ function DeviceList() {
       <ul className="devices">
         {data.map((d) => (
           <li key={d.id ?? d.name}>
-            <button
+            <TapKey
               className="device"
               disabled={!d.id || d.isRestricted || d.isActive}
               aria-current={d.isActive || undefined}
@@ -61,13 +62,13 @@ function DeviceList() {
                 <span className="device-meta">{d.isActive ? 'Playing here' : d.isRestricted ? "Can't be controlled from here" : d.type}</span>
               </span>
               {d.isActive && <span className="led" aria-hidden="true" />}
-            </button>
+            </TapKey>
           </li>
         ))}
       </ul>
-      <button className="btn btn-quiet btn-block" onClick={refreshDevices} disabled={loading}>
+      <TapKey className="btn btn-quiet btn-block" onClick={refreshDevices} disabled={loading}>
         {loading ? 'Refreshing…' : 'Refresh'}
-      </button>
+      </TapKey>
     </>
   )
 }

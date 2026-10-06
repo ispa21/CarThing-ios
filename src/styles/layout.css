@@ -505,3 +505,17 @@
     opacity: 0;
   }
 }
+
+/* The rail's keys and modes are buttons (so a tap can tick on iPhone): look like print, not form controls. */
+button.rail-tab,
+button.rail-mode {
+  border: 0;
+  cursor: pointer;
+  font-family: var(--font-ui);
+}
+
+button.rail-mode {
+  padding: 0;
+  background: none;
+  font-family: var(--font-mono);
+}

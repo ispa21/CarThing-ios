@@ -1,5 +1,8 @@
 // The listening log, the crate and the library index, kept on this device in IndexedDB (a year of plays
-// is more than localStorage should hold). No library: two object stores, a few calls.
+// is more than localStorage should hold). No library: a few object stores, a few calls.
+// Plays are written two ways: live ones one at a time (a few a day), and imports in BLOCKS
+// of a few thousand per record — one record per play takes minutes for a real export
+// (250,000 plays), blocks take well under a second.
 // If IndexedDB is unavailable (private mode in some browsers), everything lives in
 // memory for the session and says so nowhere else — the features still work.
 
@@ -8,7 +11,10 @@ import type { LibraryIndex } from './library'
 import type { Crate, Play } from './types'
 
 const NAME = 'partydeck'
-const VERSION = 1
+const VERSION = 2
+const BLOCK = 5000
+/** Fewer than this are written one by one (and stay queryable by time). */
+const SMALL = 200
 
 let opening: Promise<IDBDatabase | null> | null = null
 const memory = { plays: [] as Play[], kv: new Map<string, unknown>() }
@@ -22,6 +28,7 @@ function open(): Promise<IDBDatabase | null> {
     req.onupgradeneeded = () => {
       const db = req.result
       if (!db.objectStoreNames.contains('plays')) db.createObjectStore('plays', { autoIncrement: true }).createIndex('ts', 'ts')
+      if (!db.objectStoreNames.contains('blocks')) db.createObjectStore('blocks', { autoIncrement: true })
       if (!db.objectStoreNames.contains('kv')) db.createObjectStore('kv')
     }
     req.onsuccess = () => {
@@ -51,24 +58,32 @@ export async function addPlays(plays: Play[]) {
   if (!plays.length) return
   const db = await open()
   if (!db) {
-    memory.plays.push(...plays)
+    for (let i = 0; i < plays.length; i++) memory.plays.push(plays[i]) // not push(...plays): that throws on big arrays
     return
   }
-  const tx = db.transaction('plays', 'readwrite')
-  const store = tx.objectStore('plays')
-  for (const p of plays) store.add(p)
+  const bulk = plays.length > SMALL
+  const tx = db.transaction(bulk ? 'blocks' : 'plays', 'readwrite')
+  const store = tx.objectStore(bulk ? 'blocks' : 'plays')
+  if (bulk) for (let i = 0; i < plays.length; i += BLOCK) store.add({ plays: plays.slice(i, i + BLOCK) })
+  else for (const p of plays) store.add(p)
   await done(tx)
 }
 
-/** Every play, oldest first. */
+/** Every play (blocks and single writes), in no particular order: the caller sorts. */
 export async function allPlays(): Promise<Play[]> {
   const db = await open()
   if (!db) return [...memory.plays].sort((a, b) => a.ts - b.ts)
-  return new Promise((resolve, reject) => {
-    const req = db.transaction('plays').objectStore('plays').index('ts').getAll()
-    req.onsuccess = () => resolve(req.result as Play[])
-    req.onerror = () => reject(req.error)
-  })
+  const read = <T>(store: string) =>
+    new Promise<T[]>((resolve, reject) => {
+      const req = db.transaction(store).objectStore(store).getAll()
+      req.onsuccess = () => resolve(req.result as T[])
+      req.onerror = () => reject(req.error)
+    })
+  const [singles, blocks] = await Promise.all([read<Play>('plays'), read<{ plays: Play[] }>('blocks')])
+  const out: Play[] = []
+  for (const b of blocks) for (let i = 0; i < b.plays.length; i++) out.push(b.plays[i])
+  for (let i = 0; i < singles.length; i++) out.push(singles[i])
+  return out.sort((a, b) => a.ts - b.ts)
 }
 
 async function getKv<T>(key: string): Promise<T | null> {
@@ -105,8 +120,9 @@ export async function wipe() {
   memory.kv.clear()
   const db = await open()
   if (!db) return
-  const tx = db.transaction(['plays', 'kv'], 'readwrite')
+  const tx = db.transaction(['plays', 'blocks', 'kv'], 'readwrite')
   tx.objectStore('plays').clear()
+  tx.objectStore('blocks').clear()
   tx.objectStore('kv').clear()
   await done(tx)
 }

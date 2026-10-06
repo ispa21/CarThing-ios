@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, type PointerEvent, type ReactNode, type RefOb
 import { shouldDismissSheet } from '../lib/gesture'
 import { feedback } from '../sensory/feedback'
 import { Icon } from './Icon'
+import { TapKey } from './TapKey'
 
 /** Which way this sheet can be dragged shut: down (bottom sheet), right (side sheet), or not at all (centred panel). */
 function dragAxis(): 'x' | 'y' | null {
@@ -102,7 +103,7 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
           <div className="sheet-grip" aria-hidden="true" />
           <header className="sheet-head">
             <h2 id={titleId}>{title}</h2>
-            <button
+            <TapKey
               className="icon-btn"
               onClick={() => {
                 feedback.play('back')
@@ -111,7 +112,7 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
               aria-label="Close"
             >
               <Icon name="down" />
-            </button>
+            </TapKey>
           </header>
         </div>
         {open && children}

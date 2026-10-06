@@ -8,6 +8,7 @@ import { LibraryFeed } from '../ui/LibraryFeed'
 import { PressKey } from '../ui/PressKey'
 import { useRecordColours } from '../ui/useRecordColours'
 import { useFeed } from '../ui/useFeed'
+import { TapKey } from '../ui/TapKey'
 
 const LO = 87.5
 const HI = 108
@@ -65,6 +66,18 @@ export function Transmission() {
       </div>
     )
 
+  /** The station nearest a point on the dial. */
+  const tuneTo = (clientX: number, el: HTMLElement) => {
+    const r = el.getBoundingClientRect()
+    const f = LO + ((clientX - r.left) / r.width) * (HI - LO)
+    let k = 0
+    for (let j = 1; j < stations.length; j++) if (Math.abs(stations[j].freq - f) < Math.abs(stations[k].freq - f)) k = j
+    if (k !== i) {
+      feedback.play('detent')
+      setIndex(k)
+    }
+  }
+
   const tune = (d: number) => {
     feedback.play('tick')
     setIndex((i + d + stations.length) % stations.length)
@@ -101,7 +114,7 @@ export function Transmission() {
           </span>
         ))}
         {stations.map((s, k) => (
-          <button
+          <TapKey
             key={s.id}
             type="button"
             className="readout tx-station"
@@ -113,8 +126,20 @@ export function Transmission() {
             }}
           >
             {s.freq.toFixed(1)} <span className="tx-station-name">{s.name}</span>
-          </button>
+          </TapKey>
         ))}
+        {/* Drag along the dial to tune: a detent at each station (Android; iPhone ticks on the keys). */}
+        <div
+          className="tx-drag"
+          aria-hidden="true"
+          onPointerDown={(e) => {
+            e.currentTarget.setPointerCapture(e.pointerId)
+            tuneTo(e.clientX, e.currentTarget)
+          }}
+          onPointerMove={(e) => {
+            if (e.currentTarget.hasPointerCapture(e.pointerId)) tuneTo(e.clientX, e.currentTarget)
+          }}
+        />
         <span className="tx-needle-track" style={{ '--x': at(cur.freq) } as CSSProperties} aria-hidden="true">
           <span className="tx-needle" />
         </span>

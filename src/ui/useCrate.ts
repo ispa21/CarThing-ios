@@ -16,7 +16,7 @@ export function useCrate() {
       crateRemove(item.uri)
       return
     }
-    feedback.play('queue-add')
+    feedback.play('crate-add')
     crateAdd({ uri: item.uri, title: item.title, artist: item.subtitle, album: item.album ?? null, art: item.art, durationMs: item.durationMs ?? 0 })
   }
   return { has, toggle }

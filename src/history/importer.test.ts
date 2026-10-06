@@ -50,7 +50,7 @@ describe('parseStreamingHistory', () => {
   })
 
   it('recognises the basic export, and rejects anything else', () => {
-    expect(parseStreamingHistory([{ endTime: '2024-01-01 10:00', artistName: 'A', trackName: 'T', msPlayed: 1000 }])).toEqual({ kind: 'basic', rows: 1 })
+    expect(parseStreamingHistory([{ endTime: '2024-01-01 10:00', artistName: 'A', trackName: 'T', msPlayed: 1000 }])).toMatchObject({ kind: 'basic', rows: 1 })
     expect(parseStreamingHistory({ nope: true })).toEqual({ kind: 'unknown' })
     expect(parseStreamingHistory([])).toEqual({ kind: 'unknown' })
   })

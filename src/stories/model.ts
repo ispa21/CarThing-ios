@@ -7,6 +7,7 @@
 // session be safe or deliberately uncertain.
 
 import type { LibraryPlaylist, LibraryTrack, TopLists } from '../history/library'
+import { isSpotifyUri } from '../history/match'
 import { sessionsFrom } from '../history/sessions'
 import type { Play, Session, TrackRef } from '../history/types'
 import { DAY, describe, trackStats, type TrackStats } from './stats'
@@ -219,9 +220,11 @@ export function buildModel(input: { plays: Play[]; library: LibraryTrack[]; play
   const candidates = [...groups.values()]
     .map((artists) => {
       const sorted = [...artists].sort((a, b) => (artistListens.get(b) ?? 0) - (artistListens.get(a) ?? 0) || (urisBy.get(b)?.length ?? 0) - (urisBy.get(a)?.length ?? 0) || a.localeCompare(b))
-      const uris = sorted.flatMap((a) => urisBy.get(a) ?? [])
+      const everything = sorted.flatMap((a) => urisBy.get(a) ?? [])
+      // Plays imported by name only count for hours and patterns; a room's tracks are playable ones.
+      const uris = everything.filter(isSpotifyUri)
       const listens = sorted.reduce((s, a) => s + (artistListens.get(a) ?? 0), 0)
-      return { artists: sorted, uris, listens }
+      return { artists: sorted, uris, everything, listens }
     })
     .filter((g) => g.artists.length >= 2 && g.uris.length >= 8)
     .sort((a, b) => b.listens - a.listens || b.uris.length - a.uris.length)
@@ -239,7 +242,7 @@ export function buildModel(input: { plays: Play[]; library: LibraryTrack[]; play
       }
     }
     const named = playlist && overlap >= g.uris.length * 0.35 ? playlist.name.toLowerCase() : `the ${g.artists[0]} sound`
-    const bands = bandCount(g.uris)
+    const bands = bandCount(g.everything)
     const total = [...bands.values()].reduce((s, n) => s + n, 0)
     const [band, n] = [...bands.entries()].sort((a, b) => b[1] - a[1])[0] ?? [null, 0]
     const room: Room = { id: `r${i}`, name: named, artists: g.artists, uris: g.uris, listens: g.listens, band: total >= 10 && n / total >= 0.4 ? band : null, bandShare: total ? n / total : 0, playlist: playlist && overlap >= g.uris.length * 0.35 ? playlist.id : null }
@@ -296,7 +299,7 @@ export function buildModel(input: { plays: Play[]; library: LibraryTrack[]; play
     libByArtist,
     earlyExits,
     primary,
-    track: (uri) => describe(uri, lib, stats) ?? topTracks.get(uri) ?? null,
+    track: (uri) => (isSpotifyUri(uri) ? (describe(uri, lib, stats) ?? topTracks.get(uri) ?? null) : null),
     bucket,
     recent,
   }

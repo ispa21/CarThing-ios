@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { usePhonePortrait } from '../lib/orientation'
 import { feedback } from '../sensory/feedback'
+import { TapKey } from '../ui/TapKey'
 
 /** "Turn your phone sideways." Advances by itself when you do; never blocks. */
 export function Orientation({ onDone }: { onDone: (how: 'rotated' | 'stay-portrait') => void }) {
@@ -22,7 +23,7 @@ export function Orientation({ onDone }: { onDone: (how: 'rotated' | 'stay-portra
         </h1>
         <p className="onboard-sub">PartyDeck is built for landscape.</p>
       </div>
-      <button
+      <TapKey
         className="btn btn-quiet"
         onClick={() => {
           feedback.play('select')
@@ -30,7 +31,7 @@ export function Orientation({ onDone }: { onDone: (how: 'rotated' | 'stay-portra
         }}
       >
         Continue in portrait
-      </button>
+      </TapKey>
     </main>
   )
 }

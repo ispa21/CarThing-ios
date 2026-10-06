@@ -3,11 +3,12 @@
 //
 // "Extended streaming history" (Streaming_History_Audio_*.json) has what Stories needs:
 // the track link, when it ended, how long it played and whether it was skipped.
-// The basic "Account data" export (StreamingHistory_music_*.json) has no track links,
-// so it can't be played back from — it's recognised and explained, not imported.
+// The basic "Account data" export (StreamingHistory_music_*.json) has no track links
+// (artist, title, time, ms played): it is read as named plays and matched to your library.
 // Only the fields below are read; everything else in the file (IP address, country,
 // platform) is ignored and never stored.
 
+import type { NamedPlay } from './match'
 import type { Play } from './types'
 
 interface ExtendedRow {
@@ -23,7 +24,7 @@ interface ExtendedRow {
 
 export type ImportResult =
   | { kind: 'extended'; plays: Play[]; ignored: number }
-  | { kind: 'basic'; rows: number }
+  | { kind: 'basic'; rows: number; plays: NamedPlay[] }
   | { kind: 'unknown' }
 
 const TRACK_URI = /^spotify:track:[A-Za-z0-9]{22}$/
@@ -35,7 +36,7 @@ const str = (v: unknown) => (typeof v === 'string' ? v : null)
 export function parseStreamingHistory(json: unknown): ImportResult {
   if (!Array.isArray(json) || !json.length) return { kind: 'unknown' }
   const first = json[0] as Record<string, unknown>
-  if (first && typeof first === 'object' && 'endTime' in first && 'trackName' in first) return { kind: 'basic', rows: json.length }
+  if (first && typeof first === 'object' && 'endTime' in first && 'trackName' in first) return parseBasic(json as BasicRow[])
   if (!first || typeof first !== 'object' || !('ts' in first) || !('ms_played' in first)) return { kind: 'unknown' }
 
   const plays: Play[] = []
@@ -65,4 +66,30 @@ export function parseStreamingHistory(json: unknown): ImportResult {
     })
   }
   return { kind: 'extended', plays, ignored }
+}
+
+interface BasicRow {
+  endTime?: unknown
+  artistName?: unknown
+  trackName?: unknown
+  msPlayed?: unknown
+}
+
+/** "2024-03-01 22:15" (sometimes with seconds) is UTC. */
+const basicTime = (t: string) => {
+  const iso = t.trim().replace(' ', 'T')
+  return Date.parse(/:\d\d:\d\d$/.test(iso) ? `${iso}Z` : `${iso}:00Z`)
+}
+
+function parseBasic(rows: BasicRow[]): ImportResult {
+  const plays: NamedPlay[] = []
+  for (const r of rows) {
+    const artist = str(r?.artistName)
+    const title = str(r?.trackName)
+    const end = basicTime(str(r?.endTime) ?? '')
+    const ms = typeof r?.msPlayed === 'number' ? r.msPlayed : NaN
+    if (!artist || !title || Number.isNaN(end) || !(ms >= MIN_MS)) continue
+    plays.push({ artist, title, ts: end - ms, playedMs: ms })
+  }
+  return { kind: 'basic', rows: rows.length, plays }
 }

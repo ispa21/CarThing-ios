@@ -163,4 +163,13 @@ describe('playbackService and sensory feedback', () => {
     expect(feedback.play).not.toHaveBeenCalled()
     expect(api.skipToNext).not.toHaveBeenCalled()
   })
+
+  it('never sends a play that was imported by name to Spotify', async () => {
+    const real = 'spotify:track:4uLU6hMCjMI75M1A2tKUQC'
+    expect(await service.playUris(['name:artist|song', 'lastfm:x|y', real], 'a set')).toBe(true)
+    expect(api.startPlayback).toHaveBeenCalledWith({ uris: [real] })
+    vi.mocked(api.startPlayback).mockClear()
+    expect(await service.playUris(['name:artist|song'], 'only names')).toBe(false)
+    expect(api.startPlayback).not.toHaveBeenCalled()
+  })
 })

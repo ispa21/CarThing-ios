@@ -11,6 +11,7 @@ import { LibraryFeed } from '../ui/LibraryFeed'
 import { PressKey } from '../ui/PressKey'
 import { SaveKey } from '../ui/SaveKey'
 import { requestSession, useFeed } from '../ui/useFeed'
+import { TapKey } from '../ui/TapKey'
 
 const TIMES = [15, 30, 45, 60, 90]
 type Source = 'liked' | 'playlists' | 'everything'
@@ -112,8 +113,10 @@ export function Builder() {
               aria-label="How much uncertainty"
               aria-valuetext={mix}
               onChange={(e) => {
-                feedback.play('tick')
-                setMix(RISKS[Number(e.target.value)])
+                const v = Number(e.target.value)
+                // A detent per level; safe and chaos are end stops.
+                feedback.play(v === 0 || v === RISKS.length - 1 ? 'edge' : 'detent')
+                setMix(RISKS[v])
               }}
             />
             <span className="readout">chaos</span>
@@ -126,7 +129,7 @@ export function Builder() {
           </span>
           <div role="radiogroup" aria-labelledby="bld-room" className="bld-words">
             {[...rooms.map((r) => ({ id: r.id as string | null, label: r.name })), { id: null, label: ANY }].map((r) => (
-              <button
+              <TapKey
                 key={r.id ?? 'any'}
                 type="button"
                 className="bld-word readout"
@@ -138,7 +141,7 @@ export function Builder() {
                 }}
               >
                 {r.id === roomId ? `( ${r.label} )` : r.label}
-              </button>
+              </TapKey>
             ))}
           </div>
         </div>
@@ -148,7 +151,7 @@ export function Builder() {
           </span>
           <div role="radiogroup" aria-labelledby="bld-from" className="bld-words">
             {SOURCES.map((s) => (
-              <button
+              <TapKey
                 key={s}
                 type="button"
                 className="bld-word readout"
@@ -160,7 +163,7 @@ export function Builder() {
                 }}
               >
                 {s === source ? `( ${s} )` : s}
-              </button>
+              </TapKey>
             ))}
           </div>
         </div>
@@ -198,7 +201,7 @@ export function Builder() {
               className="btn"
               depth={1}
               onClick={() => {
-                feedback.play('queue-add')
+                feedback.play('crate-add')
                 session.forEach(crateAdd)
                 notify(`${n} records in the crate`)
               }}

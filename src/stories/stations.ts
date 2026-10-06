@@ -3,6 +3,7 @@
 // genre: Spotify no longer gives new apps what genre-and-audio clustering would need. Pure.
 
 import type { LibraryPlaylist, LibraryTrack } from '../history/library'
+import { isSpotifyUri } from '../history/match'
 import type { Play } from '../history/types'
 import { stories, type Inputs, type Story } from './engine'
 import { buildModel, type Model, type Room } from './model'
@@ -31,7 +32,7 @@ export function roomStation(r: Room): Station {
     name: r.name,
     freq: 0,
     artists: r.artists,
-    uris: r.uris,
+    uris: r.uris.filter(isSpotifyUri),
     source: `your library · ${r.uris.length} tracks · ${r.artists.length} artists that share playlists and sessions${r.band ? ` · mostly ${r.band}` : ''}`,
     about: r.artists.length > 3 ? `${named} and friends.` : `${named}.`,
   }

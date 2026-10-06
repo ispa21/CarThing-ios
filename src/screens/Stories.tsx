@@ -1,4 +1,4 @@
-import { useState, type CSSProperties, type ReactNode } from 'react'
+import { useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { tickLink } from '../app/router'
 import { crateAdd } from '../history/service'
 import type { TrackRef } from '../history/types'
@@ -15,6 +15,8 @@ import { PressKey } from '../ui/PressKey'
 import { SaveKey } from '../ui/SaveKey'
 import { CardView, Drop, Rooms } from '../ui/StoryCard'
 import { useFeed } from '../ui/useFeed'
+import { useScrollDetents } from '../ui/useScrollDetents'
+import { TapKey } from '../ui/TapKey'
 
 type Of<K extends Story['id']> = Extract<Story, { id: K }>
 
@@ -40,7 +42,7 @@ function CrateKey({ tracks }: { tracks: TrackRef[] }) {
       className="btn"
       depth={1}
       onClick={() => {
-        feedback.play('queue-add')
+        feedback.play('crate-add')
         tracks.forEach(crateAdd)
         notify(`${plural(tracks.length, 'record')} in the crate`)
       }}
@@ -96,7 +98,7 @@ function Lead({ next, now }: { next: FeedView['next']; now: number }) {
       </p>
       <div className="sto-mins" role="radiogroup" aria-label="How long you have">
         {NEXT_MINUTES.map((n) => (
-          <button
+          <TapKey
             key={n}
             type="button"
             role="radio"
@@ -108,7 +110,7 @@ function Lead({ next, now }: { next: FeedView['next']; now: number }) {
             }}
           >
             {n === mins ? `( ${n} )` : n}
-          </button>
+          </TapKey>
         ))}
       </div>
       <p className="serif sto-lead-lede">{c.rediscovery + fresh ? "Here's something you haven't heard in a while." : 'Here’s what you keep coming back to.'}</p>
@@ -307,9 +309,12 @@ export function Stories() {
   const anySignals = get('almosts') || get('ghosts') || get('three') || get('skip') || signalCards.length
   const anyArchive = get('longhaul') || archiveCards.length
   const empty = loaded && view && !view.cards.length && !view.legacy.length
+  const rootRef = useRef<HTMLDivElement>(null)
+  // Android: a detent as each depth (now, rooms, signals, archive) passes while you scroll.
+  useScrollDetents(rootRef, '.sto-depth', { enabled: Boolean(view) })
 
   return (
-    <div className="stories">
+    <div className="stories" ref={rootRef}>
       <h1 className="sr-only">Stories</h1>
       {thinking && (
         <p className="readout sto-thinking" role="status">
@@ -333,7 +338,7 @@ export function Stories() {
       {view && (view.cards.length > 0 || view.legacy.length > 0) && (
         <nav className="sto-jobs" aria-label="What do you want to do">
           {JOBS.map((j) => (
-            <button
+            <TapKey
               key={j}
               type="button"
               className="readout sto-job"
@@ -344,7 +349,7 @@ export function Stories() {
               }}
             >
               {job === j ? `( ${j} )` : j}
-            </button>
+            </TapKey>
           ))}
         </nav>
       )}

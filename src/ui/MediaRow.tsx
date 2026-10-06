@@ -5,6 +5,7 @@ import { Artwork } from './Artwork'
 import { Icon } from './Icon'
 import { PressKey } from './PressKey'
 import { SpotifyLink } from './SpotifyLink'
+import { TapKey } from './TapKey'
 
 const KIND_LABEL: Record<MediaKind, string> = {
   track: 'Song',
@@ -63,9 +64,9 @@ export function MediaRow({ item, onPlay, onQueue, lead, trail, showKind = false,
           {body}
         </SpotifyLink>
       ) : onPlay ? (
-        <button className="row-main" onClick={() => onPlay(item)} aria-label={playLabel}>
+        <TapKey className="row-main" onClick={() => onPlay(item)} aria-label={playLabel}>
           {body}
-        </button>
+        </TapKey>
       ) : (
         <div className="row-main">{body}</div>
       )}

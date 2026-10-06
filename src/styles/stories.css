@@ -1282,3 +1282,15 @@
     display: none;
   }
 }
+
+/* Drag to tune: the band under the station chips (chips stay tappable above it). */
+.tx-drag {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 30px;
+  bottom: 0;
+  z-index: 0;
+  cursor: ew-resize;
+  touch-action: none;
+}

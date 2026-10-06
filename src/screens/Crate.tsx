@@ -15,6 +15,7 @@ import { PressKey } from '../ui/PressKey'
 import { ReconnectButton } from '../ui/ReconnectButton'
 import { SpotifyLink } from '../ui/SpotifyLink'
 import { useRecordColours } from '../ui/useRecordColours'
+import { TapKey } from '../ui/TapKey'
 
 const TABS = 11
 
@@ -93,7 +94,7 @@ export function Crate() {
                     </span>
                   </span>
                   <span className="row-time readout">{formatTime(item.durationMs)}</span>
-                  <button
+                  <TapKey
                     className="icon-btn"
                     aria-label={`Take ${item.title} out of the crate`}
                     onClick={() => {
@@ -102,7 +103,7 @@ export function Crate() {
                     }}
                   >
                     <Icon name="close" size={18} />
-                  </button>
+                  </TapKey>
                 </li>
               ))}
             </ol>
@@ -134,7 +135,7 @@ export function Crate() {
               ) : (
                 <ReconnectButton label="Reconnect to save playlists" />
               )}
-              <button
+              <TapKey
                 className="btn btn-danger"
                 data-armed={armed || undefined}
                 onClick={() => {
@@ -150,7 +151,7 @@ export function Crate() {
                 }}
               >
                 {armed ? 'Press again to tip it out' : 'Tip it out'}
-              </button>
+              </TapKey>
             </div>
             <p className="readout crate-note">
               kept on this device · {crate.savedAt ? 'saved, so it stays' : `empties itself after ${CRATE_TTL_MS / 86_400_000} days unless saved`}

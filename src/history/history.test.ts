@@ -104,6 +104,22 @@ describe('mergePlays', () => {
   it('dedupes within the incoming batch too', () => {
     expect(mergePlays([], [play('a', 0), play('a', 1000)])).toHaveLength(1)
   })
+
+  it('keeps a song played again a few minutes later, from the same source', () => {
+    const imp = (ts: number) => play('a', ts, 90_000, false, 'import')
+    expect(mergePlays([], [imp(0), imp(2 * 60_000), imp(5 * 60_000)])).toHaveLength(3)
+    // …but the same export dropped in twice adds nothing
+    expect(mergePlays([imp(0), imp(2 * 60_000)], [imp(0), imp(2 * 60_000)])).toHaveLength(0)
+    // …and the quick export (minute-rounded) beside the extended one is one play, not two
+    expect(mergePlays([imp(10_000)], [imp(40_000)])).toHaveLength(0)
+  })
+
+  it('stays fast for a favourite played tens of thousands of times', () => {
+    const many = Array.from({ length: 50_000 }, (_, i) => play('fav', i * 5 * 60_000, 180_000, false, 'import'))
+    const t0 = performance.now()
+    expect(mergePlays([], many)).toHaveLength(50_000)
+    expect(performance.now() - t0).toBeLessThan(1500)
+  })
 })
 
 describe('crate', () => {

@@ -26,6 +26,11 @@ describe('Android vibration patterns', () => {
     expect(new Set(ms).size).toBe(4)
   })
 
+  it('every rhythm is its own: no two levels feel the same', () => {
+    const shapes = levels.map((l) => VIBRATION[l].join(','))
+    expect(new Set(shapes).size).toBe(shapes.length)
+  })
+
   it('success, warning and error are distinct rhythms, not just lengths', () => {
     const { success, warning, error } = VIBRATION
     expect(pulses(success)).toHaveLength(2)
