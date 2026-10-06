@@ -20,9 +20,9 @@ const ANY = 'surprise me'
 
 function fromQuery() {
   const q = new URLSearchParams(window.location.search)
-  const minutes = Number(q.get('minutes'))
+  const minutes = Math.round(Number(q.get('minutes')))
   const risk = q.get('risk') as Risk | null
-  return { minutes: TIMES.includes(minutes) ? minutes : 30, risk: risk && RISKS.includes(risk) ? risk : 'curious', room: q.get('room') }
+  return { minutes: minutes >= 5 && minutes <= 240 ? minutes : 30, risk: risk && RISKS.includes(risk) ? risk : 'curious', room: q.get('room') }
 }
 
 /**
@@ -97,6 +97,23 @@ export function Builder() {
                 <span className="readout">{t}</span>
               </PressKey>
             ))}
+            {/* "You have 27 minutes before you arrive": any length from 5 to 240. */}
+            <label className="bld-exact readout">
+              <span>or exactly</span>
+              <input
+                type="number"
+                inputMode="numeric"
+                min={5}
+                max={240}
+                value={minutes}
+                aria-label="Minutes"
+                onChange={(e) => {
+                  const v = Math.round(Number(e.target.value))
+                  if (v >= 5 && v <= 240) setMinutes(v)
+                }}
+              />
+              <span>min</span>
+            </label>
           </div>
         </div>
         <div className="bld-row">

@@ -154,3 +154,37 @@ describe('stories from Spotify’s ranking of your past', () => {
     expect(m.bucket(top.long.tracks[0].uri)).toBe('core')
   })
 })
+
+describe('after listening', () => {
+  it('recaps the last session: length, what was new, what just crossed three listens', () => {
+    const ref = (artist: string, i: number) => ({ uri: `spotify:track:${artist}${i}`.padEnd(36, 'z'), title: `${artist} ${i}`, artist, album: null, art: null, durationMs: 200_000 })
+    const mk = (r: ReturnType<typeof ref>, ts: number): Play => ({ ...r, ts, playedMs: 200_000, skipped: false, source: 'live' })
+    const earlier = Array.from({ length: 12 }, (_, d) => mk(ref('Old', d % 3), NOW - (20 - d) * DAY))
+    const fav = ref('Old', 1) // already has listens from earlier: this session makes it three
+    const session = [mk(ref('Fresh', 1), NOW - 3_000_000), mk(fav, NOW - 2_700_000), mk(ref('Fresh', 2), NOW - 2_400_000), mk(ref('Old', 0), NOW - 2_100_000)]
+    const feed = buildFeed({ plays: [...earlier, ...session], library: [], now: NOW }, 1)
+    const card = feed.cards.find((c) => c.id === 'recap')
+    expect(card?.headline).toMatch(/You listened for \d+ minutes/)
+    expect(card?.lede).toContain('Fresh')
+    expect(card?.actions.some((a) => a.kind === 'build')).toBe(true)
+    // …and a session from yesterday is no longer news
+    const old = buildFeed({ plays: earlier, library: [], now: NOW + 3 * DAY }, 1).cards.map((c) => c.id)
+    expect(old).not.toContain('recap')
+  })
+})
+
+describe('your public identity', () => {
+  it('offers public playlists built from what you really play — and publishes nothing by itself', () => {
+    const w = world()
+    const card = buildFeed({ ...w, now: NOW }, 1).cards.find((c) => c.id === 'identity')
+    expect(card).toBeTruthy()
+    const saves = card!.actions.filter((a) => a.kind === 'save')
+    expect(saves.length).toBeGreaterThanOrEqual(2)
+    expect(saves.every((a) => a.kind === 'save' && a.public === true && a.uris.length >= 5)).toBe(true)
+    expect(saves.some((a) => a.kind === 'save' && /^CORE \/ \d{4}$/.test(a.name))).toBe(true)
+  })
+
+  it('needs five songs of evidence', () => {
+    expect(buildFeed({ plays: [], library: [], now: NOW }, 1).cards.find((c) => c.id === 'identity')).toBeUndefined()
+  })
+})

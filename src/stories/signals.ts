@@ -739,6 +739,43 @@ export function comebacks(m: Model): Card | null {
   }
 }
 
+/** After listening: what the last session was, what was new in it, what's one play from sticking. */
+export function recap(m: Model): Card | null {
+  const s = m.sessions[m.sessions.length - 1]
+  if (!s || m.now - s.end > 8 * 3_600_000) return null
+  const heard = s.plays.filter((p) => p.playedMs >= LISTEN_MS)
+  if (heard.length < 3) return null
+  const minutes = Math.round(s.heardMs / 60_000)
+  const artists = [...new Set(heard.map((p) => lead(p.artist)))]
+  // New to you: this session holds the first listen of the artist, and there's nothing before it.
+  const firstTime = artists.filter((a) => (m.statsByArtist.get(a) ?? []).every((st) => st.first >= s.start - 60_000))
+  // One play from a favourite: crossed three listens in this session (3–5 is a candidate).
+  const candidates = [...new Set(heard.map((p) => p.uri))].filter((u) => m.stats.get(u)?.listens === 3 && (m.stats.get(u)?.times.filter((t) => t >= s.start).length ?? 0) >= 1)
+  const candidateTracks = tracksOf(m, candidates)
+  const earlier = m.sessions.slice(-31, -1).filter((x) => x.heardMs > 0)
+  const usual = earlier.length >= 5 ? earlier.reduce((sum, x) => sum + x.heardMs, 0) / earlier.length / 60_000 : null
+  const skipped = s.plays.filter((p) => p.skipped).length
+  const said = [
+    firstTime.length ? `${cap(word(firstTime.length))} ${firstTime.length === 1 ? 'artist' : 'artists'} you'd never played: ${firstTime.slice(0, 3).join(', ')}.` : '',
+    candidateTracks.length ? `${cap(word(candidateTracks.length))} ${candidateTracks.length === 1 ? 'song' : 'songs'} just crossed three listens: ${candidateTracks.slice(0, 2).map((t) => t.title).join(', ')}.` : '',
+    usual && minutes > usual * 1.4 ? 'Longer than your usual.' : usual && minutes < usual * 0.6 ? 'Shorter than your usual.' : '',
+  ].filter(Boolean)
+  return {
+    id: 'recap',
+    depth: 'now',
+    job: 'understand',
+    kicker: `session recap · ${new Date(s.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}`,
+    headline: `You listened for ${minutes} minutes.`,
+    lede: said.join(' ') || `${plural(heard.length, 'song')} by ${plural(artists.length, 'artist')}.`,
+    figures: [{ kind: 'counts', items: [{ value: String(heard.length), label: 'songs' }, { value: String(artists.length), label: 'artists' }, { value: String(firstTime.length), label: 'new to you' }, { value: String(skipped), label: 'skipped' }] }],
+    actions: [
+      ...(candidateTracks.length ? [play('Play the near-favourites', candidateTracks, 'near-favourites'), { kind: 'crate' as const, label: 'Into a crate', tracks: candidateTracks }] : []),
+      { kind: 'build', label: 'Keep it going', risk: 'curious' },
+    ],
+    weight: 0.45,
+  }
+}
+
 export function closers(m: Model): Card | null {
   const last = new Map<string, number>()
   const first = new Map<string, number>()

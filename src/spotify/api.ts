@@ -146,9 +146,9 @@ export const getTopArtists = (range: TopRange, offset = 0) => spotify<RawTopArti
 /** Scope user-follow-read. Artists you follow, 50 at a time, by cursor. */
 export const getFollowedArtists = (after?: string) => spotify<RawFollowedArtists>('/me/following', { query: { type: 'artist', limit: 50, after } })
 
-/** Scope playlist-modify-private. Feb 2026: replaces POST /users/{id}/playlists. Private by default. */
-export const createPlaylist = (name: string, description: string) =>
-  spotify<RawCreatedPlaylist>('/me/playlists', { method: 'POST', body: { name, description, public: false } })
+/** Scope playlist-modify-private (or -public to publish). Feb 2026: replaces POST /users/{id}/playlists. Private unless asked. */
+export const createPlaylist = (name: string, description: string, isPublic = false) =>
+  spotify<RawCreatedPlaylist>('/me/playlists', { method: 'POST', body: { name, description, public: isPublic } })
 
 /** Scope playlist-modify-private. Feb 2026: replaces POST /playlists/{id}/tracks. At most 100 URIs per request. */
 export const addPlaylistItems = (id: string, uris: string[]) =>

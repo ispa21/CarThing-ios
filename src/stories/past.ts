@@ -78,3 +78,48 @@ export function rising(m: Model): Card | null {
     share: `New in my life: ${fresh.slice(0, 3).join(', ')}.`,
   }
 }
+
+/**
+ * YOUR PUBLIC MUSIC IDENTITY. Spotify shows only the playlists you make public, so the
+ * profile is built out of them: the five that define you now, your core, and what you've
+ * lately discovered. Nothing is published until you press a key.
+ */
+export function publicIdentity(m: Model): Card | null {
+  const recent = [...m.stats.values()].map((s) => ({ t: m.track(s.track.uri), n: m.recent(s, 90) })).filter((x): x is { t: TrackRef; n: number } => x.t !== null && x.n > 0)
+  const bySpins = recent.sort((a, b) => b.n - a.n).map((x) => x.t)
+  const five = (bySpins.length >= 5 ? bySpins : (m.top?.short.tracks ?? [])).slice(0, 5)
+  if (five.length < 5) return null
+  const core = upTo(
+    [...m.core]
+      .map((u) => m.track(u))
+      .filter((t): t is TrackRef => t !== null)
+      .sort((a, b) => (m.stats.get(b.uri)?.listens ?? 0) - (m.stats.get(a.uri)?.listens ?? 0)),
+    240,
+  ).slice(0, 50)
+  const discovered = [...m.stats.values()]
+    .filter((s) => s.listens >= 3 && m.now - s.first < 60 * 86_400_000)
+    .sort((a, b) => b.listens - a.listens)
+    .map((s) => m.track(s.track.uri))
+    .filter((t): t is TrackRef => t !== null)
+    .slice(0, 25)
+  const year = new Date(m.now).getFullYear()
+  const room = m.rooms[0]
+  const artists = [...new Set(five.map((t) => lead(t.artist)))]
+  const publish = (name: string, description: string, tracks: TrackRef[], label: string) => ({ kind: 'save' as const, label, name, description, uris: tracks.map((t) => t.uri), public: true })
+  return {
+    id: 'identity',
+    depth: 'now',
+    job: 'curate',
+    kicker: 'your public music identity',
+    headline: 'Five songs that are you, right now.',
+    lede: `${room ? `Your main room is ${room.name}. ` : ''}Public playlists are what people see on your Spotify profile. PartyDeck can publish a few that actually say something — nothing goes public until you press its key.`,
+    figures: [{ kind: 'rows', rows: five.map((t) => ({ title: t.title, sub: t.artist, trail: m.stats.get(t.uri) ? `${m.recent(m.stats.get(t.uri)!, 90)}×` : '' })) }],
+    actions: [
+      publish('The 5 — right now', `The five songs that define my listening right now (${artists.slice(0, 3).join(', ')}). Made with PartyDeck.`, five, 'Publish “The 5”'),
+      ...(core.length >= 10 ? [publish(`CORE / ${year}`, `The songs I actually live in. ${core.length} tracks, worked out from what I really play. Made with PartyDeck.`, core, `Publish “CORE / ${year}”`)] : []),
+      ...(discovered.length >= 5 ? [publish('Recently discovered', 'Songs I found lately and kept playing. Made with PartyDeck.', discovered, 'Publish “Recently discovered”')] : []),
+      { kind: 'share', label: 'Share', text: `Right now I'm on ${artists.slice(0, 3).join(', ')}${room ? ` — ${room.name}` : ''}. The 5: ${five.map((t) => t.title).join(', ')}.` },
+    ],
+    weight: 0.4,
+  }
+}

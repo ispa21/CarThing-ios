@@ -14,6 +14,8 @@ export const SPOTIFY_SCOPES = [
   'playlist-read-private',
   // Crate and session → "save as playlist" (POST /me/playlists, POST /playlists/{id}/items).
   'playlist-modify-private',
+  // Your public music identity: playlists you choose to publish show on your Spotify profile.
+  'playlist-modify-public',
   // Archive: Spotify's last 50 plays, to fill in before PartyDeck was open.
   'user-read-recently-played',
   // Stories: your liked songs are the raw material ("the forgotten shelf", "deep cuts").

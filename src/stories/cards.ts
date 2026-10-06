@@ -22,7 +22,7 @@ export type Figure =
 export type Action =
   | { kind: 'play'; label: string; uris: string[]; name: string; primary?: boolean }
   | { kind: 'crate'; label: string; tracks: TrackRef[] }
-  | { kind: 'save'; label: string; name: string; description: string; uris: string[] }
+  | { kind: 'save'; label: string; name: string; description: string; uris: string[]; public?: boolean }
   | { kind: 'build'; label: string; room?: string; risk?: Risk; minutes?: number }
   | { kind: 'share'; label: string; text: string }
   | { kind: 'dismiss'; label: string }
@@ -43,6 +43,8 @@ export interface Card {
   weight: number
   /** An identity statement worth sharing, if there is one. */
   share?: string
+  /** Up to four cover images of the tracks it is about (set by the feed), for the share poster. */
+  art?: string[]
 }
 
 // ── Helpers for writing cards ──

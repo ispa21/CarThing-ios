@@ -360,19 +360,21 @@ export async function playUris(all: string[], label: string, { silent = false }:
 }
 
 /**
- * Saves a list of tracks as a new private playlist (needs playlist-modify-private).
+ * Saves a list of tracks as a new playlist: private (playlist-modify-private), or public on
+ * your profile when asked (playlist-modify-public).
  * Resolves to the playlist's Spotify link, or null if it failed (the error is announced).
  */
-export async function saveAsPlaylist(name: string, description: string, all: string[]) {
+export async function saveAsPlaylist(name: string, description: string, all: string[], { isPublic = false }: { isPublic?: boolean } = {}) {
   const uris = all.filter(isSpotifyUri)
   if (!uris.length) return null
+  if (isPublic && !hasScope('playlist-modify-public')) return null // the key offers a reconnect instead
   feedback.play('select') // the press; the confirmation follows once Spotify has it
   try {
-    const created = await api.createPlaylist(name, description)
+    const created = await api.createPlaylist(name, description, isPublic)
     if (!created?.id) throw new SpotifyError(0, 'No playlist returned')
     for (let i = 0; i < uris.length; i += 100) await api.addPlaylistItems(created.id, uris.slice(i, i + 100))
     feedback.play('saved')
-    notify(`Saved “${name}” to your Spotify playlists`)
+    notify(isPublic ? `Published “${name}” on your Spotify profile` : `Saved “${name}” to your Spotify playlists`)
     return { uri: created.uri, url: normalizeUrl(created.external_urls?.spotify) }
   } catch (e) {
     reportCommandError(e)

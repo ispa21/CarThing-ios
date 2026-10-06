@@ -4,7 +4,7 @@
 
 import type { LibraryPlaylist, TopLists } from '../history/library'
 import { capsuleOf, eras, monthSoundtrack, thenVsNow, timeCapsule, type Capsule } from './archive'
-import { faded, longGame, rising } from './past'
+import { faded, longGame, publicIdentity, rising } from './past'
 import type { Card } from './cards'
 import { albumNeglect, almostFans, compression, discoveryDebt, duplicateTaste, followTheThread, forgottenPlaylist, graveyard, outsideTheCore, theBridge } from './discover'
 import { stories, type Inputs, type Story } from './engine'
@@ -24,6 +24,7 @@ import {
   libraryFraud,
   oneNightStands,
   playlistDna,
+  recap,
   repeatThreshold,
   secretGenre,
   tasteCliff,
@@ -79,6 +80,8 @@ export function buildFeed(input: FeedInputs, seed: number): Feed {
   const legacy = stories(input, seed)
   const makers: Array<() => Card | null> = [
     // now
+    () => recap(m),
+    () => publicIdentity(m),
     () => forgottenPlaylist(m, seed),
     () => graveyard(m),
     () => outsideTheCore(m, seed),
@@ -127,6 +130,21 @@ export function buildFeed(input: FeedInputs, seed: number): Feed {
     .filter((c): c is Card => c !== null && !(hidden[c.id] && hidden[c.id] > input.now))
     // A story that can't end in something to do isn't told.
     .filter((c) => c.actions.length > 0)
+
+  // Covers for the share poster: the first few distinct ones among the tracks a card plays or saves.
+  for (const c of cards) {
+    const art: string[] = []
+    for (const a of c.actions) {
+      if (a.kind !== 'play' && a.kind !== 'save') continue
+      for (const u of a.uris) {
+        const img = m.track(u)?.art
+        if (img && !art.includes(img)) art.push(img)
+        if (art.length >= 4) break
+      }
+      if (art.length >= 4) break
+    }
+    if (art.length) c.art = art
+  }
 
   const recentTotal = [...m.stats.values()].reduce((s, x) => s + m.recent(x, 90), 0)
   const rooms: RoomView[] = m.rooms.map((r) => {

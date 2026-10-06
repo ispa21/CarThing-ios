@@ -159,8 +159,13 @@ Each scope was checked against the OpenAPI schema.
 | `playlist-modify-private` | Crate / session / story → save as a private playlist (`POST /me/playlists`, `POST /playlists/{id}/items`) |
 | `user-read-recently-played` | Archive fills in your last 50 plays (`GET /me/player/recently-played`) |
 | `user-library-read` | Stories, the builder and Transmission read your liked songs (`GET /me/tracks`) |
+| `user-follow-read` | Artists you follow, for "discovery debt" (`GET /me/following`) |
+| `user-top-read` | Your top tracks and artists over about 4 weeks, 6 months and a year or more (`GET /me/top/{tracks,artists}`): stories on day one |
+| `playlist-modify-public` | Only when you press a "Publish" key: a playlist on your public profile (`POST /me/playlists` with `public: true`) |
 
 Sessions connected before these scopes were added must reconnect; the screens that need them offer a Reconnect button.
+
+Importing your Spotify export: drop `my_spotify_data.zip` (or its JSON files) on Stories. The extended history (Streaming_History_Audio_….json) has track links and all-time plays; the quick "account data" export (StreamingHistory_music_….json) has names only and the last year, and is matched to your library by artist and title. Plays imported by name only are used for statistics and are never sent to Spotify.
 
 The listening log, crate and library index live on the device in IndexedDB (`partydeck`), never uploaded, and are wiped on Disconnect. The optional streaming-history import reads only track, artist, album, time, ms played and skip fields.
 

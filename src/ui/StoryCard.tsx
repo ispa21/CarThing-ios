@@ -7,6 +7,7 @@ import type { Action, Card, Figure } from '../stories/cards'
 import type { RoomView } from '../stories/feed'
 import type { Station } from '../stories/stations'
 import { notify } from '../store/ui'
+import { sharePoster } from '../poster/render'
 import { Artwork } from './Artwork'
 import { Icon } from './Icon'
 import { PressKey } from './PressKey'
@@ -142,7 +143,7 @@ function ActionKey({ a, card, onDismiss }: { a: Action; card: Card; onDismiss: (
         </PressKey>
       )
     case 'save':
-      return <SaveKey name={a.name} description={a.description} uris={a.uris} label={a.label} />
+      return <SaveKey name={a.name} description={a.description} uris={a.uris} label={a.label} isPublic={a.public} />
     case 'build': {
       const q = new URLSearchParams()
       if (a.risk) q.set('risk', a.risk)
@@ -161,13 +162,11 @@ function ActionKey({ a, card, onDismiss }: { a: Action; card: Card; onDismiss: (
           depth={1}
           onClick={() => {
             feedback.play('select')
-            const nav = navigator as Navigator & { share?: (d: { text: string }) => Promise<void> }
-            if (nav.share) void nav.share({ text: a.text }).catch(() => {})
-            else
-              void navigator.clipboard
-                ?.writeText(a.text)
-                .then(() => notify('Copied — paste it anywhere'))
-                .catch(() => notify('Couldn’t copy', 'error'))
+            // A poster of the story where the device can share or save an image; the sentence otherwise.
+            void sharePoster(card, a.text).then((how) => {
+              if (how === 'saved') notify('Poster saved')
+              else if (how === 'text') notify('Shared as text')
+            })
           }}
         >
           {a.label}
